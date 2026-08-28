@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Delyvo Company</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f4f6f8;color:#111827}
+header{background:#111827;color:white;padding:18px}
+.logo{font-size:23px;font-weight:800}
+.container{max-width:700px;margin:auto;padding:16px}
+.hero{background:#1f2937;color:white;border-radius:18px;padding:22px;margin-bottom:16px}
+.hero h1{margin:0 0 8px}
+.hero p{margin:0;color:#d1d5db}
+.card{background:white;border-radius:15px;padding:17px;margin-bottom:13px;box-shadow:0 2px 10px #00000012}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.stat{background:white;border-radius:14px;padding:17px;box-shadow:0 2px 10px #00000012}
+.num{font-size:25px;font-weight:800;margin-top:5px}
+input{width:100%;padding:12px;border:1px solid #ddd;border-radius:9px;margin:6px 0}
+button{width:100%;border:0;border-radius:9px;padding:12px;background:#111827;color:white;font-weight:bold;margin-top:8px}
+.result{white-space:pre-wrap;font-size:13px;background:#f3f4f6;padding:12px;border-radius:9px;margin-top:10px}
+.success{color:#15803d;font-weight:bold}
+.error{color:#b91c1c;font-weight:bold}
+</style>
+</head>
+<body>
+
+<header>
+<div class="logo">Delyvo Company</div>
+</header>
+
+<div class="container">
+
+<div class="hero">
+<h1>Company Logistics</h1>
+<p>Manage your shipments through Delyvo Core.</p>
+</div>
+
+<div class="card">
+<h3>Company Login / Dashboard</h3>
+
+<input id="companyId" placeholder="Company ID e.g. COM-XXXXXXXX">
+
+<button onclick="loadDashboard()">Load Dashboard</button>
+
+<div id="companyResult" class="result">
+Enter Company ID.
+</div>
+</div>
+
+<div id="stats" class="grid" style="display:none">
+
+<div class="stat">
+<div>Total Shipments</div>
+<div id="total" class="num">0</div>
+</div>
+
+<div class="stat">
+<div>Delivered</div>
+<div id="delivered" class="num">0</div>
+</div>
+
+<div class="stat">
+<div>Pending</div>
+<div id="pending" class="num">0</div>
+</div>
+
+<div class="stat">
+<div>Status</div>
+<div id="status" class="num">-</div>
+</div>
+
+</div>
+
+<div class="card">
+<h3>Company Information</h3>
+<div id="companyInfo">No company loaded.</div>
+</div>
+
+<div class="card">
+<h3>Company Shipments</h3>
+<button onclick="loadShipments()">Refresh Shipments</button>
+<div id="shipments" class="result">No shipments loaded.</div>
+</div>
+
+</div>
+
+<script>
+
+let currentCompany = "";
+
+function escapeHtml(value){
+return String(value || "")
+.replaceAll("&","&amp;")
+.replaceAll("<","&lt;")
+.replaceAll(">","&gt;")
+.replaceAll('"',"&quot;");
+}
+
+async function loadDashboard(){
+
+const id=document.getElementById("companyId").value.trim();
+
+if(!id){
+alert("Company ID enter karein");
+return;
+}
+
+currentCompany=id;
+
+const result=document.getElementById("companyResult");
+
+result.textContent="Loading...";
+
+try{
+
+const r=await fetch(`/api/companies/${encodeURIComponent(id)}/dashboard`);
+
+const data=await r.json();
+
+if(!r.ok || data.success===false){
+
+result.innerHTML=
+`<span class="error">${escapeHtml(data.message || "Company not found")}</span>`;
+
+document.getElementById("stats").style.display="none";
+return;
+}
+
+document.getElementById("stats").style.display="grid";
+
+document.getElementById("total").textContent=
+data.statistics.total_shipments;
+
+document.getElementById("delivered").textContent=
+data.statistics.delivered_shipments;
+
+document.getElementById("pending").textContent=
+data.statistics.pending_shipments;
+
+document.getElementById("status").textContent=
+data.company.status;
+
+document.getElementById("companyInfo").innerHTML=`
+<b>Company ID:</b> ${escapeHtml(data.company.company_id)}<br>
+<b>Name:</b> ${escapeHtml(data.company.name)}<br>
+<b>Email:</b> ${escapeHtml(data.company.email)}<br>
+<b>Phone:</b> ${escapeHtml(data.company.phone)}<br>
+<b>Status:</b> ${escapeHtml(data.company.status)}
+`;
+
+result.innerHTML=
+`<span class="success">Company dashboard loaded successfully.</span>`;
+
+await loadShipments();
+
+}catch(e){
+
+result.innerHTML=
+`<span class="error">Server connection error</span>`;
+
+}
+
+}
+
+async function loadShipments(){
+
+if(!currentCompany){
+document.getElementById("shipments").textContent=
+"First load Company Dashboard.";
+return;
+}
+
+const box=document.getElementById("shipments");
+
+box.textContent="Loading shipments...";
+
+try{
+
+const r=await fetch(
+`/api/companies/${encodeURIComponent(currentCompany)}/shipments`
+);
+
+const data=await r.json();
+
+if(!r.ok || data.success===false){
+
+box.textContent=data.message || "Unable to load shipments";
+return;
+}
+
+if(!data.shipments || !data.shipments.length){
+
+box.textContent=
+"No company-linked shipments yet.";
+return;
+}
+
+box.innerHTML=data.shipments.map(x=>`
+<div style="padding:10px 0;border-bottom:1px solid #ddd">
+<b>${escapeHtml(x.shipment_id || x.id)}</b><br>
+Status: ${escapeHtml(x.status || "-")}
+</div>
+`).join("");
+
+}catch(e){
+
+box.textContent="Shipments load nahi ho paaye.";
+
+}
+
+}
+
+</script>
+
+</body>
+</html>
