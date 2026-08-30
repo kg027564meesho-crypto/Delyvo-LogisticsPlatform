@@ -4,6 +4,8 @@ __pycache__/
 *.sqlite
 *.sqlite3
 *.bak
+*.before-*
+*.step*
 *backup*
 *.log
 delyvo-production.tar.gz
