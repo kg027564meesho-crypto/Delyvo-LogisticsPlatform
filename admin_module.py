@@ -1,8 +1,12 @@
 import sqlite3
+import os
 from datetime import datetime
 from flask import request, jsonify, render_template
 
-DB_PATH = "data/platform.db"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(BASE_DIR, "data")
+os.makedirs(DATA_DIR, exist_ok=True)
+DB_PATH = os.path.join(DATA_DIR, "platform.db")
 
 
 def db():
