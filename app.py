@@ -107,7 +107,8 @@ def init_db():
             company_name TEXT,
             city TEXT,
             status TEXT NOT NULL DEFAULT 'ACTIVE',
-            created_at TEXT NOT NULL
+            created_at TEXT NOT NULL,
+            company_id TEXT
         )
     """)
     db.execute("""
@@ -1531,7 +1532,33 @@ def create_seller():
             "success": False,
             "message": "name and phone are required"
         }), 400
+
     db = get_db()
+
+    # SELLER → COMPANY LINK VALIDATION
+    if company_id:
+        company = db.execute("""
+            SELECT company_id, name, status
+            FROM companies
+            WHERE company_id=?
+        """, (company_id,)).fetchone()
+
+        if not company:
+            db.close()
+            return jsonify({
+                "success": False,
+                "message": "Company not found",
+                "company_id": company_id
+            }), 404
+
+        if company["status"] != "ACTIVE":
+            db.close()
+            return jsonify({
+                "success": False,
+                "message": "Company is inactive",
+                "company_id": company_id
+            }), 400
+
     existing = db.execute(
         "SELECT seller_id FROM sellers WHERE phone=?",
         (phone,)
@@ -1574,9 +1601,14 @@ def create_seller():
 def get_sellers():
     db = get_db()
     rows = db.execute("""
-        SELECT *
-        FROM sellers
-        ORDER BY id DESC
+        SELECT
+            s.*,
+            c.name AS linked_company_name,
+            c.status AS linked_company_status
+        FROM sellers s
+        LEFT JOIN companies c
+            ON c.company_id=s.company_id
+        ORDER BY s.id DESC
     """).fetchall()
     db.close()
     return jsonify({
