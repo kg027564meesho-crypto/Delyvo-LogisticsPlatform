@@ -5416,6 +5416,8 @@ def health():
         "status": "ONLINE",
         "database": "CONNECTED"
     })
+init_db()
+
 # Register Delyvo Company module
 register_company_routes(app)
 # Register Delyvo Admin module
