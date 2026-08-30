@@ -1,0 +1,613 @@
+==================================================
+        DELYVO FINAL UI READINESS TEST
+==================================================
+
+=== 1. SERVER ===
+{"database":"CONNECTED","status":"ONLINE","success":true}
+
+=== 2. UI ROUTES ===
+/ -> HTTP 200
+/admin -> HTTP 200
+/admin/login -> HTTP 404
+/admin/dashboard -> HTTP 404
+/admin/partners -> HTTP 404
+/company-dashboard -> HTTP 200
+/hub-dashboard -> HTTP 200
+/partner-dashboard -> HTTP 200
+/seller-dashboard -> HTTP 404
+/delyvo-market -> HTTP 200
+
+=== 3. ACTIVE TEMPLATE CHECK ===
+PASS templates/admin_login.html
+PASS templates/admin_dashboard.html
+PASS templates/admin_partners.html
+PASS templates/company_dashboard.html
+PASS templates/hub_dashboard.html
+PASS templates/partner_dashboard.html
+PASS templates/seller_dashboard.html
+PASS templates/delyvo_market.html
+PASS templates/delyvo_home.html
+
+=== 4. JAVASCRIPT FETCH/API AUDIT ===
+templates/partner_dashboard.html:16:        <button class="top-action" onclick="loadAll()">↻</button>
+templates/partner_dashboard.html:94:        <button onclick="loadAll()">Refresh</button>
+templates/partner_dashboard.html:148:            <button onclick="loadPartnerSeat()">Refresh</button>
+templates/partner_dashboard.html:164:            <button onclick="loadAvailableOrders()">Refresh</button>
+templates/partner_dashboard.html:175:            <button onclick="loadPendingAssignments()">Refresh</button>
+templates/partner_dashboard.html:190:            <button onclick="loadDeliveryHistory()">Refresh</button>
+templates/partner_dashboard.html:245:    <button class="nav-btn active" onclick="showPage('homePage',this)">
+templates/partner_dashboard.html:249:    <button class="nav-btn" onclick="showPage('deliveriesPage',this)">
+templates/partner_dashboard.html:253:    <button class="nav-btn" onclick="showPage('earningsPage',this)">
+templates/partner_dashboard.html:257:    <button class="nav-btn" onclick="showPage('profilePage',this)">
+templates/partner_dashboard.html:288:    const response = await fetch(
+templates/partner_dashboard.html:289:        `/api/partners/${encodeURIComponent(partnerId)}/dashboard`
+templates/partner_dashboard.html:358:        const response = await fetch(
+templates/partner_dashboard.html:359:            `/api/partners/${encodeURIComponent(partnerId)}/active-assignments`
+templates/partner_dashboard.html:477:                    onclick="collectCOD('${escapeHtml(item.assignment_id)}', this)">
+templates/partner_dashboard.html:483:                    onclick="deliverShipment('${escapeHtml(item.assignment_id)}', this)">
+templates/partner_dashboard.html:489:                    onclick="rtoShipment('${escapeHtml(item.assignment_id)}', this)">
+templates/partner_dashboard.html:503:        const response = await fetch(
+templates/partner_dashboard.html:504:            `/api/assignments/${encodeURIComponent(assignmentId)}/confirm`,
+templates/partner_dashboard.html:538:        const response = await fetch(
+templates/partner_dashboard.html:539:            `/api/assignments/${encodeURIComponent(assignmentId)}/collect-cod`,
+templates/partner_dashboard.html:574:        const response = await fetch(
+templates/partner_dashboard.html:575:            `/api/assignments/${encodeURIComponent(assignmentId)}/deliver`,
+templates/partner_dashboard.html:616:        const response = await fetch(
+templates/partner_dashboard.html:617:            `/api/assignments/${encodeURIComponent(assignmentId)}/rto`,
+templates/partner_dashboard.html:852:        const response = await fetch(
+templates/partner_dashboard.html:853:            `/api/partners/${encodeURIComponent(partnerId)}/assignments`
+templates/partner_dashboard.html:969:        const response = await fetch(
+templates/partner_dashboard.html:970:            "/api/hubs/HUB001/shipments/available"
+templates/partner_dashboard.html:1049:                        onclick="confirmPartnerSeat('${escapeHtml(seat.seat_id || "")}')"
+templates/partner_dashboard.html:1070:        const response = await fetch(
+templates/partner_dashboard.html:1071:            `/api/partners/${encodeURIComponent(partnerId)}/seat`
+templates/partner_dashboard.html:1104:        const response = await fetch(
+templates/partner_dashboard.html:1105:            `/api/partner-seats/${encodeURIComponent(seatId)}/confirm`,
+templates/admin_partners.html:19:        <button onclick="loadAll()">Refresh</button>
+templates/admin_partners.html:91:                onclick="exportAssignmentsCSV()"
+templates/admin_partners.html:100:                onclick="exportEarningsCSV()"
+templates/admin_partners.html:108:                onclick="refreshPartnerOperations()"
+templates/admin_partners.html:120:        <button onclick="closeOperations()">Close</button>
+templates/admin_partners.html:172:    <button type="button" onclick="clearAssignmentFilters()">Clear</button>
+templates/admin_partners.html:206:    <button type="button" onclick="clearEarningFilters()">Clear</button>
+templates/admin_partners.html:248:    <button type="button" onclick="clearPartnerFilters()">Clear</button>
+templates/admin_partners.html:280:    const response = await fetch("/api/partners/summary");
+templates/admin_partners.html:293:    const response = await fetch("/api/partners");
+templates/admin_partners.html:308:                    const r = await fetch(
+templates/admin_partners.html:309:                        `/api/partners/${encodeURIComponent(partner.partner_id)}/dashboard`
+templates/admin_partners.html:348:        const response = await fetch(
+templates/admin_partners.html:349:            `/api/partners/${encodeURIComponent(partnerId)}/status`,
+templates/admin_partners.html:628:                onclick="goToAssignmentPage(${page - 1})">
+templates/admin_partners.html:637:                onclick="goToAssignmentPage(${page + 1})">
+templates/admin_partners.html:812:                onclick="goToEarningPage(${page - 1})">
+templates/admin_partners.html:823:                onclick="goToEarningPage(${page + 1})">
+templates/admin_partners.html:885:                fetch(`/api/partners/${encodeURIComponent(partnerId)}/dashboard`),
+templates/admin_partners.html:886:                fetch(`/api/partners/${encodeURIComponent(partnerId)}/assignments`),
+templates/admin_partners.html:887:                fetch(`/api/partners/${encodeURIComponent(partnerId)}/earnings`)
+templates/admin_partners.html:1546:                    onclick="viewPartner('${escapeHtml(partner.partner_id)}')">
+templates/admin_partners.html:1578:document.addEventListener("DOMContentLoaded", function () {
+templates/seller_dashboard.html:210:        <button class="refresh" onclick="loadDashboard()">Refresh</button>
+templates/seller_dashboard.html:358:            const response = await fetch(
+templates/seller_dashboard.html:359:                "/api/sellers/" +
+templates/seller_dashboard.html:936:        await fetch(url, options || {});
+templates/seller_dashboard.html:1033:            "/api/sellers/" +
+templates/seller_dashboard.html:1118:                "/api/sellers/" +
+templates/seller_dashboard.html:1247:            "/api/sellers/" +
+templates/seller_dashboard.html:1311:            "/api/sellers/" +
+templates/seller_dashboard.html:1359:            "/api/sellers/" +
+templates/seller_dashboard.html:1475:            "/api/sellers/" +
+templates/seller_dashboard.html:1568:                "/api/sellers/" +
+templates/seller_dashboard.html:1705:            "/api/sellers/" +
+templates/seller_dashboard.html:1739:document.addEventListener(
+templates/seller_dashboard.html:1809:    addProductButton.addEventListener(
+templates/seller_dashboard.html:1823:    createOrderButton.addEventListener(
+templates/seller_dashboard.html:1837:    refreshProducts.addEventListener(
+templates/seller_dashboard.html:1851:    refreshOrders.addEventListener(
+templates/seller_dashboard.html:2021:            onclick="createProduct()">
+templates/seller_dashboard.html:2100:            onclick="createOrder()">
+templates/seller_dashboard.html:2123:            onclick="loadProducts()">
+templates/seller_dashboard.html:2158:            onclick="loadOrders()">
+templates/seller_dashboard.html:2235:        const response = await fetch(
+templates/seller_dashboard.html:2236:            `/api/sellers/${encodeURIComponent(SELLER_ID)}/products`,
+templates/seller_dashboard.html:2291:        const response = await fetch(
+templates/seller_dashboard.html:2292:            `/api/sellers/${encodeURIComponent(SELLER_ID)}/products`
+templates/seller_dashboard.html:2345:                        onclick="
+templates/seller_dashboard.html:2379:        const response = await fetch(
+templates/seller_dashboard.html:2380:            `/api/sellers/${encodeURIComponent(SELLER_ID)}/products/${encodeURIComponent(productId)}/stock`,
+templates/seller_dashboard.html:2419:        const response = await fetch(
+templates/seller_dashboard.html:2420:            `/api/sellers/${encodeURIComponent(SELLER_ID)}/products/${encodeURIComponent(productId)}/status`,
+templates/seller_dashboard.html:2509:        const response = await fetch(
+templates/seller_dashboard.html:2510:            `/api/sellers/${encodeURIComponent(SELLER_ID)}/orders`,
+templates/seller_dashboard.html:2594:        const response = await fetch(
+templates/seller_dashboard.html:2595:            `/api/sellers/${encodeURIComponent(SELLER_ID)}/orders`
+templates/seller_dashboard.html:2664:                        onclick="
+templates/seller_dashboard.html:2694:        const response = await fetch(
+templates/seller_dashboard.html:2695:            `/api/sellers/${encodeURIComponent(SELLER_ID)}/orders/${encodeURIComponent(orderId)}/status`,
+templates/seller_dashboard.html:2730:        const response = await fetch(
+templates/seller_dashboard.html:2731:            `/api/sellers/${encodeURIComponent(SELLER_ID)}/orders/${encodeURIComponent(orderId)}`
+templates/seller_dashboard.html:2765:window.addEventListener("load", function() {
+templates/delyvo_market.html:286:        <button class="cart" onclick="openCart()">
+templates/delyvo_market.html:321:        <button class="category active" onclick="setCategory('all',this)">
+templates/delyvo_market.html:324:        <button class="category" onclick="setCategory('fashion',this)">
+templates/delyvo_market.html:327:        <button class="category" onclick="setCategory('electronics',this)">
+templates/delyvo_market.html:330:        <button class="category" onclick="setCategory('home',this)">
+templates/delyvo_market.html:333:        <button class="category" onclick="setCategory('beauty',this)">
+templates/delyvo_market.html:351:    <button onclick="window.scrollTo({top:0,behavior:'smooth'})">
+templates/delyvo_market.html:354:    <button onclick="openCart()">
+templates/delyvo_market.html:357:    <button onclick="openOrders()">
+templates/delyvo_market.html:360:    <button onclick="openProfile()">
+templates/delyvo_market.html:368:<button class="close" onclick="closeModal('productModal')">×</button>
+templates/delyvo_market.html:376:<button class="close" onclick="closeModal('cartModal')">×</button>
+templates/delyvo_market.html:380:<button class="primary" onclick="openCheckout()">
+templates/delyvo_market.html:389:<button class="close" onclick="closeModal('checkoutModal')">×</button>
+templates/delyvo_market.html:403:<button class="primary" onclick="placeOrder()">
+templates/delyvo_market.html:412:<button class="close" onclick="closeModal('ordersModal')">×</button>
+templates/delyvo_market.html:420:<button class="primary" onclick="lookupOrder()">
+templates/delyvo_market.html:431:<button class="close" onclick="closeModal('profileModal')">×</button>
+templates/delyvo_market.html:571:        const r = await fetch("/api/market/sellers");
+templates/delyvo_market.html:601:            onclick="selectSeller('')"
+templates/delyvo_market.html:611:            onclick="selectSeller('${escapeHtml(s.seller_id)}')"
+templates/delyvo_market.html:650:        let url = "/api/market/products";
+templates/delyvo_market.html:657:        const r = await fetch(url);
+templates/delyvo_market.html:724:                    onclick="addToCart('${escapeHtml(p.product_id)}')"
+templates/delyvo_market.html:731:                    onclick="openProduct('${escapeHtml(p.product_id)}')"
+templates/delyvo_market.html:829:            await fetch(
+templates/delyvo_market.html:830:                "/api/market/product/" +
+templates/delyvo_market.html:870:                onclick="addToCart('${escapeHtml(p.product_id)}');closeModal('productModal')"
+templates/delyvo_market.html:1068:                <button onclick="changeQty(${i},-1)">
+templates/delyvo_market.html:1074:                <button onclick="changeQty(${i},1)">
+templates/delyvo_market.html:1290:                await fetch(
+templates/delyvo_market.html:1291:                    "/api/sellers/" +
+templates/delyvo_market.html:1440:        const r = await fetch("/api/market/customer/orders", {
+templates/delyvo_market.html:1520:                onclick="clearCustomerOrders()"
+templates/delyvo_market.html:1556:                        onclick="loadOrderById(
+templates/delyvo_market.html:1587:        const r = await fetch(
+templates/delyvo_market.html:1588:            "/api/market/orders/" +
+templates/delyvo_market.html:1633:        const r = await fetch(
+templates/delyvo_market.html:1634:            "/api/market/orders/" +
+templates/delyvo_market.html:1675:        const r = await fetch(
+templates/delyvo_market.html:1676:            "/api/market/orders/" +
+templates/delyvo_market.html:1711:                onclick="cancelMarketOrder(
+templates/delyvo_market.html:1724:                onclick="requestMarketReturn(
+templates/delyvo_market.html:1890:            await fetch(
+templates/delyvo_market.html:1891:                "/api/market/orders/" +
+templates/delyvo_market.html:1961:                            onclick="cancelMarketOrder('${escapeHtml(o.order_id)}')">
+templates/delyvo_market.html:1975:                            onclick="requestMarketReturn('${escapeHtml(o.order_id)}')">
+templates/company_dashboard.html:45:<button onclick="loadDashboard()">Load Dashboard</button>
+templates/company_dashboard.html:83:<button onclick="loadShipments()">Refresh Shipments</button>
+templates/company_dashboard.html:118:const r=await fetch(`/api/companies/${encodeURIComponent(id)}/dashboard`);
+templates/company_dashboard.html:181:const r=await fetch(
+templates/company_dashboard.html:182:`/api/companies/${encodeURIComponent(currentCompany)}/shipments`
+templates/admin_dashboard.html:444: <button onclick="loadShipments()">Refresh</button>
+templates/admin_dashboard.html:512:  <button onclick="addPartner()">+ Add Partner</button>
+templates/admin_dashboard.html:513:  <button onclick="loadPartners()">Refresh</button>
+templates/admin_dashboard.html:538:  <button onclick="addHub()">+ Add Hub</button>
+templates/admin_dashboard.html:539:  <button onclick="loadHubs()">Refresh</button>
+templates/admin_dashboard.html:564:  <button onclick="loadSellers()">Refresh</button>
+templates/admin_dashboard.html:589: <button onclick="loadProducts()">Refresh</button>
+templates/admin_dashboard.html:671: <button onclick="loadOrders()">Refresh</button>
+templates/admin_dashboard.html:747: <button onclick="loadPayments()">Refresh</button>
+templates/admin_dashboard.html:786:  <button onclick="addCompany()">+ Add Company</button>
+templates/admin_dashboard.html:787:  <button onclick="loadCompanies()">Refresh</button>
+templates/admin_dashboard.html:812: const response = await fetch(url);
+templates/admin_dashboard.html:820:  const data = await getJSON("/api/admin/dashboard");
+templates/admin_dashboard.html:847:  const data=await getJSON("/api/admin/products");
+templates/admin_dashboard.html:873:  const data=await getJSON("/api/admin/products/summary");
+templates/admin_dashboard.html:991:    <button onclick='viewAdminProduct(${JSON.stringify(x.product_id)})'>
+templates/admin_dashboard.html:994:    <button onclick='changeProductStock(${JSON.stringify(x.product_id)},${stock})'>
+templates/admin_dashboard.html:997:    <button onclick='toggleProductStatus(${JSON.stringify(x.product_id)},${JSON.stringify(x.status)})'>
+templates/admin_dashboard.html:1088:    "/api/admin/products/"+encodeURIComponent(productId)
+templates/admin_dashboard.html:1153:  const response=await fetch(
+templates/admin_dashboard.html:1154:   "/api/admin/products/"+encodeURIComponent(productId)+"/stock",
+templates/admin_dashboard.html:1200:  const response=await fetch(
+templates/admin_dashboard.html:1201:   "/api/admin/products/"+encodeURIComponent(productId)+"/status",
+templates/admin_dashboard.html:1239:  const data=await getJSON("/api/admin/shipments/recent");
+templates/admin_dashboard.html:1319:    <button onclick='viewAdminShipment(${JSON.stringify(shipmentId)})'>
+templates/admin_dashboard.html:1376:   "/api/shipments/"+encodeURIComponent(shipmentId)
+templates/admin_dashboard.html:1456:  const response=await fetch(
+templates/admin_dashboard.html:1457:   "/api/shipments/"+encodeURIComponent(shipmentId)+"/status",
+templates/admin_dashboard.html:1498:  const data=await getJSON("/api/admin/partners");
+templates/admin_dashboard.html:1544:    <button onclick="togglePartnerStatus('${x.partner_id}', ${active})">
+templates/admin_dashboard.html:1592:   "/api/partners/" + encodeURIComponent(partnerId) + "/status",
+templates/admin_dashboard.html:1620:  const data=await getJSON("/api/admin/hubs");
+templates/admin_dashboard.html:1664:    <button onclick="toggleHubStatus('${x.hub_id}', ${active})">
+templates/admin_dashboard.html:1712:   "/api/hubs/" + encodeURIComponent(hubId) + "/status",
+templates/admin_dashboard.html:1740:  const data=await getJSON("/api/admin/companies");
+templates/admin_dashboard.html:1784:    <button onclick="toggleCompanyStatus('${x.company_id}', ${active})">
+templates/admin_dashboard.html:1834:   "/api/companies/" + encodeURIComponent(companyId) + "/status",
+templates/admin_dashboard.html:1862:  const data=await getJSON("/api/sellers");
+templates/admin_dashboard.html:1910:    <button onclick="toggleSellerStatus('${x.seller_id}', ${active})">
+templates/admin_dashboard.html:1956:   "/api/sellers/" + encodeURIComponent(sellerId) + "/status",
+templates/admin_dashboard.html:1984:   getJSON("/api/admin/orders"),
+templates/admin_dashboard.html:1985:   getJSON("/api/admin/orders/summary")
+templates/admin_dashboard.html:2066:    <button onclick='viewAdminOrder(${JSON.stringify(orderId)})'>
+templates/admin_dashboard.html:2132:   "/api/admin/orders/"+encodeURIComponent(orderId)
+templates/admin_dashboard.html:2200:  const response=await fetch(
+templates/admin_dashboard.html:2201:   "/api/admin/orders/"+encodeURIComponent(orderId)+"/status",
+templates/admin_dashboard.html:2242:   getJSON("/api/payments"),
+templates/admin_dashboard.html:2243:   getJSON("/api/payments/summary")
+templates/admin_dashboard.html:2342:  const data=await postJSON("/api/partners",{
+templates/admin_dashboard.html:2373:  const data=await postJSON("/api/hubs",{
+templates/admin_dashboard.html:2408:  const data=await postJSON("/api/companies",{
+templates/admin_dashboard.html:2513:    "/api/admin/products/"+encodeURIComponent(productId)
+templates/admin_dashboard.html:2626:  const response=await fetch(
+templates/admin_dashboard.html:2627:   "/api/admin/products/"+
+templates/admin_dashboard.html:2728:  const response=await fetch(
+templates/admin_dashboard.html:2729:   "/api/admin/products/"+
+templates/admin_dashboard.html:2775:document.addEventListener("keydown",function(event){
+templates/admin_dashboard.html:2844:      <button onclick="loadOwnerFinancial()"
+templates/admin_dashboard.html:2890:    const response = await fetch("/api/owner/financial");
+templates/admin_dashboard.html:2976:document.addEventListener("DOMContentLoaded", function() {
+templates/admin_dashboard.html:3037:        onclick="submitOwnerWithdrawal()"
+templates/admin_dashboard.html:3043:        onclick="loadOwnerWithdrawals()"
+templates/admin_dashboard.html:3134:    const response = await fetch(
+templates/admin_dashboard.html:3135:      "/api/owner/withdraw",
+templates/admin_dashboard.html:3197:    const response = await fetch(
+templates/admin_dashboard.html:3198:      "/api/owner/withdrawals"
+templates/admin_dashboard.html:3309:document.addEventListener(
+templates/admin_dashboard.html:3451:    <button onclick="saveFinancialSettings()"
+templates/admin_dashboard.html:3512:    const response = await fetch("/api/financial/settings");
+templates/admin_dashboard.html:3554:    const response = await fetch("/api/financial/settings", {
+templates/admin_dashboard.html:3578:    const response = await fetch("/api/financial/dashboard");
+templates/admin_dashboard.html:3636:    const response = await fetch("/api/financial/transactions");
+templates/admin_dashboard.html:3688:document.addEventListener("DOMContentLoaded", function() {
+templates/admin_dashboard.html:3807:      await fetch("/api/financial/payouts");
+templates/admin_dashboard.html:3851:      await fetch("/api/partner-earnings");
+templates/admin_dashboard.html:3910:                  onclick="payPartnerEarning('${row.earning_id}')"
+templates/admin_dashboard.html:3937:      await fetch("/api/seller-settlements");
+templates/admin_dashboard.html:3995:                  onclick="paySellerSettlement('${row.settlement_id}')"
+templates/admin_dashboard.html:4022:      await fetch("/api/company-settlements");
+templates/admin_dashboard.html:4080:                  onclick="payCompanySettlement('${row.settlement_id}')"
+templates/admin_dashboard.html:4112:    const response = await fetch(
+templates/admin_dashboard.html:4113:      "/api/partner-earnings/" +
+templates/admin_dashboard.html:4154:    const response = await fetch(
+templates/admin_dashboard.html:4155:      "/api/seller-settlements/" +
+templates/admin_dashboard.html:4196:    const response = await fetch(
+templates/admin_dashboard.html:4197:      "/api/company-settlements/" +
+templates/admin_dashboard.html:4240:document.addEventListener(
+templates/admin_dashboard.html:4252:<div id="productModal" class="product-modal" onclick="closeProductModal(event)">
+templates/admin_dashboard.html:4253: <div class="product-modal-card" onclick="event.stopPropagation()">
+templates/admin_dashboard.html:4259:    onclick="closeProductModal()"
+templates/admin_dashboard.html:4269:    onclick="closeProductModal()"
+templates/admin_dashboard.html:4279:<div id="stockModal" class="product-modal" onclick="closeStockModal(event)">
+templates/admin_dashboard.html:4280: <div class="product-modal-card" onclick="event.stopPropagation()">
+templates/admin_dashboard.html:4286:    onclick="closeStockModal()"
+templates/admin_dashboard.html:4312:    onclick="closeStockModal()"
+templates/admin_dashboard.html:4317:   <button onclick="submitProductStock()">
+templates/admin_dashboard.html:4326:<div id="statusModal" class="product-modal" onclick="closeStatusModal(event)">
+templates/admin_dashboard.html:4327: <div class="product-modal-card" onclick="event.stopPropagation()">
+templates/admin_dashboard.html:4333:    onclick="closeStatusModal()"
+templates/admin_dashboard.html:4343:    onclick="closeStatusModal()"
+templates/admin_dashboard.html:4348:   <button onclick="submitProductStatus()">
+templates/hub_dashboard.html:182:onclick="loadHub()">
+templates/hub_dashboard.html:259:onclick="loadShipments()">
+templates/hub_dashboard.html:280:onclick="loadPartners()">
+templates/hub_dashboard.html:340:await fetch(
+templates/hub_dashboard.html:341:"/api/hub/"+encodeURIComponent(code)
+templates/hub_dashboard.html:440:await fetch(
+templates/hub_dashboard.html:441:"/api/hub/"+encodeURIComponent(currentHub)+"/shipments"
+templates/hub_dashboard.html:526:        const r = await fetch(
+templates/hub_dashboard.html:527:            "/api/hubs/" +
+templates/hub_dashboard.html:583:await fetch(
+templates/hub_dashboard.html:584:"/api/hub/"+encodeURIComponent(currentHub)+"/partners"
+templates/admin_login.html:108:document.getElementById("loginForm").addEventListener("submit", async function(e){
+templates/admin_login.html:114:        const response = await fetch("/api/admin/login", {
+
+=== 5. FORMS ===
+templates/partner_dashboard.html:16:        <button class="top-action" onclick="loadAll()">↻</button>
+templates/partner_dashboard.html:94:        <button onclick="loadAll()">Refresh</button>
+templates/partner_dashboard.html:148:            <button onclick="loadPartnerSeat()">Refresh</button>
+templates/partner_dashboard.html:164:            <button onclick="loadAvailableOrders()">Refresh</button>
+templates/partner_dashboard.html:175:            <button onclick="loadPendingAssignments()">Refresh</button>
+templates/partner_dashboard.html:190:            <button onclick="loadDeliveryHistory()">Refresh</button>
+templates/partner_dashboard.html:245:    <button class="nav-btn active" onclick="showPage('homePage',this)">
+templates/partner_dashboard.html:249:    <button class="nav-btn" onclick="showPage('deliveriesPage',this)">
+templates/partner_dashboard.html:253:    <button class="nav-btn" onclick="showPage('earningsPage',this)">
+templates/partner_dashboard.html:257:    <button class="nav-btn" onclick="showPage('profilePage',this)">
+templates/partner_dashboard.html:413:            <button
+templates/partner_dashboard.html:475:                <button
+templates/partner_dashboard.html:481:                <button
+templates/partner_dashboard.html:487:                <button
+templates/partner_dashboard.html:939:                <button
+templates/partner_dashboard.html:1047:                    <button
+templates/admin_partners.html:19:        <button onclick="loadAll()">Refresh</button>
+templates/admin_partners.html:87:            <button
+templates/admin_partners.html:90:                type="button"
+templates/admin_partners.html:96:            <button
+templates/admin_partners.html:99:                type="button"
+templates/admin_partners.html:105:            <button
+templates/admin_partners.html:107:                type="button"
+templates/admin_partners.html:120:        <button onclick="closeOperations()">Close</button>
+templates/admin_partners.html:172:    <button type="button" onclick="clearAssignmentFilters()">Clear</button>
+templates/admin_partners.html:206:    <button type="button" onclick="clearEarningFilters()">Clear</button>
+templates/admin_partners.html:248:    <button type="button" onclick="clearPartnerFilters()">Clear</button>
+templates/admin_partners.html:625:            <button
+templates/admin_partners.html:626:                type="button"
+templates/admin_partners.html:634:            <button
+templates/admin_partners.html:635:                type="button"
+templates/admin_partners.html:809:            <button
+templates/admin_partners.html:810:                type="button"
+templates/admin_partners.html:820:            <button
+templates/admin_partners.html:821:                type="button"
+templates/admin_partners.html:1544:                <button
+templates/admin_partners.html:1545:                    type="button"
+templates/seller_dashboard.html:210:        <button class="refresh" onclick="loadDashboard()">Refresh</button>
+templates/seller_dashboard.html:700:<button
+templates/seller_dashboard.html:703:type="button">
+templates/seller_dashboard.html:763:<button
+templates/seller_dashboard.html:766:type="button">
+templates/seller_dashboard.html:788:<button
+templates/seller_dashboard.html:791:type="button">
+templates/seller_dashboard.html:833:<button
+templates/seller_dashboard.html:836:type="button">
+templates/seller_dashboard.html:1176:<button
+templates/seller_dashboard.html:1178:type="button"
+templates/seller_dashboard.html:1184:<button
+templates/seller_dashboard.html:1186:type="button"
+templates/seller_dashboard.html:1192:<button
+templates/seller_dashboard.html:1194:type="button"
+templates/seller_dashboard.html:1648:<button
+templates/seller_dashboard.html:1650:type="button"
+templates/seller_dashboard.html:2019:        <button
+templates/seller_dashboard.html:2098:        <button
+templates/seller_dashboard.html:2121:        <button
+templates/seller_dashboard.html:2156:        <button
+templates/seller_dashboard.html:2343:                    <button
+templates/seller_dashboard.html:2662:                    <button
+templates/delyvo_market.html:286:        <button class="cart" onclick="openCart()">
+templates/delyvo_market.html:321:        <button class="category active" onclick="setCategory('all',this)">
+templates/delyvo_market.html:324:        <button class="category" onclick="setCategory('fashion',this)">
+templates/delyvo_market.html:327:        <button class="category" onclick="setCategory('electronics',this)">
+templates/delyvo_market.html:330:        <button class="category" onclick="setCategory('home',this)">
+templates/delyvo_market.html:333:        <button class="category" onclick="setCategory('beauty',this)">
+templates/delyvo_market.html:351:    <button onclick="window.scrollTo({top:0,behavior:'smooth'})">
+templates/delyvo_market.html:354:    <button onclick="openCart()">
+templates/delyvo_market.html:357:    <button onclick="openOrders()">
+templates/delyvo_market.html:360:    <button onclick="openProfile()">
+templates/delyvo_market.html:368:<button class="close" onclick="closeModal('productModal')">×</button>
+templates/delyvo_market.html:376:<button class="close" onclick="closeModal('cartModal')">×</button>
+templates/delyvo_market.html:380:<button class="primary" onclick="openCheckout()">
+templates/delyvo_market.html:389:<button class="close" onclick="closeModal('checkoutModal')">×</button>
+templates/delyvo_market.html:403:<button class="primary" onclick="placeOrder()">
+templates/delyvo_market.html:412:<button class="close" onclick="closeModal('ordersModal')">×</button>
+templates/delyvo_market.html:420:<button class="primary" onclick="lookupOrder()">
+templates/delyvo_market.html:431:<button class="close" onclick="closeModal('profileModal')">×</button>
+templates/delyvo_market.html:599:        <button
+templates/delyvo_market.html:609:        <button
+templates/delyvo_market.html:722:                <button
+templates/delyvo_market.html:729:                <button
+templates/delyvo_market.html:868:            <button
+templates/delyvo_market.html:1068:                <button onclick="changeQty(${i},-1)">
+templates/delyvo_market.html:1074:                <button onclick="changeQty(${i},1)">
+templates/delyvo_market.html:1518:            <button
+templates/delyvo_market.html:1554:                    <button
+templates/delyvo_market.html:1709:            <button
+templates/delyvo_market.html:1722:            <button
+templates/delyvo_market.html:1959:                        <button
+templates/delyvo_market.html:1973:                        <button
+templates/company_dashboard.html:45:<button onclick="loadDashboard()">Load Dashboard</button>
+templates/company_dashboard.html:83:<button onclick="loadShipments()">Refresh Shipments</button>
+templates/admin_dashboard.html:444: <button onclick="loadShipments()">Refresh</button>
+templates/admin_dashboard.html:512:  <button onclick="addPartner()">+ Add Partner</button>
+templates/admin_dashboard.html:513:  <button onclick="loadPartners()">Refresh</button>
+templates/admin_dashboard.html:538:  <button onclick="addHub()">+ Add Hub</button>
+templates/admin_dashboard.html:539:  <button onclick="loadHubs()">Refresh</button>
+templates/admin_dashboard.html:564:  <button onclick="loadSellers()">Refresh</button>
+templates/admin_dashboard.html:589: <button onclick="loadProducts()">Refresh</button>
+templates/admin_dashboard.html:671: <button onclick="loadOrders()">Refresh</button>
+templates/admin_dashboard.html:747: <button onclick="loadPayments()">Refresh</button>
+templates/admin_dashboard.html:786:  <button onclick="addCompany()">+ Add Company</button>
+templates/admin_dashboard.html:787:  <button onclick="loadCompanies()">Refresh</button>
+templates/admin_dashboard.html:991:    <button onclick='viewAdminProduct(${JSON.stringify(x.product_id)})'>
+templates/admin_dashboard.html:994:    <button onclick='changeProductStock(${JSON.stringify(x.product_id)},${stock})'>
+templates/admin_dashboard.html:997:    <button onclick='toggleProductStatus(${JSON.stringify(x.product_id)},${JSON.stringify(x.status)})'>
+templates/admin_dashboard.html:1319:    <button onclick='viewAdminShipment(${JSON.stringify(shipmentId)})'>
+templates/admin_dashboard.html:1544:    <button onclick="togglePartnerStatus('${x.partner_id}', ${active})">
+templates/admin_dashboard.html:1664:    <button onclick="toggleHubStatus('${x.hub_id}', ${active})">
+templates/admin_dashboard.html:1784:    <button onclick="toggleCompanyStatus('${x.company_id}', ${active})">
+templates/admin_dashboard.html:1910:    <button onclick="toggleSellerStatus('${x.seller_id}', ${active})">
+templates/admin_dashboard.html:2066:    <button onclick='viewAdminOrder(${JSON.stringify(orderId)})'>
+templates/admin_dashboard.html:2844:      <button onclick="loadOwnerFinancial()"
+templates/admin_dashboard.html:3036:      <button
+templates/admin_dashboard.html:3042:      <button
+templates/admin_dashboard.html:3451:    <button onclick="saveFinancialSettings()"
+templates/admin_dashboard.html:3909:                <button
+templates/admin_dashboard.html:3994:                <button
+templates/admin_dashboard.html:4079:                <button
+templates/admin_dashboard.html:4257:   <button
+templates/admin_dashboard.html:4267:   <button
+templates/admin_dashboard.html:4284:   <button
+templates/admin_dashboard.html:4310:   <button
+templates/admin_dashboard.html:4317:   <button onclick="submitProductStock()">
+templates/admin_dashboard.html:4331:   <button
+templates/admin_dashboard.html:4341:   <button
+templates/admin_dashboard.html:4348:   <button onclick="submitProductStatus()">
+templates/hub_dashboard.html:180:<button
+templates/hub_dashboard.html:258:<button
+templates/hub_dashboard.html:279:<button
+templates/admin_login.html:92:    <form id="loginForm">
+templates/admin_login.html:99:        <button type="submit">Login to Admin Portal</button>
+
+=== 6. BROKEN HTML/JS MARKERS ===
+templates/partner_dashboard.html:295:        throw new Error(data.message || "Dashboard request failed");
+templates/partner_dashboard.html:365:            throw new Error(data.message || "Assignments request failed");
+templates/partner_dashboard.html:519:            throw new Error(data.message || "Confirmation failed");
+templates/partner_dashboard.html:555:            throw new Error(data.message || "COD collection failed");
+templates/partner_dashboard.html:592:            throw new Error(data.message || "Delivery failed");
+templates/partner_dashboard.html:634:            throw new Error(data.message || "RTO failed");
+templates/partner_dashboard.html:859:            throw new Error(
+templates/partner_dashboard.html:976:            throw new Error(
+templates/partner_dashboard.html:1077:            throw new Error(
+templates/partner_dashboard.html:1120:            throw new Error(
+templates/partner_dashboard.html:1147:        console.error(error);
+templates/admin_partners.html:284:        throw new Error(data.message || "Summary request failed");
+templates/admin_partners.html:297:        throw new Error(data.message || "Partners request failed");
+templates/admin_partners.html:327:            console.error("Operations summary failed", error);
+templates/admin_partners.html:362:            throw new Error(data.message || "Status update failed");
+templates/admin_partners.html:398:    if (Number.isNaN(d.getTime())) return escapeHtml(String(value));
+templates/admin_partners.html:893:            throw new Error("Failed to refresh operations data");
+templates/admin_partners.html:926:        console.error(error);
+templates/admin_partners.html:1367:        console.error(error);
+templates/admin_partners.html:1453:        console.error(error);
+templates/admin_partners.html:1598:        console.error(
+templates/seller_dashboard.html:367:                throw new Error(
+templates/seller_dashboard.html:904:        value === null || value === undefined
+templates/seller_dashboard.html:923:        typeof SELLER_ID !== "undefined" &&
+templates/seller_dashboard.html:948:        throw new Error(
+templates/seller_dashboard.html:2256:            throw new Error(
+templates/seller_dashboard.html:2298:            throw new Error(
+templates/seller_dashboard.html:2395:            throw new Error(
+templates/seller_dashboard.html:2435:            throw new Error(
+templates/seller_dashboard.html:2543:            throw new Error(
+templates/seller_dashboard.html:2601:            throw new Error(
+templates/seller_dashboard.html:2710:            throw new Error(
+templates/seller_dashboard.html:2737:            throw new Error(
+templates/delyvo_market.html:575:            throw new Error("Seller API failed");
+templates/delyvo_market.html:661:            throw new Error("Product API failed");
+templates/delyvo_market.html:837:            throw new Error("Product not found");
+templates/delyvo_market.html:1315:                throw new Error(
+templates/delyvo_market.html:1602:            throw new Error(
+templates/delyvo_market.html:1648:            throw new Error(
+templates/delyvo_market.html:1899:            throw new Error(
+templates/admin_dashboard.html:836:  console.error(e);
+templates/admin_dashboard.html:862:  console.error(e);
+templates/admin_dashboard.html:881:  console.error(e);
+templates/admin_dashboard.html:1125:  console.error(e);
+templates/admin_dashboard.html:1179:  console.error(e);
+templates/admin_dashboard.html:1226:  console.error(e);
+templates/admin_dashboard.html:1242:   throw new Error(data.message || "Unable to load shipments");
+templates/admin_dashboard.html:1252:  console.error(e);
+templates/admin_dashboard.html:1485:  console.error(e);
+templates/admin_dashboard.html:1989:   throw new Error(ordersData.message || "Unable to load orders");
+templates/admin_dashboard.html:2005:  console.error(e);
+templates/admin_dashboard.html:2229:  console.error(e);
+templates/admin_dashboard.html:2563:  console.error(e);
+templates/admin_dashboard.html:2663:  console.error(e);
+templates/admin_dashboard.html:2765:  console.error(e);
+templates/admin_dashboard.html:2798:     OWNER FINANCIAL SECTION
+templates/admin_dashboard.html:2800:<section id="ownerFinancialManagement" style="margin-top:28px;">
+templates/admin_dashboard.html:2802:  <h2>Owner Financial</h2>
+templates/admin_dashboard.html:2804:  <div id="ownerFinancialMessage"
+templates/admin_dashboard.html:2808:  <!-- Owner Financial Overview -->
+templates/admin_dashboard.html:2844:      <button onclick="loadOwnerFinancial()"
+templates/admin_dashboard.html:2850:    <div id="ownerFinancialLedgerBox"
+templates/admin_dashboard.html:2861:function ownerFinancialMoney(value) {
+templates/admin_dashboard.html:2865:function showOwnerFinancialMessage(message, success=true) {
+templates/admin_dashboard.html:2866:  const box = document.getElementById("ownerFinancialMessage");
+templates/admin_dashboard.html:2886:async function loadOwnerFinancial() {
+templates/admin_dashboard.html:2890:    const response = await fetch("/api/owner/financial");
+templates/admin_dashboard.html:2894:      throw new Error(data.message || "Unable to load owner financial data");
+templates/admin_dashboard.html:2900:      ownerFinancialMoney(owner.total_earned);
+templates/admin_dashboard.html:2903:      ownerFinancialMoney(owner.total_debit);
+templates/admin_dashboard.html:2906:      ownerFinancialMoney(owner.profit);
+templates/admin_dashboard.html:2909:      ownerFinancialMoney(owner.withdrawn);
+templates/admin_dashboard.html:2912:      ownerFinancialMoney(owner.available_balance);
+templates/admin_dashboard.html:2915:    const box = document.getElementById("ownerFinancialLedgerBox");
+templates/admin_dashboard.html:2947:            ${ownerFinancialMoney(row.amount)}
+templates/admin_dashboard.html:2966:    showOwnerFinancialMessage(error.message, false);
+templates/admin_dashboard.html:2968:    const box = document.getElementById("ownerFinancialLedgerBox");
+templates/admin_dashboard.html:2971:      box.textContent = "Unable to load owner financial data.";
+templates/admin_dashboard.html:2977:  loadOwnerFinancial();
+templates/admin_dashboard.html:3154:      throw new Error(
+templates/admin_dashboard.html:3173:    if (typeof loadOwnerFinancial === "function") {
+templates/admin_dashboard.html:3174:      loadOwnerFinancial();
+templates/admin_dashboard.html:3204:      throw new Error(
+templates/admin_dashboard.html:3318:<!-- FINANCIAL MANAGEMENT SECTION -->
+templates/admin_dashboard.html:3319:<section id="financialManagement" style="margin-top:28px;">
+templates/admin_dashboard.html:3320:  <h2>Financial Management</h2>
+templates/admin_dashboard.html:3322:  <div id="financialMessage"
+templates/admin_dashboard.html:3326:  <!-- Financial Overview -->
+templates/admin_dashboard.html:3400:  <!-- Financial Settings -->
+templates/admin_dashboard.html:3402:    <h3>Financial Settings</h3>
+templates/admin_dashboard.html:3451:    <button onclick="saveFinancialSettings()"
+templates/admin_dashboard.html:3453:      Save Financial Settings
+templates/admin_dashboard.html:3478:    <div id="financialTransactionsBox">
+templates/admin_dashboard.html:3486:function financialMoney(value) {
+templates/admin_dashboard.html:3490:function showFinancialMessage(message, success=true) {
+templates/admin_dashboard.html:3491:  const box = document.getElementById("financialMessage");
+templates/admin_dashboard.html:3510:async function loadFinancialSettings() {
+templates/admin_dashboard.html:3512:    const response = await fetch("/api/financial/settings");
+templates/admin_dashboard.html:3516:      throw new Error(data.message || "Unable to load settings");
+templates/admin_dashboard.html:3534:    showFinancialMessage(error.message, false);
+templates/admin_dashboard.html:3538:async function saveFinancialSettings() {
+templates/admin_dashboard.html:3554:    const response = await fetch("/api/financial/settings", {
+templates/admin_dashboard.html:3565:      throw new Error(result.message || "Failed to save settings");
+templates/admin_dashboard.html:3568:    showFinancialMessage("Financial settings saved successfully.");
+templates/admin_dashboard.html:3569:    loadFinancialDashboard();
+templates/admin_dashboard.html:3572:    showFinancialMessage(error.message, false);
+templates/admin_dashboard.html:3576:async function loadFinancialDashboard() {
+templates/admin_dashboard.html:3578:    const response = await fetch("/api/financial/dashboard");
+templates/admin_dashboard.html:3582:      throw new Error(data.message || "Unable to load financial dashboard");
+templates/admin_dashboard.html:3585:    const f = data.financial || {};
+templates/admin_dashboard.html:3594:      financialMoney(cod.total_cod);
+templates/admin_dashboard.html:3597:      financialMoney(cod.collected_cod);
+templates/admin_dashboard.html:3600:      financialMoney(cod.pending_cod);
+templates/admin_dashboard.html:3603:      financialMoney(platform.revenue);
+templates/admin_dashboard.html:3606:      financialMoney(platform.expenses);
+templates/admin_dashboard.html:3609:      financialMoney(platform.net);
+templates/admin_dashboard.html:3612:      financialMoney(partner.paid_earnings);
+templates/admin_dashboard.html:3615:      financialMoney(partner.pending_earnings);
+templates/admin_dashboard.html:3618:      financialMoney(seller.paid_payable);
+templates/admin_dashboard.html:3621:      financialMoney(seller.pending_payable);
+templates/admin_dashboard.html:3624:      financialMoney(company.paid_amount);
+templates/admin_dashboard.html:3627:      financialMoney(company.pending_amount);
+templates/admin_dashboard.html:3630:    showFinancialMessage(error.message, false);
+templates/admin_dashboard.html:3634:async function loadFinancialTransactions() {
+templates/admin_dashboard.html:3636:    const response = await fetch("/api/financial/transactions");
+templates/admin_dashboard.html:3640:      throw new Error(data.message || "Unable to load transactions");
+templates/admin_dashboard.html:3644:      financialMoney(data.summary?.total_credit);
+templates/admin_dashboard.html:3647:      financialMoney(data.summary?.total_debit);
+templates/admin_dashboard.html:3650:      financialMoney(data.summary?.net_balance);
+templates/admin_dashboard.html:3655:      document.getElementById("financialTransactionsBox").innerHTML =
+templates/admin_dashboard.html:3660:    document.getElementById("financialTransactionsBox").innerHTML =
+templates/admin_dashboard.html:3665:          — ${financialMoney(row.amount)}
+templates/admin_dashboard.html:3676:    showFinancialMessage(error.message, false);
+templates/admin_dashboard.html:3680:async function loadFinancialManagement() {
+templates/admin_dashboard.html:3682:    loadFinancialSettings(),
+templates/admin_dashboard.html:3683:    loadFinancialDashboard(),
+templates/admin_dashboard.html:3684:    loadFinancialTransactions()
+templates/admin_dashboard.html:3689:  loadFinancialManagement();
+templates/admin_dashboard.html:3807:      await fetch("/api/financial/payouts");
+templates/admin_dashboard.html:3812:      throw new Error(
+templates/admin_dashboard.html:3856:      throw new Error(
+templates/admin_dashboard.html:3942:      throw new Error(
+templates/admin_dashboard.html:4027:      throw new Error(
+templates/admin_dashboard.html:4124:      throw new Error(
+templates/admin_dashboard.html:4166:      throw new Error(
+templates/admin_dashboard.html:4208:      throw new Error(
+templates/hub_dashboard.html:545:            throw new Error(
+
+=== 7. CORE API SMOKE TEST ===
+/api/admin -> HTTP 404
+/api/sellers -> HTTP 200
+/api/companies -> HTTP 200
+/api/shipments -> HTTP 200
+/api/hubs -> HTTP 200
+/api/bags -> HTTP 200
+/api/movements -> HTTP 200
+/api/partners -> HTTP 200
+/api/assignments -> HTTP 404
+/api/payments -> HTTP 200
+/api/financial -> HTTP 404
+/api/owner -> HTTP 404
+/api/market -> HTTP 404
+
+=== 8. PYTHON COMPILE ===
+PYTHON_COMPILE=PASS
+
+=== 9. FINAL E2E ===
+E2E_EXIT_CODE=0
+ORDER_ID=ORD-AEC8C0BC
+SHIPMENT_ID=SHP-FD6AAFA7
+AWB=AWB-AA3FADE8
+ASSIGNMENT_ID=ASN-CC7C6034
+✅ ALL HTTP CHECKS PASSED
+ORDER_ID=ORD-AEC8C0BC
+SHIPMENT_ID=SHP-FD6AAFA7
+AWB=AWB-AA3FADE8
+ASSIGNMENT_ID=ASN-CC7C6034
+
+=== 10. FINAL UI DECISION ===
+==================================================
+✅ UI/BACKEND READINESS BASELINE = PASS
+==================================================

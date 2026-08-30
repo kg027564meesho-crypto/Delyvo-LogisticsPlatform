@@ -1,0 +1,344 @@
+#!/data/data/com.termux/files/usr/bin/bash
+
+BASE="http://127.0.0.1:5001"
+SELLER="SEL-90C7AA9E"
+PRODUCT="PROD-BFC437E7"
+HUB="HUB001"
+PARTNER="PTR-5CAAB579"
+
+echo "======================================================"
+echo "        DELYVO FINAL FULL E2E INTEGRATION QA"
+echo "======================================================"
+
+fail=0
+
+check() {
+    NAME="$1"
+    URL="$2"
+    METHOD="${3:-GET}"
+    DATA="${4:-}"
+
+    echo
+    echo "===== $NAME ====="
+
+    if [ "$METHOD" = "GET" ]; then
+        RESP=$(curl -s -w "\n__HTTP__%{http_code}" "$URL")
+    else
+        RESP=$(curl -s -X "$METHOD" "$URL" \
+            -H "Content-Type: application/json" \
+            -d "$DATA" \
+            -w "\n__HTTP__%{http_code}")
+    fi
+
+    echo "$RESP"
+
+    HTTP=$(echo "$RESP" | sed -n 's/__HTTP__//p' | tail -1)
+
+    if [ "$HTTP" -ge 200 ] && [ "$HTTP" -lt 300 ]; then
+        echo "PASS: $HTTP"
+    else
+        echo "FAIL: $HTTP"
+        fail=$((fail+1))
+    fi
+}
+
+echo
+echo "===== 1. SERVER ====="
+check "Health" "$BASE/api/health"
+
+echo
+echo "===== 2. MARKET ====="
+check "Market Page" "$BASE/market"
+check "Products" "$BASE/api/market/products"
+check "Sellers" "$BASE/api/market/sellers"
+
+echo
+echo "===== 3. HUB / PARTNER ====="
+check "Hubs" "$BASE/api/hubs"
+check "Partners" "$BASE/api/partners"
+check "Hub Detail" "$BASE/api/hub/$HUB"
+check "Hub Partners" "$BASE/api/hub/$HUB/partners"
+
+echo
+echo "===== 4. CREATE FRESH ORDER ====="
+
+ORDER_RESPONSE=$(curl -s -X POST \
+"$BASE/api/sellers/$SELLER/orders" \
+-H "Content-Type: application/json" \
+-d "{
+  \"customer_name\":\"Delyvo Final E2E Customer\",
+  \"customer_phone\":\"9999999988\",
+  \"delivery_address\":\"Delyvo Final E2E Address, Ghaziabad\",
+  \"payment_type\":\"COD\",
+  \"delivery_fee\":20,
+  \"origin_hub\":\"$HUB\",
+  \"destination_hub\":\"$HUB\",
+  \"pickup_address\":\"Test Seller Pickup, Ghaziabad\",
+  \"items\":[
+    {
+      \"product_id\":\"$PRODUCT\",
+      \"quantity\":1
+    }
+  ]
+}")
+
+echo "$ORDER_RESPONSE"
+
+ORDER_ID=$(python -c '
+import json,sys
+try:
+ d=json.loads(sys.stdin.read())
+ print(d.get("order_id") or d.get("order",{}).get("order_id") or "")
+except:
+ print("")
+' <<< "$ORDER_RESPONSE")
+
+SHIPMENT_ID=$(python -c '
+import json,sys
+try:
+ d=json.loads(sys.stdin.read())
+ print(d.get("shipment_id") or d.get("shipment",{}).get("shipment_id") or "")
+except:
+ print("")
+' <<< "$ORDER_RESPONSE")
+
+AWB=$(python -c '
+import json,sys
+try:
+ d=json.loads(sys.stdin.read())
+ print(d.get("shipment",{}).get("awb",""))
+except:
+ print("")
+' <<< "$ORDER_RESPONSE")
+
+echo
+echo "ORDER_ID=$ORDER_ID"
+echo "SHIPMENT_ID=$SHIPMENT_ID"
+echo "AWB=$AWB"
+
+if [ -z "$ORDER_ID" ] || [ -z "$SHIPMENT_ID" ]; then
+    echo
+    echo "❌ ORDER/SHIPMENT CREATION FAILED"
+    exit 1
+fi
+
+echo
+echo "===== 5. ORDER VERIFICATION ====="
+check "Customer Order" \
+"$BASE/api/market/orders/$ORDER_ID"
+
+check "Customer Order Summary" \
+"$BASE/api/market/orders/$ORDER_ID/summary"
+
+check "Seller Order" \
+"$BASE/api/sellers/$SELLER/orders/$ORDER_ID"
+
+echo
+echo "===== 6. SHIPMENT VERIFICATION ====="
+check "Shipment" \
+"$BASE/api/shipments/$SHIPMENT_ID"
+
+check "Shipment Events" \
+"$BASE/api/shipments/$SHIPMENT_ID/events"
+
+check "Shipment Tracking" \
+"$BASE/api/shipments/$SHIPMENT_ID/tracking"
+
+echo
+echo "===== 7. HUB AVAILABLE SHIPMENT ====="
+check "Hub Available Shipments" \
+"$BASE/api/hubs/$HUB/shipments/available"
+
+echo
+echo "===== 8. HUB ASSIGNMENT ====="
+
+ASSIGN_RESPONSE=$(curl -s -X POST \
+"$BASE/api/hubs/$HUB/assign" \
+-H "Content-Type: application/json" \
+-d "{
+  \"shipment_id\":\"$SHIPMENT_ID\",
+  \"partner_id\":\"$PARTNER\"
+}")
+
+echo "$ASSIGN_RESPONSE"
+
+ASSIGNMENT_ID=$(python -c '
+import json,sys
+try:
+ d=json.loads(sys.stdin.read())
+ print(
+   d.get("assignment_id")
+   or d.get("assignment",{}).get("assignment_id")
+   or d.get("data",{}).get("assignment_id")
+   or ""
+ )
+except:
+ print("")
+' <<< "$ASSIGN_RESPONSE")
+
+echo
+echo "ASSIGNMENT_ID=$ASSIGNMENT_ID"
+
+if [ -z "$ASSIGNMENT_ID" ]; then
+    echo
+    echo "⚠️ DIRECT HUB ASSIGNMENT DID NOT RETURN ASSIGNMENT_ID"
+    echo "Checking existing partner assignments..."
+fi
+
+echo
+echo "===== 9. PARTNER ASSIGNMENTS ====="
+check "Partner Assignments" \
+"$BASE/api/partners/$PARTNER/assignments"
+
+check "Partner Active Assignments" \
+"$BASE/api/partners/$PARTNER/active-assignments"
+
+echo
+echo "===== 10. HUB ASSIGNMENTS ====="
+check "Hub Assignments" \
+"$BASE/api/hubs/$HUB/assignments"
+
+check "Hub Assignment Summary" \
+"$BASE/api/hubs/$HUB/assignments/summary"
+
+echo
+echo "===== 11. PARTNER DASHBOARD ====="
+check "Partner Dashboard" \
+"$BASE/api/partners/$PARTNER/dashboard"
+
+check "Partner Earnings" \
+"$BASE/api/partners/$PARTNER/earnings"
+
+echo
+echo "===== 12. SHIPMENT STATUS ====="
+check "Shipment Status CREATED" \
+"$BASE/api/shipments/$SHIPMENT_ID/status" \
+POST \
+'{"status":"PROCESSING","hub_code":"HUB001","note":"Final E2E processing"}'
+
+check "Shipment After Status" \
+"$BASE/api/shipments/$SHIPMENT_ID"
+
+echo
+echo "===== 13. PAYMENT ====="
+check "Shipment Payment" \
+"$BASE/api/shipments/$SHIPMENT_ID/payment"
+
+check "Payment Summary" \
+"$BASE/api/payments/summary"
+
+echo
+echo "===== 14. ADMIN ====="
+check "Admin Dashboard" \
+"$BASE/api/admin/dashboard"
+
+check "Admin Orders" \
+"$BASE/api/admin/orders"
+
+check "Admin Recent Shipments" \
+"$BASE/api/admin/shipments/recent"
+
+check "Admin Partners" \
+"$BASE/api/admin/partners"
+
+check "Admin Hubs" \
+"$BASE/api/admin/hubs"
+
+echo
+echo "===== 15. FINANCIAL ====="
+check "Financial Dashboard" \
+"$BASE/api/financial/dashboard"
+
+check "Financial Transactions" \
+"$BASE/api/financial/transactions"
+
+check "Financial Payouts" \
+"$BASE/api/financial/payouts"
+
+echo
+echo "===== 16. SELLER DASHBOARD ====="
+check "Seller Dashboard" \
+"$BASE/api/sellers/$SELLER/dashboard"
+
+check "Seller Settlements" \
+"$BASE/api/sellers/$SELLER/settlements"
+
+check "Seller Order Summary" \
+"$BASE/api/sellers/$SELLER/orders/summary"
+
+echo
+echo "===== 17. FINAL DATABASE STATE ====="
+
+python - <<'PY'
+import app
+
+db=app.get_db()
+
+tables=[
+    "sellers",
+    "products",
+    "orders",
+    "order_items",
+    "shipments",
+    "shipment_events",
+    "hubs",
+    "delivery_partners",
+    "delivery_assignments",
+    "payments",
+    "partner_earnings",
+    "hub_movements",
+]
+
+print()
+for table in tables:
+    try:
+        row=db.execute(
+            f"SELECT COUNT(*) AS c FROM {table}"
+        ).fetchone()
+        print(f"{table}: {row['c']}")
+    except Exception as e:
+        print(f"{table}: ERROR {e}")
+PY
+
+echo
+echo "======================================================"
+echo "              FINAL E2E QA RESULT"
+echo "======================================================"
+
+if [ "$fail" -eq 0 ]; then
+    echo "✅ ALL HTTP CHECKS PASSED"
+else
+    echo "⚠️ HTTP CHECK FAILURES: $fail"
+fi
+
+echo
+echo "ORDER_ID=$ORDER_ID"
+echo "SHIPMENT_ID=$SHIPMENT_ID"
+echo "AWB=$AWB"
+echo "ASSIGNMENT_ID=$ASSIGNMENT_ID"
+
+echo
+echo "======================================================"
+echo " FLOW:"
+echo " Customer"
+echo "    ↓"
+echo " Market Order"
+echo "    ↓"
+echo " Seller"
+echo "    ↓"
+echo " Shipment + AWB"
+echo "    ↓"
+echo " Hub"
+echo "    ↓"
+echo " Delivery Partner"
+echo "    ↓"
+echo " Pickup"
+echo "    ↓"
+echo " COD Collection"
+echo "    ↓"
+echo " Delivery"
+echo "    ↓"
+echo " Payment / Earnings"
+echo "    ↓"
+echo " Admin + Seller + Partner"
+echo "======================================================"

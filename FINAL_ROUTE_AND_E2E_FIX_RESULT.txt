@@ -1,0 +1,106 @@
+==================================================
+       DELYVO FINAL ROUTE + E2E FIX
+==================================================
+
+=== 1. CURRENT ROUTES ===
+
+=== 2. CHECK E2E ASSIGNMENT PAYLOAD ===
+156:"$BASE/api/hubs/$HUB/assign" \
+170:   d.get("assignment_id")
+171:   or d.get("assignment",{}).get("assignment_id")
+172:   or d.get("data",{}).get("assignment_id")
+185:    echo "Checking existing partner assignments..."
+191:"$BASE/api/partners/$PARTNER/assignments"
+194:"$BASE/api/partners/$PARTNER/active-assignments"
+199:"$BASE/api/hubs/$HUB/assignments"
+202:"$BASE/api/hubs/$HUB/assignments/summary"
+215:"$BASE/api/shipments/$SHIPMENT_ID/status" \
+286:    "delivery_assignments",
+
+=== 3. CHECK ASSIGNMENT ROUTE IMPLEMENTATION ===
+app.py:3968:@app.route("/api/hubs/<hub_code>/assign", methods=["POST"])
+app.py:3969:def assign_shipment_from_hub(hub_code):
+app.py:4098:def confirm_partner_assignment(assignment_id):
+app.py:4193:def reconcile_partner_assignments(db, partner_id=None):
+app.py:4255:def partner_assignments(partner_id):
+app.py:4296:def pickup_assignment(assignment_id):
+app.py:4352:def complete_partner_delivery(assignment_id):
+app.py:4525:def partner_rto(assignment_id):
+app.py:4681:def partner_active_assignments(partner_id):
+app.py:4727:@app.route("/api/hubs/<hub_code>/assignments", methods=["GET"])
+app.py:4728:def hub_assignments(hub_code):
+app.py:4768:@app.route("/api/hubs/<hub_code>/assignments/summary", methods=["GET"])
+app.py:4769:def hub_assignment_summary(hub_code):
+app.py:4831:def partner_collect_cod(assignment_id):
+
+=== 4. CHECK SHIPMENT STATUS IMPLEMENTATION ===
+app.py:902:    initial_shipment_status = (
+app.py:910:        if initial_shipment_status == "AT_DESTINATION_HUB"
+app.py:925:        initial_shipment_status,
+app.py:926:        destination_hub if initial_shipment_status == "AT_DESTINATION_HUB" else origin_hub,
+app.py:2051:    if shipment["status"] in {"DELIVERED", "CANCELLED", "RETURNED"}:
+app.py:2055:            "message": "Shipment cannot be added to bag in current status"
+app.py:2102:        (shipment_id, status, hub_code, note, created_at)
+app.py:2190:            (shipment_id, status, hub_code, note, created_at)
+app.py:2410:    if shipment["status"] == "DELIVERED":
+app.py:2416:    if shipment["status"] in {"CANCELLED", "RETURNED", "RTO"}:
+app.py:2420:            "message": "Shipment cannot be delivered in current status"
+app.py:2442:        (shipment_id, status, hub_code, note, created_at)
+app.py:2856:    if shipment["status"] == "DELIVERED":
+app.py:2862:    if shipment["status"] in {"RTO", "RETURNED"}:
+app.py:2888:        (shipment_id, status, hub_code, note, created_at)
+app.py:2920:    if shipment["status"] != "RTO":
+app.py:2924:            "message": "Shipment must be in RTO status before return completion"
+app.py:2943:        (shipment_id, status, hub_code, note, created_at)
+app.py:2983:    shipment_status_rows = db.execute("""
+app.py:2989:    shipment_status = {
+app.py:2991:        for row in shipment_status_rows
+app.py:3042:                "by_status": shipment_status
+app.py:3105:# SHIPMENT TRACKING & STATUS MODULE
+app.py:3107:@app.route("/api/shipments/<shipment_id>/status", methods=["POST"])
+app.py:3108:def update_shipment_status(shipment_id):
+app.py:3128:            "message": "Invalid shipment status",
+app.py:3146:    current_status = shipment["status"]
+app.py:3151:            "message": "Delivered shipment cannot change status"
+app.py:3157:            "message": "Returned shipment cannot change status"
+app.py:3163:        note = f"Shipment status changed to {new_status}"
+app.py:3178:        (shipment_id, status, hub_code, note, created_at)
+app.py:3198:        "message": "Shipment status updated successfully",
+app.py:3243:            "status": shipment["status"],
+app.py:3536:            s.status AS shipment_status
+app.py:4031:    if shipment["status"] != "AT_DESTINATION_HUB":
+app.py:4108:        SELECT da.*, s.status AS shipment_status,
+app.py:4133:    if assignment["shipment_status"] != "AT_DESTINATION_HUB":
+app.py:4196:    current shipment terminal status.
+app.py:4281:            s.status AS shipment_status,
+app.py:4364:        SELECT da.*, s.status AS shipment_status,
+app.py:4397:    if assignment["shipment_status"] == "DELIVERED":
+app.py:4403:    if assignment["shipment_status"] in {"RTO", "RETURNED", "CANCELLED"}:
+app.py:4407:            "message": "Shipment cannot be delivered in current status"
+app.py:4456:        (shipment_id, status, hub_code, note, created_at)
+app.py:4537:        SELECT da.*, s.status AS shipment_status,
+app.py:4570:    if assignment["shipment_status"] == "DELIVERED":
+app.py:4576:    if assignment["shipment_status"] in {"RTO", "RETURNED", "CANCELLED"}:
+app.py:4607:        (shipment_id, status, hub_code, note, created_at)
+app.py:4709:            s.status AS shipment_status,
+app.py:4750:            s.status AS shipment_status,
+app.py:4842:        SELECT da.*, s.status AS shipment_status
+app.py:4876:    if assignment["shipment_status"] in {
+app.py:4930:        (shipment_id, status, hub_code, note, created_at)
+app.py:6570:        if shipment and str(shipment["status"]).upper() in (
+app.py:6582:                (shipment_id,status,hub_code,note,created_at)
+app.py:6647:            (shipment_id,status,hub_code,note,created_at)
+
+=== 5. TEST EXISTING UI ROUTES ===
+/ -> HTTP 200
+/admin -> HTTP 200
+/admin-dashboard -> HTTP 200
+/admin-partners -> HTTP 200
+/company -> HTTP 200
+/company-dashboard -> HTTP 200
+/hub-dashboard -> HTTP 200
+/partner-dashboard -> HTTP 200
+/market -> HTTP 200
+
+=== 6. PYTHON COMPILE ===
+PYTHON_COMPILE=FAIL

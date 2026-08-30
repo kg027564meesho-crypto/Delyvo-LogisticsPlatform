@@ -1,0 +1,2444 @@
+======================================================
+        DELYVO FINAL FULL E2E INTEGRATION QA
+======================================================
+
+===== 1. SERVER =====
+
+===== Health =====
+{"database":"CONNECTED","status":"ONLINE","success":true}
+
+__HTTP__200
+PASS: 200
+
+===== 2. MARKET =====
+
+===== Market Page =====
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="theme-color" content="#111827">
+<title>Delyvo Market</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+    margin:0;
+    font-family:Arial,sans-serif;
+    background:#f5f6f8;
+    color:#111827;
+}
+header{
+    position:sticky;
+    top:0;
+    z-index:10;
+    background:#111827;
+    color:white;
+    padding:14px;
+}
+.top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+.logo{
+    font-size:23px;
+    font-weight:800;
+}
+.cart{
+    background:white;
+    color:#111827;
+    border:0;
+    border-radius:20px;
+    padding:8px 13px;
+    font-weight:bold;
+}
+.search{
+    margin-top:12px;
+    width:100%;
+    padding:13px;
+    border:0;
+    border-radius:10px;
+    font-size:15px;
+}
+.container{
+    padding:15px;
+    max-width:900px;
+    margin:auto;
+}
+.banner{
+    background:linear-gradient(135deg,#111827,#374151);
+    color:white;
+    border-radius:16px;
+    padding:22px;
+    margin-bottom:18px;
+}
+.banner h1{margin:0 0 7px}
+.banner p{margin:0;color:#d1d5db}
+
+.section-title{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin:18px 0 10px;
+}
+
+.sellers{
+    display:flex;
+    gap:10px;
+    overflow-x:auto;
+    padding-bottom:5px;
+}
+.seller{
+    min-width:145px;
+    padding:12px;
+    border:0;
+    border-radius:12px;
+    background:white;
+    box-shadow:0 2px 8px #00000010;
+    text-align:left;
+}
+.seller.active{
+    outline:2px solid #111827;
+}
+.seller-name{
+    font-weight:bold;
+}
+.seller-city{
+    font-size:12px;
+    color:#6b7280;
+    margin-top:4px;
+}
+.seller-products{
+    font-size:11px;
+    color:#6b7280;
+    margin-top:4px;
+}
+
+.categories{
+    display:flex;
+    gap:10px;
+    overflow-x:auto;
+}
+.category{
+    min-width:85px;
+    padding:12px 10px;
+    border:0;
+    border-radius:12px;
+    background:white;
+    box-shadow:0 2px 8px #00000010;
+}
+.category.active{
+    background:#111827;
+    color:white;
+}
+
+.products{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:12px;
+}
+.card{
+    background:white;
+    border-radius:14px;
+    overflow:hidden;
+    box-shadow:0 2px 10px #00000010;
+}
+.pic{
+    height:145px;
+    background:#e5e7eb;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:45px;
+}
+.info{padding:11px}
+.name{
+    font-weight:bold;
+    min-height:38px;
+}
+.seller-label{
+    font-size:12px;
+    color:#6b7280;
+    margin-top:4px;
+}
+.price{
+    font-size:19px;
+    font-weight:800;
+    margin:7px 0;
+}
+.stock{
+    font-size:12px;
+    color:#6b7280;
+}
+.add{
+    width:100%;
+    border:0;
+    border-radius:9px;
+    padding:10px;
+    margin-top:8px;
+    background:#111827;
+    color:white;
+    font-weight:bold;
+}
+.detail{
+    width:100%;
+    border:1px solid #ddd;
+    border-radius:9px;
+    padding:9px;
+    margin-top:7px;
+    background:white;
+    font-weight:bold;
+}
+
+.empty{
+    background:white;
+    padding:25px;
+    border-radius:14px;
+    text-align:center;
+    grid-column:1/-1;
+}
+
+.modal{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:#0008;
+    z-index:20;
+    align-items:flex-end;
+}
+.sheet{
+    background:white;
+    width:100%;
+    max-height:90vh;
+    overflow:auto;
+    border-radius:20px 20px 0 0;
+    padding:18px;
+}
+.close{
+    float:right;
+    border:0;
+    background:#eee;
+    border-radius:50%;
+    width:35px;
+    height:35px;
+}
+.item{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    padding:12px 0;
+    border-bottom:1px solid #eee;
+}
+.qty button{
+    border:1px solid #ddd;
+    background:white;
+    padding:4px 9px;
+}
+input,textarea,select{
+    width:100%;
+    padding:12px;
+    margin:6px 0;
+    border:1px solid #ddd;
+    border-radius:9px;
+}
+.primary{
+    width:100%;
+    padding:13px;
+    background:#111827;
+    color:white;
+    border:0;
+    border-radius:10px;
+    font-weight:bold;
+    margin-top:10px;
+}
+.order-card{
+    background:#f9fafb;
+    border:1px solid #eee;
+    border-radius:12px;
+    padding:13px;
+    margin:10px 0;
+}
+.track{
+    margin-top:10px;
+    padding:10px;
+    border-radius:9px;
+    background:#eef2ff;
+}
+.nav{
+    position:fixed;
+    bottom:0;
+    left:0;
+    right:0;
+    background:white;
+    border-top:1px solid #ddd;
+    display:flex;
+    justify-content:space-around;
+    padding:10px;
+    z-index:15;
+}
+.nav button{
+    border:0;
+    background:none;
+    font-size:12px;
+}
+main{padding-bottom:70px}
+
+@media(min-width:700px){
+    .products{
+        grid-template-columns:repeat(4,1fr);
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <div class="top">
+        <div class="logo">Delyvo Market</div>
+        <button class="cart" onclick="openCart()">
+            🛒 Cart <span id="cartCount">0</span>
+        </button>
+    </div>
+
+    <input
+        id="search"
+        class="search"
+        placeholder="Search products, sellers..."
+        oninput="filterProducts()"
+    >
+</header>
+
+<main>
+<div class="container">
+
+    <div class="banner">
+        <h1>Shop on Delyvo</h1>
+        <p>Products from Delyvo sellers, delivered to your door.</p>
+    </div>
+
+    <div class="section-title">
+        <h3>🛍️ Sellers</h3>
+        <span id="sellerCount"></span>
+    </div>
+
+    <div id="sellers" class="sellers">
+        <div class="empty">Loading sellers...</div>
+    </div>
+
+    <div class="section-title">
+        <h3>Categories</h3>
+    </div>
+
+    <div class="categories">
+        <button class="category active" onclick="setCategory('all',this)">
+            🛍️ All
+        </button>
+        <button class="category" onclick="setCategory('fashion',this)">
+            👕 Fashion
+        </button>
+        <button class="category" onclick="setCategory('electronics',this)">
+            📱 Electronics
+        </button>
+        <button class="category" onclick="setCategory('home',this)">
+            🏠 Home
+        </button>
+        <button class="category" onclick="setCategory('beauty',this)">
+            💄 Beauty
+        </button>
+    </div>
+
+    <div class="section-title">
+        <h3>Products</h3>
+        <span id="productCount"></span>
+    </div>
+
+    <div id="products" class="products">
+        <div class="empty">Loading products...</div>
+    </div>
+
+</div>
+</main>
+
+<div class="nav">
+    <button onclick="window.scrollTo({top:0,behavior:'smooth'})">
+        🏠<br>Home
+    </button>
+    <button onclick="openCart()">
+        🛒<br>Cart
+    </button>
+    <button onclick="openOrders()">
+        📦<br>Orders
+    </button>
+    <button onclick="openProfile()">
+        👤<br>Account
+    </button>
+</div>
+
+<!-- PRODUCT DETAIL -->
+<div id="productModal" class="modal">
+<div class="sheet">
+<button class="close" onclick="closeModal('productModal')">×</button>
+<div id="productDetail"></div>
+</div>
+</div>
+
+<!-- CART -->
+<div id="cartModal" class="modal">
+<div class="sheet">
+<button class="close" onclick="closeModal('cartModal')">×</button>
+<h2>Your Cart</h2>
+<div id="cartItems"></div>
+<div id="cartTotal"></div>
+<button class="primary" onclick="openCheckout()">
+    Proceed to Checkout
+</button>
+</div>
+</div>
+
+<!-- CHECKOUT -->
+<div id="checkoutModal" class="modal">
+<div class="sheet">
+<button class="close" onclick="closeModal('checkoutModal')">×</button>
+<h2>Checkout</h2>
+
+<input id="customerName" placeholder="Your name">
+<input id="customerPhone" placeholder="Phone number">
+<textarea id="address" placeholder="Delivery address"></textarea>
+
+<select id="paymentType">
+    <option value="COD">Cash on Delivery</option>
+    <option value="PREPAID">Online Payment</option>
+</select>
+
+<div id="checkoutTotal"></div>
+
+<button class="primary" onclick="placeOrder()">
+    Place Order
+</button>
+</div>
+</div>
+
+<!-- ORDERS -->
+<div id="ordersModal" class="modal">
+<div class="sheet">
+<button class="close" onclick="closeModal('ordersModal')">×</button>
+<h2>My Orders</h2>
+
+<input
+    id="orderLookup"
+    placeholder="Enter Order ID"
+>
+
+<button class="primary" onclick="lookupOrder()">
+    Track Order
+</button>
+
+<div id="orders"></div>
+</div>
+</div>
+
+<!-- PROFILE -->
+<div id="profileModal" class="modal">
+<div class="sheet">
+<button class="close" onclick="closeModal('profileModal')">×</button>
+<h2>My Account</h2>
+<p>👤 Delyvo Market Customer</p>
+<p>Your orders and shipment tracking are available from the Orders section.</p>
+</div>
+</div>
+
+<script>
+
+let products = [];
+let sellers = [];
+let cart = [];
+let category = "all";
+let selectedSeller = "";
+
+let customerOrders = JSON.parse(
+    localStorage.getItem("delyvo_customer_orders") || "[]"
+);
+
+function saveCustomerOrders(){
+    localStorage.setItem(
+        "delyvo_customer_orders",
+        JSON.stringify(customerOrders.slice(0, 20))
+    );
+}
+
+function rememberOrder(orderId){
+    if(!orderId) return;
+
+    customerOrders = [
+        orderId,
+        ...customerOrders.filter(x => x !== orderId)
+    ].slice(0, 20);
+
+    saveCustomerOrders();
+}
+
+
+
+function marketOrderStatusLabel(status){
+
+    const value = String(status || "").toUpperCase();
+
+    const labels = {
+        NEW: "New",
+        PLACED: "Order Placed",
+        ASSIGNED: "Assigned",
+        PICKED_UP: "Picked Up",
+        IN_TRANSIT: "In Transit",
+        OUT_FOR_DELIVERY: "Out for Delivery",
+        DELIVERED: "Delivered",
+        CANCELLED: "Cancelled",
+        RETURN_REQUESTED: "Return Requested",
+        RETURNED: "Returned"
+    };
+
+    return labels[value] || value || "Unknown";
+}
+
+function marketShipmentStatusLabel(status){
+
+    const value = String(status || "").toUpperCase();
+
+    const labels = {
+        CREATED: "Shipment Created",
+        ASSIGNED: "Shipment Assigned",
+        PICKED_UP: "Picked Up",
+        IN_TRANSIT: "In Transit",
+        OUT_FOR_DELIVERY: "Out for Delivery",
+        DELIVERED: "Delivered",
+        CANCELLED: "Cancelled",
+        RETURN_REQUESTED: "Return Requested",
+        RETURNED: "Returned"
+    };
+
+    return labels[value] || value || "—";
+}
+
+function paymentStatusLabel(status){
+
+    const value = String(status || "").toUpperCase();
+
+    if(value === "PAID"){
+        return "PAID";
+    }
+
+    if(value === "PENDING"){
+        return "PENDING";
+    }
+
+    if(value === "FAILED"){
+        return "FAILED";
+    }
+
+    if(value === "COLLECTED"){
+        return "COLLECTED";
+    }
+
+    return value || "—";
+}
+
+
+async function copyMarketText(value){
+    const text = String(value || "");
+
+    if(!text){
+        return;
+    }
+
+    try{
+        await navigator.clipboard.writeText(text);
+        alert("Copied.");
+    }catch(e){
+        alert(text);
+    }
+}
+
+function money(x){
+    return "₹" + Number(x || 0).toFixed(0);
+}
+
+function escapeHtml(s){
+    return String(s || "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+}
+
+/* =========================
+   LOAD SELLERS
+========================= */
+
+async function loadSellers(){
+
+    const box = document.getElementById("sellers");
+
+    try{
+
+        const r = await fetch("/api/market/sellers");
+        const data = await r.json();
+
+        if(!r.ok || data.success === false){
+            throw new Error("Seller API failed");
+        }
+
+        sellers = data.sellers || [];
+
+        document.getElementById("sellerCount").textContent =
+            `${sellers.length} sellers`;
+
+        renderSellers();
+
+    }catch(e){
+
+        box.innerHTML =
+            `<div class="empty">
+                Sellers load nahi ho paaye.
+             </div>`;
+    }
+}
+
+function renderSellers(){
+
+    const box = document.getElementById("sellers");
+
+    let html = `
+        <button
+            class="seller ${selectedSeller === "" ? "active" : ""}"
+            onclick="selectSeller('')"
+        >
+            <div class="seller-name">🛍️ All Sellers</div>
+            <div class="seller-city">Delyvo Marketplace</div>
+        </button>
+    `;
+
+    html += sellers.map(s => `
+        <button
+            class="seller ${selectedSeller === s.seller_id ? "active" : ""}"
+            onclick="selectSeller('${escapeHtml(s.seller_id)}')"
+        >
+            <div class="seller-name">
+                ${escapeHtml(s.name)}
+            </div>
+            <div class="seller-city">
+                📍 ${escapeHtml(s.city || "India")}
+            </div>
+            <div class="seller-products">
+                ${Number(s.product_count || 0)} products
+            </div>
+        </button>
+    `).join("");
+
+    box.innerHTML = html;
+}
+
+function selectSeller(id){
+
+    selectedSeller = id;
+
+    renderSellers();
+
+    loadProducts();
+}
+
+/* =========================
+   LOAD PRODUCTS
+========================= */
+
+async function loadProducts(){
+
+    const box = document.getElementById("products");
+
+    box.innerHTML =
+        `<div class="empty">Loading products...</div>`;
+
+    try{
+
+        let url = "/api/market/products";
+
+        if(selectedSeller){
+            url += "?seller_id=" +
+                encodeURIComponent(selectedSeller);
+        }
+
+        const r = await fetch(url);
+        const data = await r.json();
+
+        if(!r.ok || data.success === false){
+            throw new Error("Product API failed");
+        }
+
+        products = data.products || [];
+
+        filterProducts();
+
+    }catch(e){
+
+        box.innerHTML =
+            `<div class="empty">
+                Products load nahi ho paaye.
+             </div>`;
+    }
+}
+
+function renderProducts(list){
+
+    const box = document.getElementById("products");
+
+    document.getElementById("productCount").textContent =
+        `${list.length} products`;
+
+    if(!list.length){
+
+        box.innerHTML =
+            `<div class="empty">
+                No products found.
+             </div>`;
+
+        return;
+    }
+
+    box.innerHTML = list.map(p => `
+
+        <div class="card">
+
+            <div class="pic">📦</div>
+
+            <div class="info">
+
+                <div class="name">
+                    ${escapeHtml(p.name)}
+                </div>
+
+                <div class="seller-label">
+                    🏪 ${escapeHtml(p.seller_name || "Delyvo Seller")}
+                </div>
+
+                <div class="seller-label">
+                    📍 ${escapeHtml(p.seller_city || "")}
+                </div>
+
+                <div class="price">
+                    ${money(p.price)}
+                </div>
+
+                <div class="stock">
+                    ${Number(p.stock)} available
+                </div>
+
+                <button
+                    class="add"
+                    onclick="addToCart('${escapeHtml(p.product_id)}')"
+                >
+                    Add to Cart
+                </button>
+
+                <button
+                    class="detail"
+                    onclick="openProduct('${escapeHtml(p.product_id)}')"
+                >
+                    View Product
+                </button>
+
+            </div>
+        </div>
+
+    `).join("");
+}
+
+/* =========================
+   SEARCH / CATEGORY
+========================= */
+
+function setCategory(c,button){
+
+    category = c;
+
+    document
+        .querySelectorAll(".category")
+        .forEach(x => x.classList.remove("active"));
+
+    if(button){
+        button.classList.add("active");
+    }
+
+    filterProducts();
+}
+
+function filterProducts(){
+
+    const q = String(
+        document.getElementById("search").value || ""
+    ).trim().toLowerCase();
+
+    let list = products.slice();
+
+    if(selectedSeller){
+        list = list.filter(
+            p => String(p.seller_id || "") === selectedSeller
+        );
+    }
+
+    if(category !== "all"){
+
+        list = list.filter(p => {
+
+            const text = [
+                p.name,
+                p.description,
+                p.sku
+            ]
+            .join(" ")
+            .toLowerCase();
+
+            return text.includes(category.toLowerCase());
+        });
+    }
+
+    if(q){
+
+        list = list.filter(p => {
+
+            const text = [
+                p.name,
+                p.description,
+                p.sku,
+                p.seller_name,
+                p.seller_city
+            ]
+            .join(" ")
+            .toLowerCase();
+
+            return text.includes(q);
+        });
+    }
+
+    renderProducts(list);
+}
+
+/* =========================
+   PRODUCT DETAIL
+========================= */
+
+async function openProduct(productId){
+
+    const box =
+        document.getElementById("productDetail");
+
+    document.getElementById("productModal")
+        .style.display = "flex";
+
+    box.innerHTML = "Loading product...";
+
+    try{
+
+        const r =
+            await fetch(
+                "/api/market/product/" +
+                encodeURIComponent(productId)
+            );
+
+        const data = await r.json();
+
+        if(!r.ok || data.success === false){
+            throw new Error("Product not found");
+        }
+
+        const p = data.product;
+
+        box.innerHTML = `
+
+            <div class="pic">📦</div>
+
+            <h2>
+                ${escapeHtml(p.name)}
+            </h2>
+
+            <p>
+                🏪 ${escapeHtml(p.seller_name || "")}
+            </p>
+
+            <p>
+                📍 ${escapeHtml(p.seller_city || "")}
+            </p>
+
+            <h2>${money(p.price)}</h2>
+
+            <p>
+                ${escapeHtml(p.description || "No description available.")}
+            </p>
+
+            <p>
+                Stock: ${Number(p.stock)}
+            </p>
+
+            <button
+                class="primary"
+                onclick="addToCart('${escapeHtml(p.product_id)}');closeModal('productModal')"
+            >
+                Add to Cart
+            </button>
+        `;
+
+    }catch(e){
+
+        box.innerHTML =
+            `<div class="empty">
+                Product details load nahi ho paaye.
+             </div>`;
+    }
+}
+
+/* =========================
+   CART
+========================= */
+
+
+function addToCart(id){
+    const product = products.find(
+        p =>
+            String(p.product_id) ===
+            String(id)
+    );
+
+    if(!product){
+        alert("Product not found.");
+        return;
+    }
+
+    const stock =
+        Number(product.stock || 0);
+
+    if(stock <= 0){
+        alert(
+            "This product is currently out of stock."
+        );
+        return;
+    }
+
+    const existing = cart.find(
+        x =>
+            String(x.product_id) ===
+            String(id)
+    );
+
+    if(existing){
+        if(
+            Number(existing.quantity || 0) >=
+            stock
+        ){
+            alert(
+                "Maximum available stock reached."
+            );
+            return;
+        }
+
+        existing.quantity =
+            Number(existing.quantity || 0) + 1;
+
+    }else{
+        cart.push({
+            product_id: product.product_id,
+            product_name: product.name,
+            seller_id: product.seller_id,
+            seller_name: product.seller_name,
+            unit_price: Number(product.price || 0),
+            quantity: 1,
+            stock: stock
+        });
+    }
+
+    saveCart();
+    updateCartCount();
+    renderCart();
+}
+
+
+function saveCart(){
+    localStorage.setItem(
+        "delyvo_cart",
+        JSON.stringify(cart)
+    );
+}
+
+function loadCart(){
+
+    try{
+        cart = JSON.parse(
+            localStorage.getItem("delyvo_cart") || "[]"
+        );
+    }catch{
+        cart = [];
+    }
+
+    updateCartCount();
+}
+
+function removeUnavailableCartItems(){
+
+    const before = cart.length;
+
+    cart = cart.filter(item => {
+
+        const stock = Number(item.stock || 0);
+
+        return stock > 0 &&
+               Number(item.quantity || 0) > 0;
+    });
+
+    if(before !== cart.length){
+        saveCart();
+        updateCartCount();
+    }
+}
+
+
+function updateCartProductsStock(){
+    cart = cart.map(item => {
+        const p = products.find(
+            x =>
+                String(x.product_id) ===
+                String(item.product_id)
+        );
+
+        if(p){
+            item.product_name = p.name;
+            item.seller_id = p.seller_id;
+            item.seller_name = p.seller_name;
+            item.unit_price = Number(p.price || 0);
+            item.stock = Number(p.stock || 0);
+
+            if(item.quantity > item.stock){
+                item.quantity = item.stock;
+            }
+        }
+
+        return item;
+    }).filter(
+        item => Number(item.stock || 0) > 0 &&
+                Number(item.quantity || 0) > 0
+    );
+
+    saveCart();
+    updateCartCount();
+}
+
+
+function updateCartCount(){
+
+    document.getElementById("cartCount")
+        .textContent =
+        cart.reduce(
+            (a,b) => a + Number(b.quantity || 0),
+            0
+        );
+}
+
+function openCart(){
+
+    renderCart();
+
+    document.getElementById("cartModal")
+        .style.display = "flex";
+}
+
+function renderCart(){
+
+    const box =
+        document.getElementById("cartItems");
+
+    if(!cart.length){
+
+        box.innerHTML =
+            `<div class="empty">
+                Cart is empty.
+             </div>`;
+
+        document.getElementById("cartTotal")
+            .innerHTML = "";
+
+        return;
+    }
+
+    box.innerHTML = cart.map((x,i) => `
+
+        <div class="item">
+
+            <div>
+                <b>${escapeHtml(x.name)}</b><br>
+                🏪 ${escapeHtml(x.seller_name || "")}<br>
+                ${money(x.price)} × ${x.quantity}
+            </div>
+
+            <div class="qty">
+
+                <button onclick="changeQty(${i},-1)">
+                    −
+                </button>
+
+                ${x.quantity}
+
+                <button onclick="changeQty(${i},1)">
+                    +
+                </button>
+
+            </div>
+
+        </div>
+
+    `).join("");
+
+    const subtotal =
+        cart.reduce(
+            (a,b) =>
+                a +
+                Number(b.price) *
+                Number(b.quantity),
+            0
+        );
+
+    document.getElementById("cartTotal")
+        .innerHTML =
+        `<h3>Subtotal: ${money(subtotal)}</h3>`;
+}
+
+
+function changeQty(i,d){
+    if(!cart[i]) return;
+
+    const next =
+        Number(cart[i].quantity || 0) +
+        Number(d || 0);
+
+    if(next <= 0){
+        cart.splice(i,1);
+    }else{
+        const stock =
+            Number(cart[i].stock || 0);
+
+        if(stock > 0 && next > stock){
+            alert(
+                "Maximum available stock reached."
+            );
+            return;
+        }
+
+        cart[i].quantity = next;
+    }
+
+    saveCart();
+    updateCartCount();
+    renderCart();
+}
+
+
+/* =========================
+   CHECKOUT
+========================= */
+
+function calculateCartTotal(){
+
+    return cart.reduce(
+        (sum,item) =>
+            sum +
+            Number(item.unit_price || 0) *
+            Number(item.quantity || 0),
+        0
+    );
+}
+
+function openCheckout(){
+
+    if(!cart.length){
+
+        alert("Cart is empty");
+        return;
+    }
+
+    closeModal("cartModal");
+
+    const subtotal =
+        cart.reduce(
+            (a,b) =>
+                a +
+                Number(b.price) *
+                Number(b.quantity),
+            0
+        );
+
+    const deliveryFee = 50;
+
+    document.getElementById("checkoutTotal")
+        .innerHTML = `
+            <h3>
+                Total: ${money(subtotal + deliveryFee)}
+            </h3>
+            <small>
+                Delivery fee: ${money(deliveryFee)}
+            </small>
+        `;
+
+    document.getElementById("checkoutModal")
+        .style.display = "flex";
+}
+
+async function placeOrder(){
+
+    updateCartProductsStock();
+    removeUnavailableCartItems();
+
+    if(!cart.length){
+        alert("Cart is empty.");
+        return;
+    }
+
+    const customerName =
+        document.getElementById("customerName").value.trim();
+
+    const customerPhone =
+        document.getElementById("customerPhone").value.trim();
+
+    const address =
+        document.getElementById("address").value.trim();
+
+    const paymentType =
+        document.getElementById("paymentType").value;
+
+    if(!customerName){
+        alert("Please enter your name.");
+        return;
+    }
+
+    if(!/^[0-9]{10}$/.test(customerPhone)){
+        alert("Please enter a valid 10-digit phone number.");
+        return;
+    }
+
+    if(!address){
+        alert("Please enter delivery address.");
+        return;
+    }
+
+    if(!["COD","PREPAID"].includes(paymentType)){
+        alert("Please select a valid payment method.");
+        return;
+    }
+
+
+
+    if(!cart.length){
+
+        alert("Cart is empty");
+        return;
+    }
+
+    const customer_name =
+        document
+            .getElementById("customerName")
+            .value
+            .trim();
+
+    const customer_phone =
+        document
+            .getElementById("customerPhone")
+            .value
+            .trim();
+
+    const delivery_address =
+        document
+            .getElementById("address")
+            .value
+            .trim();
+
+    const payment_type =
+        document
+            .getElementById("paymentType")
+            .value;
+
+    if(
+        !customer_name ||
+        !customer_phone ||
+        !delivery_address
+    ){
+
+        alert("Please fill all delivery details");
+        return;
+    }
+
+    /*
+      Current backend seller-order API
+      accepts one seller per order.
+      Therefore mixed-seller cart is split
+      into separate orders.
+    */
+
+    const groups = {};
+
+    cart.forEach(x => {
+
+        if(!groups[x.seller_id]){
+            groups[x.seller_id] = [];
+        }
+
+        groups[x.seller_id].push({
+            product_id:x.product_id,
+            quantity:x.quantity
+        });
+
+    });
+
+    const createdOrders = [];
+
+    try{
+
+        for(const sellerId of Object.keys(groups)){
+
+            const r =
+                await fetch(
+                    "/api/sellers/" +
+                    encodeURIComponent(sellerId) +
+                    "/orders",
+                    {
+                        method:"POST",
+                        headers:{
+                            "Content-Type":
+                                "application/json"
+                        },
+                        body:JSON.stringify({
+                            customer_name,
+                            customer_phone,
+                            delivery_address,
+                            payment_type,
+                            delivery_fee:50,
+                            items:groups[sellerId]
+                        })
+                    }
+                );
+
+            const data = await r.json();
+
+            if(!r.ok || data.success === false){
+
+                throw new Error(
+                    data.message ||
+                    "Order failed"
+                );
+            }
+
+            const order =
+                data.order || {};
+
+            createdOrders.push(
+                data.order_id ||
+                order.order_id ||
+                "ORDER"
+            );
+        }
+
+        cart = [];
+        saveCart();
+        updateCartCount();
+
+        closeModal("checkoutModal");
+
+        createdOrders.forEach(
+            id => rememberOrder(id)
+        );
+
+        
+createdOrders.forEach(id => {
+    rememberOrder(id);
+});
+
+alert(
+    "Order placed successfully!
+
+" +
+    "Order IDs:
+" +
+    createdOrders.join("
+")
+);
+
+
+        closeModal("checkoutModal");
+        closeModal("cartModal");
+
+        loadProducts();
+
+    }catch(e){
+
+        alert(
+            e.message ||
+            "Server connection error"
+        );
+    }
+}
+
+/* =========================
+   ORDERS
+========================= */
+
+
+
+async function openOrders(){
+    document.getElementById(
+        "ordersModal"
+    ).style.display = "flex";
+
+    renderSavedOrders();
+
+    await syncCustomerOrders();
+
+    renderSavedOrders();
+
+    await refreshSavedOrderStatuses();
+}
+
+
+
+
+
+async function refreshSavedOrderStatuses(){
+    if(!customerOrders.length){
+        return;
+    }
+
+    try{
+        const data = await syncCustomerOrders();
+
+        const ids = [...customerOrders];
+
+        for(const id of ids){
+            try{
+                const summary = await loadOrderSummary(id);
+
+                if(!summary || !summary.order){
+                    continue;
+                }
+
+                const node = document.getElementById(
+                    "order-status-" + id
+                );
+
+                if(node){
+                    node.textContent =
+                        marketOrderStatusLabel(
+                            summary.order.order_status
+                        );
+                }
+            }catch(e){
+                // Ignore individual order failures.
+            }
+        }
+    }catch(e){
+        console.log("Saved order status refresh unavailable");
+    }
+}
+
+async function syncCustomerOrders(){
+
+    if(!customerOrders.length){
+        return;
+    }
+
+    try{
+
+        const r = await fetch("/api/market/customer/orders", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                order_ids: customerOrders
+            })
+        });
+
+        const data = await r.json();
+
+        if(!r.ok || data.success === false){
+            return;
+        }
+
+        const serverIds = (data.orders || [])
+            .map(x => x.order_id)
+            .filter(Boolean);
+
+        customerOrders = [
+            ...serverIds,
+            ...customerOrders.filter(x => !serverIds.includes(x))
+        ].slice(0, 20);
+
+        saveCustomerOrders();
+
+    }catch(e){
+        console.log("Customer order sync unavailable");
+    }
+}
+
+function clearCustomerOrders(){
+
+    if(!customerOrders.length){
+        return;
+    }
+
+    if(!confirm("Clear saved orders from this device?")){
+        return;
+    }
+
+    customerOrders = [];
+
+    saveCustomerOrders();
+
+    renderSavedOrders();
+}
+
+
+function renderSavedOrders(){
+    const box = document.getElementById("orders");
+
+    if(!box){
+        return;
+    }
+
+    if(!customerOrders.length){
+        box.innerHTML = `
+            <div class="empty">
+                No saved orders yet.<br>
+                Place an order and it will appear here.
+            </div>
+        `;
+        return;
+    }
+
+    box.innerHTML = `
+        <div
+            style="
+                display:flex;
+                justify-content:space-between;
+                align-items:center;
+                gap:10px;
+            "
+        >
+            <h3>Recent Orders</h3>
+
+            <button
+                class="detail"
+                onclick="clearCustomerOrders()"
+            >
+                Clear
+            </button>
+        </div>
+
+        ${
+            customerOrders.map(id => `
+                <div
+                    class="order-card"
+                    style="
+                        display:flex;
+                        justify-content:space-between;
+                        align-items:center;
+                        gap:10px;
+                    "
+                >
+                    <div>
+                        <b>
+                            ${escapeHtml(id)}
+                        </b>
+
+                        <small
+                            id="order-status-${escapeHtml(id)}"
+                            class="order-status-preview"
+                            style="
+                                display:block;
+                                margin-top:4px;
+                            "
+                        >
+                            Loading status...
+                        </small>
+                    </div>
+
+                    <button
+                        class="detail"
+                        onclick="loadOrderById(
+                            '${escapeHtml(id)}'
+                        )"
+                    >
+                        View / Track
+                    </button>
+                </div>
+            `).join("")
+        }
+    `;
+}
+
+
+async function loadOrderById(orderId){
+    document.getElementById("orderLookup").value = orderId;
+    await lookupOrder();
+}
+
+
+async function cancelMarketOrder(orderId){
+
+    if(!orderId){
+        return;
+    }
+
+    if(!confirm("Are you sure you want to cancel this order?")){
+        return;
+    }
+
+    try{
+
+        const r = await fetch(
+            "/api/market/orders/" +
+            encodeURIComponent(orderId) +
+            "/cancel",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            }
+        );
+
+        const data = await r.json();
+
+        if(!r.ok || data.success === false){
+            throw new Error(
+                data.message || "Order cancellation failed"
+            );
+        }
+
+        alert("Order cancelled successfully.");
+
+        await lookupOrder();
+
+    }catch(e){
+
+        alert(
+            e.message ||
+            "Unable to cancel order."
+        );
+    }
+}
+
+
+async function requestMarketReturn(orderId){
+
+    if(!orderId){
+        return;
+    }
+
+    if(!confirm("Are you sure you want to request a return for this delivered order?")){
+        return;
+    }
+
+    try{
+
+        const r = await fetch(
+            "/api/market/orders/" +
+            encodeURIComponent(orderId) +
+            "/return",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            }
+        );
+
+        const data = await r.json();
+
+        if(!r.ok || data.success === false){
+            throw new Error(
+                data.message || "Return request failed"
+            );
+        }
+
+        alert("Return request created successfully.");
+
+        await lookupOrder();
+
+    }catch(e){
+
+        alert(
+            e.message ||
+            "Unable to create return request."
+        );
+    }
+}
+
+
+async function loadOrderSummary(orderId){
+
+    if(!orderId){
+        return null;
+    }
+
+    try{
+
+        const r = await fetch(
+            "/api/market/orders/" +
+            encodeURIComponent(orderId) +
+            "/summary"
+        );
+
+        const data = await r.json();
+
+        if(!r.ok || data.success === false){
+            return null;
+        }
+
+        return data;
+
+    }catch(e){
+
+        console.log("Order summary unavailable");
+
+        return null;
+    }
+}
+
+
+
+function marketOrderActions(order){
+
+    const status =
+        String(order?.order_status || "").toUpperCase();
+
+    let html = "";
+
+    if(status === "PLACED" || status === "NEW"){
+
+        html += `
+            <button
+                class="detail"
+                onclick="cancelMarketOrder(
+                    '${escapeHtml(order.order_id)}'
+                )">
+                Cancel Order
+            </button>
+        `;
+    }
+
+    if(status === "DELIVERED"){
+
+        html += `
+            <button
+                class="detail"
+                onclick="requestMarketReturn(
+                    '${escapeHtml(order.order_id)}'
+                )">
+                Request Return
+            </button>
+        `;
+    }
+
+    return html;
+}
+
+
+function marketShipmentProgress(status){
+    const value = String(status || "").toUpperCase();
+
+    const steps = [
+        "CREATED",
+        "ASSIGNED",
+        "PICKED_UP",
+        "IN_TRANSIT",
+        "OUT_FOR_DELIVERY",
+        "DELIVERED"
+    ];
+
+    const cancelled = [
+        "CANCELLED",
+        "RETURN_REQUESTED",
+        "RETURNED"
+    ];
+
+    if(cancelled.includes(value)){
+        return {
+            current: value,
+            steps: []
+        };
+    }
+
+    const index = steps.indexOf(value);
+
+    return {
+        current: value,
+        steps: steps.map((step, i) => ({
+            status: step,
+            done: index >= 0 && i <= index,
+            current: i === index
+        }))
+    };
+}
+
+
+function renderShipmentProgress(status){
+    const progress = marketShipmentProgress(status);
+
+    if(!progress.steps.length){
+        return `
+            <div class="track">
+                <b>${escapeHtml(
+                    marketShipmentStatusLabel(progress.current)
+                )}</b>
+            </div>
+        `;
+    }
+
+    return `
+        <div style="margin:12px 0;">
+            ${progress.steps.map(step => `
+                <div
+                    class="track"
+                    style="margin:6px 0;${step.current ? "font-weight:700;" : ""}"
+                >
+                    ${step.done ? "✓" : "○"}
+                    ${escapeHtml(
+                        marketShipmentStatusLabel(step.status)
+                    )}
+                </div>
+            `).join("")}
+        </div>
+    `;
+}
+
+function renderTrackingTimeline(events){
+
+    if(!Array.isArray(events) || !events.length){
+
+        return `
+            <div class="track">
+                Tracking events are not available yet.
+            </div>
+        `;
+    }
+
+    return events.map((e, index) => `
+
+        <div class="track" style="margin:8px 0;">
+
+            <div>
+                <b>${escapeHtml(
+                    marketShipmentStatusLabel(e.status)
+                )}</b>
+            </div>
+
+            ${
+                e.hub_code
+                ? `<div>Hub: ${escapeHtml(e.hub_code)}</div>`
+                : ""
+            }
+
+            ${
+                e.note
+                ? `<div>${escapeHtml(e.note)}</div>`
+                : ""
+            }
+
+            ${
+                e.created_at
+                ? `<small>${escapeHtml(e.created_at)}</small>`
+                : ""
+            }
+
+        </div>
+
+    `).join("");
+}
+
+
+async function refreshOrderDetails(orderId){
+    if(!orderId){
+        return null;
+    }
+
+    try{
+        const data = await loadOrderSummary(orderId);
+
+        if(!data || !data.success){
+            return null;
+        }
+
+        return data;
+    }catch(e){
+        console.log("Order detail refresh unavailable");
+        return null;
+    }
+}
+
+async function lookupOrder(){
+
+    const orderId =
+        document
+            .getElementById("orderLookup")
+            .value
+            .trim();
+
+    if(!orderId){
+
+        alert("Enter Order ID");
+        return;
+    }
+
+    const box =
+        document.getElementById("orders");
+
+    box.innerHTML = "Loading order...";
+
+    try{
+
+        const r =
+            await fetch(
+                "/api/market/orders/" +
+                encodeURIComponent(orderId)
+            );
+
+        const data = await r.json();
+
+        if(!r.ok || data.success === false){
+
+            throw new Error(
+                data.message ||
+                "Order not found"
+            );
+        }
+
+        const o = data.order;
+        const items = data.items || [];
+        const shipment = data.shipment;
+        const events = Array.isArray(data.events)
+            ? data.events.slice().reverse()
+            : [];
+
+        rememberOrder(o.order_id);
+
+        let eventsHtml = "";
+
+        if(events.length){
+
+            eventsHtml = events.map(e => `
+                <div class="track">
+                    <b>${escapeHtml(e.status)}</b><br>
+                    ${escapeHtml(e.note || "")}<br>
+                    <small>
+                        ${escapeHtml(e.created_at || "")}
+                    </small>
+                </div>
+            `).join("");
+
+        }else{
+
+            eventsHtml =
+                `<div class="track">
+                    Shipment tracking events not available yet.
+                 </div>`;
+        }
+
+        box.innerHTML = `
+
+            <div class="order-card">
+
+                <h3>
+                    Order ${escapeHtml(o.order_id)}
+                </h3>
+
+                <p>
+                    Order Status:
+                    <b>${escapeHtml(
+                        marketOrderStatusLabel(o.order_status)
+                    )}</b>
+                </p>
+
+                <div style="margin-top:10px;">
+
+                    ${
+                        ["PLACED","NEW"].includes(
+                            String(o.order_status || "").toUpperCase()
+                        )
+                        ?
+                        `
+                        <button
+                            class="detail"
+                            onclick="cancelMarketOrder('${escapeHtml(o.order_id)}')">
+                            Cancel Order
+                        </button>
+                        `
+                        :
+                        ""
+                    }
+
+                    ${
+                        String(o.order_status || "").toUpperCase() === "DELIVERED"
+                        ?
+                        `
+                        <button
+                            class="detail"
+                            onclick="requestMarketReturn('${escapeHtml(o.order_id)}')">
+                            Request Return
+                        </button>
+                        `
+                        :
+                        ""
+                    }
+
+                </div>
+
+                <p>
+                    Payment:
+                    <b>${escapeHtml(o.payment_type || "—")}</b>
+                    -
+                    <b>${escapeHtml(o.payment_status || "—")}</b>
+                </p>
+
+                <p>
+                    Subtotal:
+                    <b>${money(o.subtotal || 0)}</b>
+                </p>
+
+                <p>
+                    Delivery Fee:
+                    <b>${money(o.delivery_fee || 0)}</b>
+                </p>
+
+                <p>
+                    Total:
+                    <b>${money(o.total_amount || 0)}</b>
+                </p>
+
+                <p>
+                    Customer:
+                    <b>${escapeHtml(o.customer_name || "—")}</b>
+                </p>
+
+                <p>
+                    Delivery:
+                    <b>${escapeHtml(o.delivery_address || "—")}</b>
+                </p>
+
+                <hr>
+
+                <b>Items</b>
+
+                ${items.map(i => `
+                    <div class="item">
+
+                        <div>
+                            <b>
+                                ${escapeHtml(i.product_name)}
+                            </b>
+
+                            <small style="display:block;">
+                                Qty: ${Number(i.quantity || 0)}
+                            </small>
+
+                            <small style="display:block;">
+                                Unit Price:
+                                ${money(i.unit_price || 0)}
+                            </small>
+                        </div>
+
+                        <div>
+                            <b>
+                                ${money(i.total_price || 0)}
+                            </b>
+                        </div>
+
+                    </div>
+                `).join("")}
+
+                <h4>Shipment</h4>
+
+                ${
+                    shipment
+                    ?
+                    `
+                    <p>
+                        AWB:
+                        <b>
+                            ${escapeHtml(shipment.awb || "")}
+                        </b>
+                    </p>
+
+                    <p>
+                        Shipment status:
+                        <b>
+                            ${escapeHtml(
+                                marketShipmentStatusLabel(
+                                    shipment.status
+                                )
+                            )}
+                        </b>
+                    </p>
+
+                    <div style="margin-top:10px;">
+                        ${renderShipmentProgress(shipment.status)}
+                    </div>
+
+                    ${eventsHtml}
+                    `
+                    :
+                    `
+                    <div class="track">
+                        Shipment not created yet.
+                    </div>
+                    `
+                }
+
+            </div>
+        `;
+
+    }catch(e){
+
+        box.innerHTML =
+            `<div class="empty">
+                ${escapeHtml(
+                    e.message ||
+                    "Order load failed."
+                )}
+             </div>`;
+    }
+}
+
+/* =========================
+   PROFILE / MODALS
+========================= */
+
+function openProfile(){
+
+    document.getElementById("profileModal")
+        .style.display = "flex";
+}
+
+function closeModal(id){
+
+    document.getElementById(id)
+        .style.display = "none";
+}
+
+/* =========================
+   START
+========================= */
+
+loadCart();
+loadSellers();
+loadProducts();
+
+if(customerOrders.length){
+    syncCustomerOrders();
+}
+
+</script>
+
+</body>
+</html>
+__HTTP__200
+PASS: 200
+
+===== Products =====
+{"products":[{"created_at":"2026-08-28T14:18:00","description":"Seller product API QA item","name":"QA Test Product","price":299.0,"product_id":"PROD-BFC437E7","seller_city":"Ghaziabad","seller_id":"SEL-90C7AA9E","seller_name":"Test Seller","sku":"QA-PROD-001","status":"ACTIVE","stock":7,"updated_at":"2026-08-30T03:29:47"}],"success":true,"total":1}
+
+__HTTP__200
+PASS: 200
+
+===== Sellers =====
+{"sellers":[{"city":"Ghaziabad","name":"Test Seller","product_count":1,"seller_id":"SEL-90C7AA9E"}],"success":true,"total":1}
+
+__HTTP__200
+PASS: 200
+
+===== 3. HUB / PARTNER =====
+
+===== Hubs =====
+{"hubs":[{"city":"Ghaziabad","created_at":"2026-08-27T22:19:06","hub_code":"HUB001","hub_id":"HUB-306C4378","id":1,"name":"Main Hub","state":"Uttar Pradesh","status":"ACTIVE"}],"success":true}
+
+__HTTP__200
+PASS: 200
+
+===== Partners =====
+{"partners":[{"city":"Ghaziabad","created_at":"2026-08-27T22:19:06","email":"partner@test.com","id":1,"name":"Test Delivery Partner","partner_id":"PTR-5CAAB579","phone":"9876543210","status":"ACTIVE","vehicle_type":"BIKE"}],"success":true}
+
+__HTTP__200
+PASS: 200
+
+===== Hub Detail =====
+{"hub":{"city":"Ghaziabad","created_at":"2026-08-27T22:19:06","hub_code":"HUB001","hub_id":"HUB-306C4378","id":1,"name":"Main Hub","state":"Uttar Pradesh","status":"ACTIVE"},"success":true}
+
+__HTTP__200
+PASS: 200
+
+===== Hub Partners =====
+{"hub_code":"HUB001","partners":[],"success":true,"total":0}
+
+__HTTP__200
+PASS: 200
+
+===== 4. CREATE FRESH ORDER =====
+{"items":[{"created_at":"2026-08-30T08:51:34","id":24,"order_id":"ORD-F2682D52","order_item_id":"ITEM-5B832F27","product_id":"PROD-BFC437E7","product_name":"QA Test Product","quantity":1,"seller_id":"SEL-90C7AA9E","total_price":299.0,"unit_price":299.0}],"message":"Order, shipment and payment created successfully","order":{"created_at":"2026-08-30T08:51:34","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","delivery_fee":20.0,"id":26,"order_id":"ORD-F2682D52","order_status":"PLACED","payment_status":"PENDING","payment_type":"COD","seller_id":"SEL-90C7AA9E","shipment_id":"SHP-E260A02D","subtotal":299.0,"total_amount":319.0,"updated_at":"2026-08-30T08:51:34"},"payment":{"amount":319.0,"collected_amount":0.0,"collected_at":null,"collected_by":null,"created_at":"2026-08-30T08:51:34","id":33,"note":"COD payment pending collection","payment_id":"PAY-A8BF3D02","payment_type":"COD","shipment_id":"SHP-E260A02D","status":"PENDING"},"shipment":{"amount":319.0,"awb":"AWB-CB83060F","company_id":null,"created_at":"2026-08-30T08:51:34","current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","id":37,"order_id":null,"origin_hub":"HUB001","pickup_address":"Test Seller Pickup, Ghaziabad","seller_id":"SEL-90C7AA9E","shipment_id":"SHP-E260A02D","shipment_type":"FORWARD","status":"AT_DESTINATION_HUB","updated_at":"2026-08-30T08:51:34"},"success":true}
+
+ORDER_ID=ORD-F2682D52
+SHIPMENT_ID=SHP-E260A02D
+AWB=AWB-CB83060F
+
+===== 5. ORDER VERIFICATION =====
+
+===== Customer Order =====
+{"events":[{"created_at":"2026-08-30T08:51:34","hub_code":"HUB001","id":118,"note":"Shipment automatically created from seller order and is already at destination hub","shipment_id":"SHP-E260A02D","status":"AT_DESTINATION_HUB"}],"items":[{"created_at":"2026-08-30T08:51:34","id":24,"order_id":"ORD-F2682D52","order_item_id":"ITEM-5B832F27","product_id":"PROD-BFC437E7","product_name":"QA Test Product","quantity":1,"seller_id":"SEL-90C7AA9E","total_price":299.0,"unit_price":299.0}],"order":{"created_at":"2026-08-30T08:51:34","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","delivery_fee":20.0,"id":26,"order_id":"ORD-F2682D52","order_status":"PLACED","payment_status":"PENDING","payment_type":"COD","seller_id":"SEL-90C7AA9E","shipment_id":"SHP-E260A02D","subtotal":299.0,"total_amount":319.0,"updated_at":"2026-08-30T08:51:34"},"shipment":{"amount":319.0,"awb":"AWB-CB83060F","company_id":null,"created_at":"2026-08-30T08:51:34","current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","id":37,"order_id":null,"origin_hub":"HUB001","pickup_address":"Test Seller Pickup, Ghaziabad","seller_id":"SEL-90C7AA9E","shipment_id":"SHP-E260A02D","shipment_type":"FORWARD","status":"AT_DESTINATION_HUB","updated_at":"2026-08-30T08:51:34"},"success":true}
+
+__HTTP__200
+PASS: 200
+
+===== Customer Order Summary =====
+{"items":[{"created_at":"2026-08-30T08:51:34","description":"Seller product API QA item","id":24,"order_id":"ORD-F2682D52","order_item_id":"ITEM-5B832F27","product_id":"PROD-BFC437E7","product_name":"QA Test Product","quantity":1,"seller_id":"SEL-90C7AA9E","sku":"QA-PROD-001","total_price":299.0,"unit_price":299.0}],"order":{"created_at":"2026-08-30T08:51:34","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","delivery_fee":20.0,"id":26,"order_id":"ORD-F2682D52","order_status":"PLACED","payment_status":"PENDING","payment_type":"COD","seller_city":"Ghaziabad","seller_id":"SEL-90C7AA9E","seller_name":"Test Seller","shipment_id":"SHP-E260A02D","subtotal":299.0,"total_amount":319.0,"updated_at":"2026-08-30T08:51:34"},"payment":{"amount":319.0,"collected_amount":0.0,"collected_at":null,"collected_by":null,"created_at":"2026-08-30T08:51:34","id":33,"note":"COD payment pending collection","payment_id":"PAY-A8BF3D02","payment_type":"COD","shipment_id":"SHP-E260A02D","status":"PENDING"},"shipment":{"amount":319.0,"awb":"AWB-CB83060F","company_id":null,"created_at":"2026-08-30T08:51:34","current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","id":37,"order_id":null,"origin_hub":"HUB001","pickup_address":"Test Seller Pickup, Ghaziabad","seller_id":"SEL-90C7AA9E","shipment_id":"SHP-E260A02D","shipment_type":"FORWARD","status":"AT_DESTINATION_HUB","updated_at":"2026-08-30T08:51:34"},"success":true}
+
+__HTTP__200
+PASS: 200
+
+===== Seller Order =====
+{"items":[{"created_at":"2026-08-30T08:51:34","id":24,"order_id":"ORD-F2682D52","order_item_id":"ITEM-5B832F27","product_id":"PROD-BFC437E7","product_name":"QA Test Product","quantity":1,"seller_id":"SEL-90C7AA9E","total_price":299.0,"unit_price":299.0}],"order":{"created_at":"2026-08-30T08:51:34","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","delivery_fee":20.0,"id":26,"order_id":"ORD-F2682D52","order_status":"PLACED","payment_status":"PENDING","payment_type":"COD","seller_id":"SEL-90C7AA9E","shipment_id":"SHP-E260A02D","subtotal":299.0,"total_amount":319.0,"updated_at":"2026-08-30T08:51:34"},"success":true}
+
+__HTTP__200
+PASS: 200
+
+===== 6. SHIPMENT VERIFICATION =====
+
+===== Shipment =====
+{"shipment":{"amount":319.0,"awb":"AWB-CB83060F","company_id":null,"created_at":"2026-08-30T08:51:34","current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","events":[{"created_at":"2026-08-30T08:51:34","hub_code":"HUB001","id":118,"note":"Shipment automatically created from seller order and is already at destination hub","shipment_id":"SHP-E260A02D","status":"AT_DESTINATION_HUB"}],"id":37,"order_id":null,"origin_hub":"HUB001","pickup_address":"Test Seller Pickup, Ghaziabad","seller_id":"SEL-90C7AA9E","shipment_id":"SHP-E260A02D","shipment_type":"FORWARD","status":"AT_DESTINATION_HUB","updated_at":"2026-08-30T08:51:34"},"success":true}
+
+__HTTP__200
+PASS: 200
+
+===== Shipment Events =====
+{"events":[{"created_at":"2026-08-30T08:51:34","hub_code":"HUB001","id":118,"note":"Shipment automatically created from seller order and is already at destination hub","shipment_id":"SHP-E260A02D","status":"AT_DESTINATION_HUB"}],"shipment_id":"SHP-E260A02D","success":true}
+
+__HTTP__200
+PASS: 200
+
+===== Shipment Tracking =====
+{"success":true,"tracking":{"amount":319.0,"awb":"AWB-CB83060F","created_at":"2026-08-30T08:51:34","current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","events":[{"created_at":"2026-08-30T08:51:34","hub_code":"HUB001","id":118,"note":"Shipment automatically created from seller order and is already at destination hub","status":"AT_DESTINATION_HUB"}],"origin_hub":"HUB001","shipment_id":"SHP-E260A02D","shipment_type":"FORWARD","status":"AT_DESTINATION_HUB","updated_at":"2026-08-30T08:51:34"}}
+
+__HTTP__200
+PASS: 200
+
+===== 7. HUB AVAILABLE SHIPMENT =====
+
+===== Hub Available Shipments =====
+{"hub_code":"HUB001","shipments":[{"amount":319.0,"awb":"AWB-CB83060F","company_id":null,"created_at":"2026-08-30T08:51:34","current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","id":37,"order_id":null,"origin_hub":"HUB001","pickup_address":"Test Seller Pickup, Ghaziabad","seller_id":"SEL-90C7AA9E","shipment_id":"SHP-E260A02D","shipment_type":"FORWARD","status":"AT_DESTINATION_HUB","updated_at":"2026-08-30T08:51:34"}],"success":true}
+
+__HTTP__200
+PASS: 200
+
+===== 8. HUB ASSIGNMENT =====
+{"assignment":{"assigned_at":"2026-08-30T08:51:35","assignment_id":"ASN-BD837B59","completed_at":null,"hub_code":"HUB001","id":31,"partner_id":"PTR-5CAAB579","picked_up_at":null,"shipment_id":"SHP-E260A02D","status":"ASSIGNED"},"message":"Shipment assigned from hub successfully","success":true}
+
+ASSIGNMENT_ID=ASN-BD837B59
+
+===== 9. PARTNER ASSIGNMENTS =====
+
+===== Partner Assignments =====
+{"assignments":[{"amount":319.0,"assigned_at":"2026-08-30T08:51:35","assignment_id":"ASN-BD837B59","awb":"AWB-CB83060F","completed_at":null,"customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":31,"partner_id":"PTR-5CAAB579","picked_up_at":null,"shipment_id":"SHP-E260A02D","shipment_status":"AT_DESTINATION_HUB","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T03:29:48","assignment_id":"ASN-7434F0C7","awb":"AWB-DF880DAE","completed_at":null,"customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":30,"partner_id":"PTR-5CAAB579","picked_up_at":null,"shipment_id":"SHP-41B07F46","shipment_status":"OUT_FOR_DELIVERY","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T03:19:38","assignment_id":"ASN-CC7C6034","awb":"AWB-AA3FADE8","completed_at":null,"customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":29,"partner_id":"PTR-5CAAB579","picked_up_at":null,"shipment_id":"SHP-FD6AAFA7","shipment_status":"OUT_FOR_DELIVERY","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T03:16:56","assignment_id":"ASN-65A05727","awb":"AWB-B033259B","completed_at":null,"customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":28,"partner_id":"PTR-5CAAB579","picked_up_at":null,"shipment_id":"SHP-73138C32","shipment_status":"OUT_FOR_DELIVERY","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T03:14:38","assignment_id":"ASN-C86D47BF","awb":"AWB-DA154B08","completed_at":null,"customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":27,"partner_id":"PTR-5CAAB579","picked_up_at":null,"shipment_id":"SHP-C9E95713","shipment_status":"OUT_FOR_DELIVERY","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T03:12:08","assignment_id":"ASN-E5459A92","awb":"AWB-F848131F","completed_at":null,"customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":26,"partner_id":"PTR-5CAAB579","picked_up_at":null,"shipment_id":"SHP-CC8D1D07","shipment_status":"OUT_FOR_DELIVERY","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T03:10:03","assignment_id":"ASN-E2E6F98D","awb":"AWB-4769AA91","completed_at":null,"customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":25,"partner_id":"PTR-5CAAB579","picked_up_at":null,"shipment_id":"SHP-E7696C4D","shipment_status":"OUT_FOR_DELIVERY","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T03:08:00","assignment_id":"ASN-E202D41F","awb":"AWB-CC46317B","completed_at":null,"customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":24,"partner_id":"PTR-5CAAB579","picked_up_at":null,"shipment_id":"SHP-243CF469","shipment_status":"OUT_FOR_DELIVERY","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T03:05:51","assignment_id":"ASN-8DAB05EF","awb":"AWB-8C40E3C0","completed_at":null,"customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":23,"partner_id":"PTR-5CAAB579","picked_up_at":null,"shipment_id":"SHP-8C65E933","shipment_status":"OUT_FOR_DELIVERY","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T03:04:05","assignment_id":"ASN-214D87F6","awb":"AWB-DB9F4939","completed_at":null,"customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":22,"partner_id":"PTR-5CAAB579","picked_up_at":null,"shipment_id":"SHP-7E341C24","shipment_status":"OUT_FOR_DELIVERY","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T02:59:11","assignment_id":"ASN-008EE517","awb":"AWB-3C929502","completed_at":null,"customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":21,"partner_id":"PTR-5CAAB579","picked_up_at":null,"shipment_id":"SHP-0CFD3540","shipment_status":"OUT_FOR_DELIVERY","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T02:55:59","assignment_id":"ASN-66A5EDD2","awb":"AWB-611080E0","completed_at":null,"customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":20,"partner_id":"PTR-5CAAB579","picked_up_at":null,"shipment_id":"SHP-42412EC1","shipment_status":"AT_DESTINATION_HUB","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T02:55:05","assignment_id":"ASN-BD2752A8","awb":"AWB-74668427","completed_at":null,"customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":19,"partner_id":"PTR-5CAAB579","picked_up_at":null,"shipment_id":"SHP-03395B66","shipment_status":"AT_DESTINATION_HUB","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T02:54:12","assignment_id":"ASN-D0A0B7A3","awb":"AWB-D630A1ED","completed_at":null,"customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":18,"partner_id":"PTR-5CAAB579","picked_up_at":null,"shipment_id":"SHP-40713A31","shipment_status":"AT_DESTINATION_HUB","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T02:51:55","assignment_id":"ASN-15D9D6F0","awb":"AWB-3A95A7BC","completed_at":null,"customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":17,"partner_id":"PTR-5CAAB579","picked_up_at":null,"shipment_id":"SHP-93F9D5A6","shipment_status":"AT_DESTINATION_HUB","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T02:50:41","assignment_id":"ASN-2A1F5040","awb":"AWB-32C7F832","completed_at":null,"customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":16,"partner_id":"PTR-5CAAB579","picked_up_at":null,"shipment_id":"SHP-83040764","shipment_status":"AT_DESTINATION_HUB","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T02:49:33","assignment_id":"ASN-B782D71F","awb":"AWB-C62C8D0B","completed_at":null,"customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":15,"partner_id":"PTR-5CAAB579","picked_up_at":null,"shipment_id":"SHP-C6A21844","shipment_status":"AT_DESTINATION_HUB","status":"ASSIGNED"},{"amount":100.0,"assigned_at":"2026-08-30T00:19:28","assignment_id":"ASN-3D9BBF9A","awb":"AWB-F5D55D67","completed_at":"2026-08-30T08:51:36","customer_name":"Final Financial Test Customer","customer_phone":"9999999999","delivery_address":"Final Test Delivery","destination_hub":"HUB001","hub_code":"HUB001","id":14,"partner_id":"PTR-5CAAB579","picked_up_at":"2026-08-30T00:19:28","shipment_id":"SHP-9E01686D","shipment_status":"DELIVERED","status":"COMPLETED"},{"amount":100.0,"assigned_at":"2026-08-30T00:02:02","assignment_id":"ASN-02ED6E2B","awb":"AWB-89A64BBD","completed_at":"2026-08-30T08:51:36","customer_name":"Owner Ledger Test Customer","customer_phone":"9999999999","delivery_address":"Test Delivery","destination_hub":"HUB001","hub_code":"HUB001","id":13,"partner_id":"PTR-5CAAB579","picked_up_at":"2026-08-30T00:02:02","shipment_id":"SHP-FB45964A","shipment_status":"DELIVERED","status":"COMPLETED"},{"amount":100.0,"assigned_at":"2026-08-29T22:19:52","assignment_id":"ASN-810B664D","awb":"AWB-76CF19FA","completed_at":"2026-08-30T08:51:36","customer_name":"Company Settlement Test","customer_phone":"9999999997","delivery_address":"Company Test Address","destination_hub":"HUB001","hub_code":"HUB001","id":12,"partner_id":"PTR-5CAAB579","picked_up_at":"2026-08-29T22:20:23","shipment_id":"SHP-D008E9F3","shipment_status":"DELIVERED","status":"COMPLETED"},{"amount":100.0,"assigned_at":"2026-08-29T22:10:31","assignment_id":"ASN-C1D15321","awb":"AWB-0DA642D3","completed_at":"2026-08-30T08:51:36","customer_name":"Seller Ledger Test","customer_phone":"9999999995","delivery_address":"Seller Test Address","destination_hub":"HUB001","hub_code":"HUB001","id":11,"partner_id":"PTR-5CAAB579","picked_up_at":"2026-08-29T22:11:59","shipment_id":"SHP-964E432C","shipment_status":"DELIVERED","status":"COMPLETED"},{"amount":100.0,"assigned_at":"2026-08-29T21:18:42","assignment_id":"ASN-74BCED53","awb":"AWB-9C464FEA","completed_at":"2026-08-29T21:21:47","customer_name":"Ledger COD Test","customer_phone":"9999999996","delivery_address":"Ledger Test Address","destination_hub":"HUB001","hub_code":"HUB001","id":10,"partner_id":"PTR-5CAAB579","picked_up_at":"2026-08-29T21:19:03","shipment_id":"SHP-14C229F6","shipment_status":"DELIVERED","status":"COMPLETED"},{"amount":100.0,"assigned_at":"2026-08-29T20:31:59","assignment_id":"ASN-5EA3F7A1","awb":"AWB-3C874D90","completed_at":"2026-08-29T20:32:57","customer_name":"Rate Test REJECT","customer_phone":"9999999997","delivery_address":"Test Reject Address","destination_hub":"HUB001","hub_code":"HUB001","id":9,"partner_id":"PTR-5CAAB579","picked_up_at":"2026-08-29T20:32:20","shipment_id":"SHP-3199E70A","shipment_status":"RTO","status":"RTO"},{"amount":100.0,"assigned_at":"2026-08-29T20:27:10","assignment_id":"ASN-9812CE36","awb":"AWB-3DE490F6","completed_at":"2026-08-29T20:28:38","customer_name":"Rate Test PAD","customer_phone":"9999999998","delivery_address":"Test PAD Address","destination_hub":"HUB001","hub_code":"HUB001","id":8,"partner_id":"PTR-5CAAB579","picked_up_at":"2026-08-29T20:27:42","shipment_id":"SHP-42F57964","shipment_status":"DELIVERED","status":"COMPLETED"},{"amount":100.0,"assigned_at":"2026-08-29T20:20:46","assignment_id":"ASN-FD8E3718","awb":"AWB-AA21917E","completed_at":"2026-08-29T20:24:04","customer_name":"Rate Test COD","customer_phone":"9999999999","delivery_address":"Test Delivery Address","destination_hub":"HUB001","hub_code":"HUB001","id":7,"partner_id":"PTR-5CAAB579","picked_up_at":"2026-08-29T20:21:14","shipment_id":"SHP-A997B7D7","shipment_status":"DELIVERED","status":"COMPLETED"},{"amount":600.0,"assigned_at":"2026-08-28T01:14:13","assignment_id":"ASN-DAF1DDED","awb":"AWB-0A1415AB","completed_at":"2026-08-28T01:17:39","customer_name":"UI Test Customer","customer_phone":"9999999999","delivery_address":"Ghaziabad UI Test Address","destination_hub":"HUB001","hub_code":"HUB001","id":6,"partner_id":"PTR-5CAAB579","picked_up_at":"2026-08-28T01:15:59","shipment_id":"SHP-D19A3837","shipment_status":"DELIVERED","status":"COMPLETED"},{"amount":500.0,"assigned_at":"2026-08-28T00:22:32","assignment_id":"ASN-DA21FD61","awb":"AWB-ADD675B3","completed_at":"2026-08-28T00:36:53","customer_name":"Test Customer","customer_phone":"9999999999","delivery_address":"Ghaziabad Test Address","destination_hub":"HUB001","hub_code":"HUB001","id":5,"partner_id":"PTR-5CAAB579","picked_up_at":"2026-08-28T00:23:20","shipment_id":"SHP-7025A8AD","shipment_status":"DELIVERED","status":"COMPLETED"},{"amount":250.0,"assigned_at":"2026-08-27T23:19:37","assignment_id":"ASN-426B3989","awb":"AWB-1D3322C4","completed_at":"2026-08-27T23:24:31","customer_name":"Earning Final Test","customer_phone":"9876500003","delivery_address":"Earning Final Test Address","destination_hub":"HUB001","hub_code":"HUB001","id":4,"partner_id":"PTR-5CAAB579","picked_up_at":"2026-08-27T23:22:01","shipment_id":"SHP-D81AFD3E","shipment_status":"DELIVERED","status":"COMPLETED"},{"amount":400.0,"assigned_at":"2026-08-27T22:59:50","assignment_id":"ASN-8880BB59","awb":"AWB-21D2D4A9","completed_at":"2026-08-27T23:14:52","customer_name":"Earning Test Customer","customer_phone":"9876500002","delivery_address":"Earning Test Address","destination_hub":"HUB001","hub_code":"HUB001","id":3,"partner_id":"PTR-5CAAB579","picked_up_at":"2026-08-27T23:01:27","shipment_id":"SHP-98A5BE9D","shipment_status":"DELIVERED","status":"COMPLETED"},{"amount":300.0,"assigned_at":"2026-08-27T22:34:36","assignment_id":"ASN-F0C59DE6","awb":"AWB-3C8AB6EE","completed_at":"2026-08-27T22:35:55","customer_name":"RTO Test Customer","customer_phone":"9876500001","delivery_address":"RTO Test Address","destination_hub":"HUB001","hub_code":"HUB001","id":2,"partner_id":"PTR-5CAAB579","picked_up_at":"2026-08-27T22:35:15","shipment_id":"SHP-FD6A1BC4","shipment_status":"RTO","status":"RTO"},{"amount":500.0,"assigned_at":"2026-08-27T22:21:30","assignment_id":"ASN-8E291311","awb":"AWB-0747503C","completed_at":"2026-08-27T22:29:12","customer_name":"Test Customer","customer_phone":"9876500000","delivery_address":"Test Customer Address","destination_hub":"HUB001","hub_code":"HUB001","id":1,"partner_id":"PTR-5CAAB579","picked_up_at":"2026-08-27T22:23:37","shipment_id":"SHP-5ACF3A6F","shipment_status":"DELIVERED","status":"COMPLETED"}],"partner_id":"PTR-5CAAB579","success":true}
+
+__HTTP__200
+PASS: 200
+
+===== Partner Active Assignments =====
+{"assignments":[{"amount":319.0,"assigned_at":"2026-08-30T08:51:35","assignment_id":"ASN-BD837B59","awb":"AWB-CB83060F","completed_at":null,"current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":31,"partner_id":"PTR-5CAAB579","picked_up_at":null,"shipment_id":"SHP-E260A02D","shipment_status":"AT_DESTINATION_HUB","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T03:29:48","assignment_id":"ASN-7434F0C7","awb":"AWB-DF880DAE","completed_at":null,"current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":30,"partner_id":"PTR-5CAAB579","picked_up_at":null,"shipment_id":"SHP-41B07F46","shipment_status":"OUT_FOR_DELIVERY","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T03:19:38","assignment_id":"ASN-CC7C6034","awb":"AWB-AA3FADE8","completed_at":null,"current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":29,"partner_id":"PTR-5CAAB579","picked_up_at":null,"shipment_id":"SHP-FD6AAFA7","shipment_status":"OUT_FOR_DELIVERY","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T03:16:56","assignment_id":"ASN-65A05727","awb":"AWB-B033259B","completed_at":null,"current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":28,"partner_id":"PTR-5CAAB579","picked_up_at":null,"shipment_id":"SHP-73138C32","shipment_status":"OUT_FOR_DELIVERY","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T03:14:38","assignment_id":"ASN-C86D47BF","awb":"AWB-DA154B08","completed_at":null,"current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":27,"partner_id":"PTR-5CAAB579","picked_up_at":null,"shipment_id":"SHP-C9E95713","shipment_status":"OUT_FOR_DELIVERY","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T03:12:08","assignment_id":"ASN-E5459A92","awb":"AWB-F848131F","completed_at":null,"current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":26,"partner_id":"PTR-5CAAB579","picked_up_at":null,"shipment_id":"SHP-CC8D1D07","shipment_status":"OUT_FOR_DELIVERY","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T03:10:03","assignment_id":"ASN-E2E6F98D","awb":"AWB-4769AA91","completed_at":null,"current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":25,"partner_id":"PTR-5CAAB579","picked_up_at":null,"shipment_id":"SHP-E7696C4D","shipment_status":"OUT_FOR_DELIVERY","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T03:08:00","assignment_id":"ASN-E202D41F","awb":"AWB-CC46317B","completed_at":null,"current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":24,"partner_id":"PTR-5CAAB579","picked_up_at":null,"shipment_id":"SHP-243CF469","shipment_status":"OUT_FOR_DELIVERY","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T03:05:51","assignment_id":"ASN-8DAB05EF","awb":"AWB-8C40E3C0","completed_at":null,"current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":23,"partner_id":"PTR-5CAAB579","picked_up_at":null,"shipment_id":"SHP-8C65E933","shipment_status":"OUT_FOR_DELIVERY","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T03:04:05","assignment_id":"ASN-214D87F6","awb":"AWB-DB9F4939","completed_at":null,"current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":22,"partner_id":"PTR-5CAAB579","picked_up_at":null,"shipment_id":"SHP-7E341C24","shipment_status":"OUT_FOR_DELIVERY","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T02:59:11","assignment_id":"ASN-008EE517","awb":"AWB-3C929502","completed_at":null,"current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":21,"partner_id":"PTR-5CAAB579","picked_up_at":null,"shipment_id":"SHP-0CFD3540","shipment_status":"OUT_FOR_DELIVERY","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T02:55:59","assignment_id":"ASN-66A5EDD2","awb":"AWB-611080E0","completed_at":null,"current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":20,"partner_id":"PTR-5CAAB579","picked_up_at":null,"shipment_id":"SHP-42412EC1","shipment_status":"AT_DESTINATION_HUB","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T02:55:05","assignment_id":"ASN-BD2752A8","awb":"AWB-74668427","completed_at":null,"current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":19,"partner_id":"PTR-5CAAB579","picked_up_at":null,"shipment_id":"SHP-03395B66","shipment_status":"AT_DESTINATION_HUB","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T02:54:12","assignment_id":"ASN-D0A0B7A3","awb":"AWB-D630A1ED","completed_at":null,"current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":18,"partner_id":"PTR-5CAAB579","picked_up_at":null,"shipment_id":"SHP-40713A31","shipment_status":"AT_DESTINATION_HUB","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T02:51:55","assignment_id":"ASN-15D9D6F0","awb":"AWB-3A95A7BC","completed_at":null,"current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":17,"partner_id":"PTR-5CAAB579","picked_up_at":null,"shipment_id":"SHP-93F9D5A6","shipment_status":"AT_DESTINATION_HUB","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T02:50:41","assignment_id":"ASN-2A1F5040","awb":"AWB-32C7F832","completed_at":null,"current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":16,"partner_id":"PTR-5CAAB579","picked_up_at":null,"shipment_id":"SHP-83040764","shipment_status":"AT_DESTINATION_HUB","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T02:49:33","assignment_id":"ASN-B782D71F","awb":"AWB-C62C8D0B","completed_at":null,"current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":15,"partner_id":"PTR-5CAAB579","picked_up_at":null,"shipment_id":"SHP-C6A21844","shipment_status":"AT_DESTINATION_HUB","status":"ASSIGNED"},{"amount":100.0,"assigned_at":"2026-08-30T00:19:28","assignment_id":"ASN-3D9BBF9A","awb":"AWB-F5D55D67","completed_at":null,"current_hub":"HUB001","customer_name":"Final Financial Test Customer","customer_phone":"9999999999","delivery_address":"Final Test Delivery","destination_hub":"HUB001","hub_code":"HUB001","id":14,"partner_id":"PTR-5CAAB579","picked_up_at":"2026-08-30T00:19:28","shipment_id":"SHP-9E01686D","shipment_status":"DELIVERED","status":"PICKED_UP"},{"amount":100.0,"assigned_at":"2026-08-30T00:02:02","assignment_id":"ASN-02ED6E2B","awb":"AWB-89A64BBD","completed_at":null,"current_hub":"HUB001","customer_name":"Owner Ledger Test Customer","customer_phone":"9999999999","delivery_address":"Test Delivery","destination_hub":"HUB001","hub_code":"HUB001","id":13,"partner_id":"PTR-5CAAB579","picked_up_at":"2026-08-30T00:02:02","shipment_id":"SHP-FB45964A","shipment_status":"DELIVERED","status":"PICKED_UP"},{"amount":100.0,"assigned_at":"2026-08-29T22:19:52","assignment_id":"ASN-810B664D","awb":"AWB-76CF19FA","completed_at":null,"current_hub":"HUB001","customer_name":"Company Settlement Test","customer_phone":"9999999997","delivery_address":"Company Test Address","destination_hub":"HUB001","hub_code":"HUB001","id":12,"partner_id":"PTR-5CAAB579","picked_up_at":"2026-08-29T22:20:23","shipment_id":"SHP-D008E9F3","shipment_status":"DELIVERED","status":"PICKED_UP"},{"amount":100.0,"assigned_at":"2026-08-29T22:10:31","assignment_id":"ASN-C1D15321","awb":"AWB-0DA642D3","completed_at":null,"current_hub":"HUB001","customer_name":"Seller Ledger Test","customer_phone":"9999999995","delivery_address":"Seller Test Address","destination_hub":"HUB001","hub_code":"HUB001","id":11,"partner_id":"PTR-5CAAB579","picked_up_at":"2026-08-29T22:11:59","shipment_id":"SHP-964E432C","shipment_status":"DELIVERED","status":"PICKED_UP"}],"partner_id":"PTR-5CAAB579","success":true}
+
+__HTTP__200
+PASS: 200
+
+===== 10. HUB ASSIGNMENTS =====
+
+===== Hub Assignments =====
+{"assignments":[{"amount":319.0,"assigned_at":"2026-08-30T08:51:35","assignment_id":"ASN-BD837B59","awb":"AWB-CB83060F","completed_at":null,"customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":31,"partner_id":"PTR-5CAAB579","partner_name":"Test Delivery Partner","partner_phone":"9876543210","picked_up_at":null,"shipment_id":"SHP-E260A02D","shipment_status":"AT_DESTINATION_HUB","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T03:29:48","assignment_id":"ASN-7434F0C7","awb":"AWB-DF880DAE","completed_at":null,"customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":30,"partner_id":"PTR-5CAAB579","partner_name":"Test Delivery Partner","partner_phone":"9876543210","picked_up_at":null,"shipment_id":"SHP-41B07F46","shipment_status":"OUT_FOR_DELIVERY","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T03:19:38","assignment_id":"ASN-CC7C6034","awb":"AWB-AA3FADE8","completed_at":null,"customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":29,"partner_id":"PTR-5CAAB579","partner_name":"Test Delivery Partner","partner_phone":"9876543210","picked_up_at":null,"shipment_id":"SHP-FD6AAFA7","shipment_status":"OUT_FOR_DELIVERY","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T03:16:56","assignment_id":"ASN-65A05727","awb":"AWB-B033259B","completed_at":null,"customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":28,"partner_id":"PTR-5CAAB579","partner_name":"Test Delivery Partner","partner_phone":"9876543210","picked_up_at":null,"shipment_id":"SHP-73138C32","shipment_status":"OUT_FOR_DELIVERY","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T03:14:38","assignment_id":"ASN-C86D47BF","awb":"AWB-DA154B08","completed_at":null,"customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":27,"partner_id":"PTR-5CAAB579","partner_name":"Test Delivery Partner","partner_phone":"9876543210","picked_up_at":null,"shipment_id":"SHP-C9E95713","shipment_status":"OUT_FOR_DELIVERY","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T03:12:08","assignment_id":"ASN-E5459A92","awb":"AWB-F848131F","completed_at":null,"customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":26,"partner_id":"PTR-5CAAB579","partner_name":"Test Delivery Partner","partner_phone":"9876543210","picked_up_at":null,"shipment_id":"SHP-CC8D1D07","shipment_status":"OUT_FOR_DELIVERY","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T03:10:03","assignment_id":"ASN-E2E6F98D","awb":"AWB-4769AA91","completed_at":null,"customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":25,"partner_id":"PTR-5CAAB579","partner_name":"Test Delivery Partner","partner_phone":"9876543210","picked_up_at":null,"shipment_id":"SHP-E7696C4D","shipment_status":"OUT_FOR_DELIVERY","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T03:08:00","assignment_id":"ASN-E202D41F","awb":"AWB-CC46317B","completed_at":null,"customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":24,"partner_id":"PTR-5CAAB579","partner_name":"Test Delivery Partner","partner_phone":"9876543210","picked_up_at":null,"shipment_id":"SHP-243CF469","shipment_status":"OUT_FOR_DELIVERY","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T03:05:51","assignment_id":"ASN-8DAB05EF","awb":"AWB-8C40E3C0","completed_at":null,"customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":23,"partner_id":"PTR-5CAAB579","partner_name":"Test Delivery Partner","partner_phone":"9876543210","picked_up_at":null,"shipment_id":"SHP-8C65E933","shipment_status":"OUT_FOR_DELIVERY","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T03:04:05","assignment_id":"ASN-214D87F6","awb":"AWB-DB9F4939","completed_at":null,"customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":22,"partner_id":"PTR-5CAAB579","partner_name":"Test Delivery Partner","partner_phone":"9876543210","picked_up_at":null,"shipment_id":"SHP-7E341C24","shipment_status":"OUT_FOR_DELIVERY","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T02:59:11","assignment_id":"ASN-008EE517","awb":"AWB-3C929502","completed_at":null,"customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":21,"partner_id":"PTR-5CAAB579","partner_name":"Test Delivery Partner","partner_phone":"9876543210","picked_up_at":null,"shipment_id":"SHP-0CFD3540","shipment_status":"OUT_FOR_DELIVERY","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T02:55:59","assignment_id":"ASN-66A5EDD2","awb":"AWB-611080E0","completed_at":null,"customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":20,"partner_id":"PTR-5CAAB579","partner_name":"Test Delivery Partner","partner_phone":"9876543210","picked_up_at":null,"shipment_id":"SHP-42412EC1","shipment_status":"AT_DESTINATION_HUB","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T02:55:05","assignment_id":"ASN-BD2752A8","awb":"AWB-74668427","completed_at":null,"customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":19,"partner_id":"PTR-5CAAB579","partner_name":"Test Delivery Partner","partner_phone":"9876543210","picked_up_at":null,"shipment_id":"SHP-03395B66","shipment_status":"AT_DESTINATION_HUB","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T02:54:12","assignment_id":"ASN-D0A0B7A3","awb":"AWB-D630A1ED","completed_at":null,"customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":18,"partner_id":"PTR-5CAAB579","partner_name":"Test Delivery Partner","partner_phone":"9876543210","picked_up_at":null,"shipment_id":"SHP-40713A31","shipment_status":"AT_DESTINATION_HUB","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T02:51:55","assignment_id":"ASN-15D9D6F0","awb":"AWB-3A95A7BC","completed_at":null,"customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":17,"partner_id":"PTR-5CAAB579","partner_name":"Test Delivery Partner","partner_phone":"9876543210","picked_up_at":null,"shipment_id":"SHP-93F9D5A6","shipment_status":"AT_DESTINATION_HUB","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T02:50:41","assignment_id":"ASN-2A1F5040","awb":"AWB-32C7F832","completed_at":null,"customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":16,"partner_id":"PTR-5CAAB579","partner_name":"Test Delivery Partner","partner_phone":"9876543210","picked_up_at":null,"shipment_id":"SHP-83040764","shipment_status":"AT_DESTINATION_HUB","status":"ASSIGNED"},{"amount":319.0,"assigned_at":"2026-08-30T02:49:33","assignment_id":"ASN-B782D71F","awb":"AWB-C62C8D0B","completed_at":null,"customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","hub_code":"HUB001","id":15,"partner_id":"PTR-5CAAB579","partner_name":"Test Delivery Partner","partner_phone":"9876543210","picked_up_at":null,"shipment_id":"SHP-C6A21844","shipment_status":"AT_DESTINATION_HUB","status":"ASSIGNED"},{"amount":100.0,"assigned_at":"2026-08-30T00:19:28","assignment_id":"ASN-3D9BBF9A","awb":"AWB-F5D55D67","completed_at":null,"customer_name":"Final Financial Test Customer","customer_phone":"9999999999","delivery_address":"Final Test Delivery","destination_hub":"HUB001","hub_code":"HUB001","id":14,"partner_id":"PTR-5CAAB579","partner_name":"Test Delivery Partner","partner_phone":"9876543210","picked_up_at":"2026-08-30T00:19:28","shipment_id":"SHP-9E01686D","shipment_status":"DELIVERED","status":"PICKED_UP"},{"amount":100.0,"assigned_at":"2026-08-30T00:02:02","assignment_id":"ASN-02ED6E2B","awb":"AWB-89A64BBD","completed_at":null,"customer_name":"Owner Ledger Test Customer","customer_phone":"9999999999","delivery_address":"Test Delivery","destination_hub":"HUB001","hub_code":"HUB001","id":13,"partner_id":"PTR-5CAAB579","partner_name":"Test Delivery Partner","partner_phone":"9876543210","picked_up_at":"2026-08-30T00:02:02","shipment_id":"SHP-FB45964A","shipment_status":"DELIVERED","status":"PICKED_UP"},{"amount":100.0,"assigned_at":"2026-08-29T22:19:52","assignment_id":"ASN-810B664D","awb":"AWB-76CF19FA","completed_at":null,"customer_name":"Company Settlement Test","customer_phone":"9999999997","delivery_address":"Company Test Address","destination_hub":"HUB001","hub_code":"HUB001","id":12,"partner_id":"PTR-5CAAB579","partner_name":"Test Delivery Partner","partner_phone":"9876543210","picked_up_at":"2026-08-29T22:20:23","shipment_id":"SHP-D008E9F3","shipment_status":"DELIVERED","status":"PICKED_UP"},{"amount":100.0,"assigned_at":"2026-08-29T22:10:31","assignment_id":"ASN-C1D15321","awb":"AWB-0DA642D3","completed_at":null,"customer_name":"Seller Ledger Test","customer_phone":"9999999995","delivery_address":"Seller Test Address","destination_hub":"HUB001","hub_code":"HUB001","id":11,"partner_id":"PTR-5CAAB579","partner_name":"Test Delivery Partner","partner_phone":"9876543210","picked_up_at":"2026-08-29T22:11:59","shipment_id":"SHP-964E432C","shipment_status":"DELIVERED","status":"PICKED_UP"},{"amount":100.0,"assigned_at":"2026-08-29T21:18:42","assignment_id":"ASN-74BCED53","awb":"AWB-9C464FEA","completed_at":"2026-08-29T21:21:47","customer_name":"Ledger COD Test","customer_phone":"9999999996","delivery_address":"Ledger Test Address","destination_hub":"HUB001","hub_code":"HUB001","id":10,"partner_id":"PTR-5CAAB579","partner_name":"Test Delivery Partner","partner_phone":"9876543210","picked_up_at":"2026-08-29T21:19:03","shipment_id":"SHP-14C229F6","shipment_status":"DELIVERED","status":"COMPLETED"},{"amount":100.0,"assigned_at":"2026-08-29T20:31:59","assignment_id":"ASN-5EA3F7A1","awb":"AWB-3C874D90","completed_at":"2026-08-29T20:32:57","customer_name":"Rate Test REJECT","customer_phone":"9999999997","delivery_address":"Test Reject Address","destination_hub":"HUB001","hub_code":"HUB001","id":9,"partner_id":"PTR-5CAAB579","partner_name":"Test Delivery Partner","partner_phone":"9876543210","picked_up_at":"2026-08-29T20:32:20","shipment_id":"SHP-3199E70A","shipment_status":"RTO","status":"RTO"},{"amount":100.0,"assigned_at":"2026-08-29T20:27:10","assignment_id":"ASN-9812CE36","awb":"AWB-3DE490F6","completed_at":"2026-08-29T20:28:38","customer_name":"Rate Test PAD","customer_phone":"9999999998","delivery_address":"Test PAD Address","destination_hub":"HUB001","hub_code":"HUB001","id":8,"partner_id":"PTR-5CAAB579","partner_name":"Test Delivery Partner","partner_phone":"9876543210","picked_up_at":"2026-08-29T20:27:42","shipment_id":"SHP-42F57964","shipment_status":"DELIVERED","status":"COMPLETED"},{"amount":100.0,"assigned_at":"2026-08-29T20:20:46","assignment_id":"ASN-FD8E3718","awb":"AWB-AA21917E","completed_at":"2026-08-29T20:24:04","customer_name":"Rate Test COD","customer_phone":"9999999999","delivery_address":"Test Delivery Address","destination_hub":"HUB001","hub_code":"HUB001","id":7,"partner_id":"PTR-5CAAB579","partner_name":"Test Delivery Partner","partner_phone":"9876543210","picked_up_at":"2026-08-29T20:21:14","shipment_id":"SHP-A997B7D7","shipment_status":"DELIVERED","status":"COMPLETED"},{"amount":600.0,"assigned_at":"2026-08-28T01:14:13","assignment_id":"ASN-DAF1DDED","awb":"AWB-0A1415AB","completed_at":"2026-08-28T01:17:39","customer_name":"UI Test Customer","customer_phone":"9999999999","delivery_address":"Ghaziabad UI Test Address","destination_hub":"HUB001","hub_code":"HUB001","id":6,"partner_id":"PTR-5CAAB579","partner_name":"Test Delivery Partner","partner_phone":"9876543210","picked_up_at":"2026-08-28T01:15:59","shipment_id":"SHP-D19A3837","shipment_status":"DELIVERED","status":"COMPLETED"},{"amount":500.0,"assigned_at":"2026-08-28T00:22:32","assignment_id":"ASN-DA21FD61","awb":"AWB-ADD675B3","completed_at":"2026-08-28T00:36:53","customer_name":"Test Customer","customer_phone":"9999999999","delivery_address":"Ghaziabad Test Address","destination_hub":"HUB001","hub_code":"HUB001","id":5,"partner_id":"PTR-5CAAB579","partner_name":"Test Delivery Partner","partner_phone":"9876543210","picked_up_at":"2026-08-28T00:23:20","shipment_id":"SHP-7025A8AD","shipment_status":"DELIVERED","status":"COMPLETED"},{"amount":250.0,"assigned_at":"2026-08-27T23:19:37","assignment_id":"ASN-426B3989","awb":"AWB-1D3322C4","completed_at":"2026-08-27T23:24:31","customer_name":"Earning Final Test","customer_phone":"9876500003","delivery_address":"Earning Final Test Address","destination_hub":"HUB001","hub_code":"HUB001","id":4,"partner_id":"PTR-5CAAB579","partner_name":"Test Delivery Partner","partner_phone":"9876543210","picked_up_at":"2026-08-27T23:22:01","shipment_id":"SHP-D81AFD3E","shipment_status":"DELIVERED","status":"COMPLETED"},{"amount":400.0,"assigned_at":"2026-08-27T22:59:50","assignment_id":"ASN-8880BB59","awb":"AWB-21D2D4A9","completed_at":"2026-08-27T23:14:52","customer_name":"Earning Test Customer","customer_phone":"9876500002","delivery_address":"Earning Test Address","destination_hub":"HUB001","hub_code":"HUB001","id":3,"partner_id":"PTR-5CAAB579","partner_name":"Test Delivery Partner","partner_phone":"9876543210","picked_up_at":"2026-08-27T23:01:27","shipment_id":"SHP-98A5BE9D","shipment_status":"DELIVERED","status":"COMPLETED"},{"amount":300.0,"assigned_at":"2026-08-27T22:34:36","assignment_id":"ASN-F0C59DE6","awb":"AWB-3C8AB6EE","completed_at":"2026-08-27T22:35:55","customer_name":"RTO Test Customer","customer_phone":"9876500001","delivery_address":"RTO Test Address","destination_hub":"HUB001","hub_code":"HUB001","id":2,"partner_id":"PTR-5CAAB579","partner_name":"Test Delivery Partner","partner_phone":"9876543210","picked_up_at":"2026-08-27T22:35:15","shipment_id":"SHP-FD6A1BC4","shipment_status":"RTO","status":"RTO"},{"amount":500.0,"assigned_at":"2026-08-27T22:21:30","assignment_id":"ASN-8E291311","awb":"AWB-0747503C","completed_at":"2026-08-27T22:29:12","customer_name":"Test Customer","customer_phone":"9876500000","delivery_address":"Test Customer Address","destination_hub":"HUB001","hub_code":"HUB001","id":1,"partner_id":"PTR-5CAAB579","partner_name":"Test Delivery Partner","partner_phone":"9876543210","picked_up_at":"2026-08-27T22:23:37","shipment_id":"SHP-5ACF3A6F","shipment_status":"DELIVERED","status":"COMPLETED"}],"hub_code":"HUB001","success":true}
+
+__HTTP__200
+PASS: 200
+
+===== Hub Assignment Summary =====
+{"hub_code":"HUB001","success":true,"summary":{"active":21,"assigned":17,"completed":8,"picked_up":4,"rto":2,"total_assignments":31}}
+
+__HTTP__200
+PASS: 200
+
+===== 11. PARTNER DASHBOARD =====
+
+===== Partner Dashboard =====
+{"dashboard":{"assignments":{"active":21,"completed":8,"rto":2,"total":31},"cod":{"collected_amount":2450.0,"collected_payments":7,"pending_amount":5423.0,"pending_payments":17},"earnings":{"paid_amount":186.0,"pending_amount":48.0,"recent":[{"amount":20.0,"assignment_id":"ASN-3D9BBF9A","created_at":"2026-08-30T00:20:05","earning_id":"EARN-8810DA91","earning_type":"DELIVERY","note":"Automatic delivery earning","paid_at":"2026-08-30T00:31:13","payout_id":"PAYOUT-18BFD548","shipment_id":"SHP-9E01686D","status":"PAID"},{"amount":20.0,"assignment_id":"ASN-02ED6E2B","created_at":"2026-08-30T00:02:44","earning_id":"EARN-E94F70B0","earning_type":"DELIVERY","note":"Automatic delivery earning","paid_at":null,"payout_id":null,"shipment_id":"SHP-FB45964A","status":"PENDING"},{"amount":0.0,"assignment_id":"ASN-810B664D","created_at":"2026-08-29T22:21:21","earning_id":"EARN-AC516D71","earning_type":"DELIVERY","note":"Automatic delivery earning","paid_at":null,"payout_id":null,"shipment_id":"SHP-D008E9F3","status":"PENDING"},{"amount":0.0,"assignment_id":"ASN-C1D15321","created_at":"2026-08-29T22:12:18","earning_id":"EARN-BD691708","earning_type":"DELIVERY","note":"Automatic delivery earning","paid_at":null,"payout_id":null,"shipment_id":"SHP-964E432C","status":"PENDING"},{"amount":15.0,"assignment_id":"ASN-74BCED53","created_at":"2026-08-29T21:21:47","earning_id":"ERN-9E66AE70","earning_type":"DELIVERY","note":"Delivery earning created automatically","paid_at":"2026-08-29T21:41:24","payout_id":"PAYOUT-F6894F43","shipment_id":"SHP-14C229F6","status":"PAID"},{"amount":1.0,"assignment_id":"ASN-5EA3F7A1","created_at":"2026-08-29T20:32:57","earning_id":"ERN-D5104720","earning_type":"RTO","note":"RTO / Reject earning created automatically","paid_at":"2026-08-29T21:39:13","payout_id":"PAYOUT-9416127C","shipment_id":"SHP-3199E70A","status":"PAID"},{"amount":13.0,"assignment_id":"ASN-9812CE36","created_at":"2026-08-29T20:28:38","earning_id":"ERN-756D0BD1","earning_type":"DELIVERY","note":"Delivery earning created automatically","paid_at":null,"payout_id":null,"shipment_id":"SHP-42F57964","status":"PENDING"},{"amount":15.0,"assignment_id":"ASN-FD8E3718","created_at":"2026-08-29T20:24:04","earning_id":"ERN-355971EF","earning_type":"DELIVERY","note":"Delivery earning created automatically","paid_at":null,"payout_id":null,"shipment_id":"SHP-A997B7D7","status":"PENDING"},{"amount":50.0,"assignment_id":"ASN-DAF1DDED","created_at":"2026-08-28T01:17:39","earning_id":"ERN-0AA458A3","earning_type":"DELIVERY","note":"Partner earning payout completed","paid_at":"2026-08-28T01:22:12","payout_id":"PAY-38C432CF","shipment_id":"SHP-D19A3837","status":"PAID"},{"amount":50.0,"assignment_id":"ASN-DA21FD61","created_at":"2026-08-28T00:36:53","earning_id":"ERN-498AD7BA","earning_type":"DELIVERY","note":"Partner earning payout completed","paid_at":"2026-08-28T01:26:57","payout_id":"PAY-76252CAD","shipment_id":"SHP-7025A8AD","status":"PAID"}],"total_amount":234.0,"total_earnings":11}},"partner":{"city":"Ghaziabad","created_at":"2026-08-27T22:19:06","email":"partner@test.com","name":"Test Delivery Partner","partner_id":"PTR-5CAAB579","phone":"9876543210","status":"ACTIVE","vehicle_type":"BIKE"},"success":true}
+
+__HTTP__200
+PASS: 200
+
+===== Partner Earnings =====
+{"earnings":[{"amount":20.0,"assignment_id":"ASN-3D9BBF9A","created_at":"2026-08-30T00:20:05","earning_id":"EARN-8810DA91","earning_type":"DELIVERY","id":11,"note":"Automatic delivery earning","paid_at":"2026-08-30T00:31:13","partner_id":"PTR-5CAAB579","payout_id":"PAYOUT-18BFD548","shipment_id":"SHP-9E01686D","status":"PAID"},{"amount":20.0,"assignment_id":"ASN-02ED6E2B","created_at":"2026-08-30T00:02:44","earning_id":"EARN-E94F70B0","earning_type":"DELIVERY","id":10,"note":"Automatic delivery earning","paid_at":null,"partner_id":"PTR-5CAAB579","payout_id":null,"shipment_id":"SHP-FB45964A","status":"PENDING"},{"amount":0.0,"assignment_id":"ASN-810B664D","created_at":"2026-08-29T22:21:21","earning_id":"EARN-AC516D71","earning_type":"DELIVERY","id":9,"note":"Automatic delivery earning","paid_at":null,"partner_id":"PTR-5CAAB579","payout_id":null,"shipment_id":"SHP-D008E9F3","status":"PENDING"},{"amount":0.0,"assignment_id":"ASN-C1D15321","created_at":"2026-08-29T22:12:18","earning_id":"EARN-BD691708","earning_type":"DELIVERY","id":8,"note":"Automatic delivery earning","paid_at":null,"partner_id":"PTR-5CAAB579","payout_id":null,"shipment_id":"SHP-964E432C","status":"PENDING"},{"amount":15.0,"assignment_id":"ASN-74BCED53","created_at":"2026-08-29T21:21:47","earning_id":"ERN-9E66AE70","earning_type":"DELIVERY","id":7,"note":"Delivery earning created automatically","paid_at":"2026-08-29T21:41:24","partner_id":"PTR-5CAAB579","payout_id":"PAYOUT-F6894F43","shipment_id":"SHP-14C229F6","status":"PAID"},{"amount":1.0,"assignment_id":"ASN-5EA3F7A1","created_at":"2026-08-29T20:32:57","earning_id":"ERN-D5104720","earning_type":"RTO","id":6,"note":"RTO / Reject earning created automatically","paid_at":"2026-08-29T21:39:13","partner_id":"PTR-5CAAB579","payout_id":"PAYOUT-9416127C","shipment_id":"SHP-3199E70A","status":"PAID"},{"amount":13.0,"assignment_id":"ASN-9812CE36","created_at":"2026-08-29T20:28:38","earning_id":"ERN-756D0BD1","earning_type":"DELIVERY","id":5,"note":"Delivery earning created automatically","paid_at":null,"partner_id":"PTR-5CAAB579","payout_id":null,"shipment_id":"SHP-42F57964","status":"PENDING"},{"amount":15.0,"assignment_id":"ASN-FD8E3718","created_at":"2026-08-29T20:24:04","earning_id":"ERN-355971EF","earning_type":"DELIVERY","id":4,"note":"Delivery earning created automatically","paid_at":null,"partner_id":"PTR-5CAAB579","payout_id":null,"shipment_id":"SHP-A997B7D7","status":"PENDING"},{"amount":50.0,"assignment_id":"ASN-DAF1DDED","created_at":"2026-08-28T01:17:39","earning_id":"ERN-0AA458A3","earning_type":"DELIVERY","id":3,"note":"Partner earning payout completed","paid_at":"2026-08-28T01:22:12","partner_id":"PTR-5CAAB579","payout_id":"PAY-38C432CF","shipment_id":"SHP-D19A3837","status":"PAID"},{"amount":50.0,"assignment_id":"ASN-DA21FD61","created_at":"2026-08-28T00:36:53","earning_id":"ERN-498AD7BA","earning_type":"DELIVERY","id":2,"note":"Partner earning payout completed","paid_at":"2026-08-28T01:26:57","partner_id":"PTR-5CAAB579","payout_id":"PAY-76252CAD","shipment_id":"SHP-7025A8AD","status":"PAID"},{"amount":50.0,"assignment_id":"ASN-426B3989","created_at":"2026-08-27T23:24:31","earning_id":"ERN-56939D51","earning_type":"DELIVERY","id":1,"note":"Partner earning payout completed","paid_at":"2026-08-27T23:33:59","partner_id":"PTR-5CAAB579","payout_id":"PAY-A1181A65","shipment_id":"SHP-D81AFD3E","status":"PAID"}],"partner_id":"PTR-5CAAB579","success":true,"summary":{"paid_amount":186.0,"pending_amount":48.0,"total_amount":234.0,"total_earnings":11}}
+
+__HTTP__200
+PASS: 200
+
+===== 12. SHIPMENT STATUS =====
+
+===== Shipment Status CREATED =====
+{"message":"Shipment status updated successfully","shipment":{"amount":319.0,"awb":"AWB-CB83060F","company_id":null,"created_at":"2026-08-30T08:51:34","current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","id":37,"order_id":null,"origin_hub":"HUB001","pickup_address":"Test Seller Pickup, Ghaziabad","seller_id":"SEL-90C7AA9E","shipment_id":"SHP-E260A02D","shipment_type":"FORWARD","status":"OUT_FOR_DELIVERY","updated_at":"2026-08-30T08:51:36"},"success":true}
+
+__HTTP__200
+PASS: 200
+
+===== Shipment After Status =====
+{"shipment":{"amount":319.0,"awb":"AWB-CB83060F","company_id":null,"created_at":"2026-08-30T08:51:34","current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","events":[{"created_at":"2026-08-30T08:51:34","hub_code":"HUB001","id":118,"note":"Shipment automatically created from seller order and is already at destination hub","shipment_id":"SHP-E260A02D","status":"AT_DESTINATION_HUB"},{"created_at":"2026-08-30T08:51:35","hub_code":"HUB001","id":119,"note":"Shipment assigned to delivery partner PTR-5CAAB579; waiting for partner confirmation","shipment_id":"SHP-E260A02D","status":"AT_DESTINATION_HUB"},{"created_at":"2026-08-30T08:51:36","hub_code":"HUB001","id":120,"note":"Final E2E out for delivery","shipment_id":"SHP-E260A02D","status":"OUT_FOR_DELIVERY"}],"id":37,"order_id":null,"origin_hub":"HUB001","pickup_address":"Test Seller Pickup, Ghaziabad","seller_id":"SEL-90C7AA9E","shipment_id":"SHP-E260A02D","shipment_type":"FORWARD","status":"OUT_FOR_DELIVERY","updated_at":"2026-08-30T08:51:36"},"success":true}
+
+__HTTP__200
+PASS: 200
+
+===== 13. PAYMENT =====
+
+===== Shipment Payment =====
+{"payment":{"amount":319.0,"collected_amount":0.0,"collected_at":null,"collected_by":null,"created_at":"2026-08-30T08:51:34","id":33,"note":"COD payment pending collection","payment_id":"PAY-A8BF3D02","payment_type":"COD","shipment_id":"SHP-E260A02D","status":"PENDING"},"shipment":{"amount":319.0,"awb":"AWB-CB83060F","customer_name":"Delyvo Final E2E Customer","shipment_id":"SHP-E260A02D"},"success":true}
+
+__HTTP__200
+PASS: 200
+
+===== Payment Summary =====
+{"success":true,"summary":{"collected_cod_amount":2650.0,"paid_payments":8,"pending_cod_amount":7317.0,"pending_payments":23,"total_cod_amount":9967.0,"total_payments":33}}
+
+__HTTP__200
+PASS: 200
+
+===== 14. ADMIN =====
+
+===== Admin Dashboard =====
+{"generated_at":"2026-08-30T08:51:37","platform":"Delyvo","statistics":{"companies":1,"hubs":1,"orders":26,"partners":1,"payments":33,"products":1,"sellers":1,"shipments":37},"success":true}
+
+__HTTP__200
+PASS: 200
+
+===== Admin Orders =====
+{"filters":{"payment_status":"","search":"","seller_id":"","status":""},"orders":[{"created_at":"2026-08-30T08:51:34","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","delivery_fee":20.0,"id":26,"item_count":1,"order_id":"ORD-F2682D52","order_status":"PLACED","payment_status":"PENDING","payment_type":"COD","seller_city":"Ghaziabad","seller_company":"","seller_email":"seller@test.com","seller_id":"SEL-90C7AA9E","seller_name":"Test Seller","seller_phone":"9999999998","shipment_id":"SHP-E260A02D","subtotal":299.0,"total_amount":319.0,"total_items":1,"updated_at":"2026-08-30T08:51:34"},{"created_at":"2026-08-30T03:29:47","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","delivery_fee":20.0,"id":25,"item_count":1,"order_id":"ORD-FDD75D6E","order_status":"PLACED","payment_status":"PENDING","payment_type":"COD","seller_city":"Ghaziabad","seller_company":"","seller_email":"seller@test.com","seller_id":"SEL-90C7AA9E","seller_name":"Test Seller","seller_phone":"9999999998","shipment_id":"SHP-41B07F46","subtotal":299.0,"total_amount":319.0,"total_items":1,"updated_at":"2026-08-30T03:29:47"},{"created_at":"2026-08-30T03:19:37","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","delivery_fee":20.0,"id":24,"item_count":1,"order_id":"ORD-AEC8C0BC","order_status":"PLACED","payment_status":"PENDING","payment_type":"COD","seller_city":"Ghaziabad","seller_company":"","seller_email":"seller@test.com","seller_id":"SEL-90C7AA9E","seller_name":"Test Seller","seller_phone":"9999999998","shipment_id":"SHP-FD6AAFA7","subtotal":299.0,"total_amount":319.0,"total_items":1,"updated_at":"2026-08-30T03:19:37"},{"created_at":"2026-08-30T03:16:55","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","delivery_fee":20.0,"id":23,"item_count":1,"order_id":"ORD-A5034DAC","order_status":"PLACED","payment_status":"PENDING","payment_type":"COD","seller_city":"Ghaziabad","seller_company":"","seller_email":"seller@test.com","seller_id":"SEL-90C7AA9E","seller_name":"Test Seller","seller_phone":"9999999998","shipment_id":"SHP-73138C32","subtotal":299.0,"total_amount":319.0,"total_items":1,"updated_at":"2026-08-30T03:16:55"},{"created_at":"2026-08-30T03:14:37","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","delivery_fee":20.0,"id":22,"item_count":1,"order_id":"ORD-35AA9747","order_status":"PLACED","payment_status":"PENDING","payment_type":"COD","seller_city":"Ghaziabad","seller_company":"","seller_email":"seller@test.com","seller_id":"SEL-90C7AA9E","seller_name":"Test Seller","seller_phone":"9999999998","shipment_id":"SHP-C9E95713","subtotal":299.0,"total_amount":319.0,"total_items":1,"updated_at":"2026-08-30T03:14:37"},{"created_at":"2026-08-30T03:12:07","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","delivery_fee":20.0,"id":21,"item_count":1,"order_id":"ORD-57DFB166","order_status":"PLACED","payment_status":"PENDING","payment_type":"COD","seller_city":"Ghaziabad","seller_company":"","seller_email":"seller@test.com","seller_id":"SEL-90C7AA9E","seller_name":"Test Seller","seller_phone":"9999999998","shipment_id":"SHP-CC8D1D07","subtotal":299.0,"total_amount":319.0,"total_items":1,"updated_at":"2026-08-30T03:12:07"},{"created_at":"2026-08-30T03:10:02","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","delivery_fee":20.0,"id":20,"item_count":1,"order_id":"ORD-3B6CF8CC","order_status":"PLACED","payment_status":"PENDING","payment_type":"COD","seller_city":"Ghaziabad","seller_company":"","seller_email":"seller@test.com","seller_id":"SEL-90C7AA9E","seller_name":"Test Seller","seller_phone":"9999999998","shipment_id":"SHP-E7696C4D","subtotal":299.0,"total_amount":319.0,"total_items":1,"updated_at":"2026-08-30T03:10:03"},{"created_at":"2026-08-30T03:07:59","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","delivery_fee":20.0,"id":19,"item_count":1,"order_id":"ORD-AD4924C4","order_status":"PLACED","payment_status":"PENDING","payment_type":"COD","seller_city":"Ghaziabad","seller_company":"","seller_email":"seller@test.com","seller_id":"SEL-90C7AA9E","seller_name":"Test Seller","seller_phone":"9999999998","shipment_id":"SHP-243CF469","subtotal":299.0,"total_amount":319.0,"total_items":1,"updated_at":"2026-08-30T03:07:59"},{"created_at":"2026-08-30T03:05:50","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","delivery_fee":20.0,"id":18,"item_count":1,"order_id":"ORD-4720908A","order_status":"PLACED","payment_status":"PENDING","payment_type":"COD","seller_city":"Ghaziabad","seller_company":"","seller_email":"seller@test.com","seller_id":"SEL-90C7AA9E","seller_name":"Test Seller","seller_phone":"9999999998","shipment_id":"SHP-8C65E933","subtotal":299.0,"total_amount":319.0,"total_items":1,"updated_at":"2026-08-30T03:05:50"},{"created_at":"2026-08-30T03:04:04","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","delivery_fee":20.0,"id":17,"item_count":1,"order_id":"ORD-5B3A38A7","order_status":"PLACED","payment_status":"PENDING","payment_type":"COD","seller_city":"Ghaziabad","seller_company":"","seller_email":"seller@test.com","seller_id":"SEL-90C7AA9E","seller_name":"Test Seller","seller_phone":"9999999998","shipment_id":"SHP-7E341C24","subtotal":299.0,"total_amount":319.0,"total_items":1,"updated_at":"2026-08-30T03:04:04"},{"created_at":"2026-08-30T02:59:10","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","delivery_fee":20.0,"id":16,"item_count":1,"order_id":"ORD-D5348BAD","order_status":"PLACED","payment_status":"PENDING","payment_type":"COD","seller_city":"Ghaziabad","seller_company":"","seller_email":"seller@test.com","seller_id":"SEL-90C7AA9E","seller_name":"Test Seller","seller_phone":"9999999998","shipment_id":"SHP-0CFD3540","subtotal":299.0,"total_amount":319.0,"total_items":1,"updated_at":"2026-08-30T02:59:10"},{"created_at":"2026-08-30T02:55:59","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","delivery_fee":20.0,"id":15,"item_count":1,"order_id":"ORD-395A1BE5","order_status":"PLACED","payment_status":"PENDING","payment_type":"COD","seller_city":"Ghaziabad","seller_company":"","seller_email":"seller@test.com","seller_id":"SEL-90C7AA9E","seller_name":"Test Seller","seller_phone":"9999999998","shipment_id":"SHP-42412EC1","subtotal":299.0,"total_amount":319.0,"total_items":1,"updated_at":"2026-08-30T02:55:59"},{"created_at":"2026-08-30T02:55:03","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","delivery_fee":20.0,"id":14,"item_count":1,"order_id":"ORD-42478CB8","order_status":"PLACED","payment_status":"PENDING","payment_type":"COD","seller_city":"Ghaziabad","seller_company":"","seller_email":"seller@test.com","seller_id":"SEL-90C7AA9E","seller_name":"Test Seller","seller_phone":"9999999998","shipment_id":"SHP-03395B66","subtotal":299.0,"total_amount":319.0,"total_items":1,"updated_at":"2026-08-30T02:55:03"},{"created_at":"2026-08-30T02:54:11","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","delivery_fee":20.0,"id":13,"item_count":1,"order_id":"ORD-DA36CFBC","order_status":"PLACED","payment_status":"PENDING","payment_type":"COD","seller_city":"Ghaziabad","seller_company":"","seller_email":"seller@test.com","seller_id":"SEL-90C7AA9E","seller_name":"Test Seller","seller_phone":"9999999998","shipment_id":"SHP-40713A31","subtotal":299.0,"total_amount":319.0,"total_items":1,"updated_at":"2026-08-30T02:54:11"},{"created_at":"2026-08-30T02:51:54","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","delivery_fee":20.0,"id":12,"item_count":1,"order_id":"ORD-A57F7A0E","order_status":"PLACED","payment_status":"PENDING","payment_type":"COD","seller_city":"Ghaziabad","seller_company":"","seller_email":"seller@test.com","seller_id":"SEL-90C7AA9E","seller_name":"Test Seller","seller_phone":"9999999998","shipment_id":"SHP-93F9D5A6","subtotal":299.0,"total_amount":319.0,"total_items":1,"updated_at":"2026-08-30T02:51:54"},{"created_at":"2026-08-30T02:50:40","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","delivery_fee":20.0,"id":11,"item_count":1,"order_id":"ORD-0E4BFA9B","order_status":"PLACED","payment_status":"PENDING","payment_type":"COD","seller_city":"Ghaziabad","seller_company":"","seller_email":"seller@test.com","seller_id":"SEL-90C7AA9E","seller_name":"Test Seller","seller_phone":"9999999998","shipment_id":"SHP-83040764","subtotal":299.0,"total_amount":319.0,"total_items":1,"updated_at":"2026-08-30T02:50:40"},{"created_at":"2026-08-30T02:49:32","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","delivery_fee":20.0,"id":10,"item_count":1,"order_id":"ORD-09482DC4","order_status":"PLACED","payment_status":"PENDING","payment_type":"COD","seller_city":"Ghaziabad","seller_company":"","seller_email":"seller@test.com","seller_id":"SEL-90C7AA9E","seller_name":"Test Seller","seller_phone":"9999999998","shipment_id":"SHP-C6A21844","subtotal":299.0,"total_amount":319.0,"total_items":1,"updated_at":"2026-08-30T02:49:32"},{"created_at":"2026-08-30T02:47:36","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","delivery_fee":20.0,"id":9,"item_count":1,"order_id":"ORD-BC7BDA87","order_status":"PLACED","payment_status":"PENDING","payment_type":"COD","seller_city":"Ghaziabad","seller_company":"","seller_email":"seller@test.com","seller_id":"SEL-90C7AA9E","seller_name":"Test Seller","seller_phone":"9999999998","shipment_id":"SHP-C8EAB427","subtotal":299.0,"total_amount":319.0,"total_items":1,"updated_at":"2026-08-30T02:47:36"},{"created_at":"2026-08-30T02:44:55","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","delivery_fee":20.0,"id":8,"item_count":1,"order_id":"ORD-296337F3","order_status":"PLACED","payment_status":"PENDING","payment_type":"COD","seller_city":"Ghaziabad","seller_company":"","seller_email":"seller@test.com","seller_id":"SEL-90C7AA9E","seller_name":"Test Seller","seller_phone":"9999999998","shipment_id":"SHP-4F7F1D78","subtotal":299.0,"total_amount":319.0,"total_items":1,"updated_at":"2026-08-30T02:44:55"},{"created_at":"2026-08-30T02:36:32","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","delivery_fee":20.0,"id":7,"item_count":1,"order_id":"ORD-33D2BDC4","order_status":"PLACED","payment_status":"PENDING","payment_type":"COD","seller_city":"Ghaziabad","seller_company":"","seller_email":"seller@test.com","seller_id":"SEL-90C7AA9E","seller_name":"Test Seller","seller_phone":"9999999998","shipment_id":"SHP-1B6CA198","subtotal":299.0,"total_amount":319.0,"total_items":1,"updated_at":"2026-08-30T02:36:32"},{"created_at":"2026-08-30T02:33:22","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","delivery_fee":20.0,"id":6,"item_count":1,"order_id":"ORD-0666FA25","order_status":"PLACED","payment_status":"PENDING","payment_type":"COD","seller_city":"Ghaziabad","seller_company":"","seller_email":"seller@test.com","seller_id":"SEL-90C7AA9E","seller_name":"Test Seller","seller_phone":"9999999998","shipment_id":"SHP-E04E4F43","subtotal":299.0,"total_amount":319.0,"total_items":1,"updated_at":"2026-08-30T02:33:22"},{"created_at":"2026-08-30T02:26:56","customer_name":"Delyvo QA Customer","customer_phone":"9999999999","delivery_address":"Delyvo QA Test Address, Ghaziabad","delivery_fee":0.0,"id":5,"item_count":1,"order_id":"ORD-6FE13F97","order_status":"CANCELLED","payment_status":"PENDING","payment_type":"COD","seller_city":"Ghaziabad","seller_company":"","seller_email":"seller@test.com","seller_id":"SEL-90C7AA9E","seller_name":"Test Seller","seller_phone":"9999999998","shipment_id":"SHP-1719FE1E","subtotal":299.0,"total_amount":299.0,"total_items":1,"updated_at":"2026-08-29 20:56:56"},{"created_at":"2026-08-30T01:00:54","customer_name":"Market E2E Customer","customer_phone":"9999999996","delivery_address":"Ghaziabad, Uttar Pradesh","delivery_fee":20.0,"id":4,"item_count":1,"order_id":"ORD-6BBFCA3A","order_status":"PLACED","payment_status":"PENDING","payment_type":"COD","seller_city":"Ghaziabad","seller_company":"","seller_email":"seller@test.com","seller_id":"SEL-90C7AA9E","seller_name":"Test Seller","seller_phone":"9999999998","shipment_id":"SHP-EA91CBF8","subtotal":299.0,"total_amount":319.0,"total_items":1,"updated_at":"2026-08-30T01:00:54"},{"created_at":"2026-08-30T00:19:28","customer_name":"Final Financial Test Customer","customer_phone":"9999999999","delivery_address":"Final Test Delivery","delivery_fee":20.0,"id":3,"item_count":0,"order_id":"ORD-00336B6C","order_status":"PLACED","payment_status":"PAID","payment_type":"COD","seller_city":"Ghaziabad","seller_company":"","seller_email":"seller@test.com","seller_id":"SEL-90C7AA9E","seller_name":"Test Seller","seller_phone":"9999999998","shipment_id":"SHP-9E01686D","subtotal":80.0,"total_amount":100.0,"total_items":0,"updated_at":"2026-08-30T00:20:05"},{"created_at":"2026-08-30T00:02:02","customer_name":"Owner Ledger Test Customer","customer_phone":"9999999999","delivery_address":"Test Delivery","delivery_fee":20.0,"id":2,"item_count":0,"order_id":"ORD-5DD3D97C","order_status":"PLACED","payment_status":"PAID","payment_type":"COD","seller_city":"Ghaziabad","seller_company":"","seller_email":"seller@test.com","seller_id":"SEL-90C7AA9E","seller_name":"Test Seller","seller_phone":"9999999998","shipment_id":"SHP-FB45964A","subtotal":80.0,"total_amount":100.0,"total_items":0,"updated_at":"2026-08-30T00:02:44"},{"created_at":"2026-08-29T11:04:46","customer_name":"Admin Order QA","customer_phone":"9999999997","delivery_address":"Ghaziabad, Uttar Pradesh","delivery_fee":0.0,"id":1,"item_count":1,"order_id":"ORD-00CE77FB","order_status":"CONFIRMED","payment_status":"PENDING","payment_type":"COD","seller_city":"Ghaziabad","seller_company":"","seller_email":"seller@test.com","seller_id":"SEL-90C7AA9E","seller_name":"Test Seller","seller_phone":"9999999998","shipment_id":null,"subtotal":299.0,"total_amount":299.0,"total_items":1,"updated_at":"2026-08-29T12:09:14"}],"success":true,"summary":{"cancelled":1,"confirmed":1,"delivered":0,"placed":24,"processing":0,"shipped":0,"total":26,"total_order_value":7816.0},"total":26}
+
+__HTTP__200
+PASS: 200
+
+===== Admin Recent Shipments =====
+{"shipments":[{"amount":319.0,"awb":"AWB-CB83060F","company_id":null,"created_at":"2026-08-30T08:51:34","current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","id":37,"order_id":null,"origin_hub":"HUB001","pickup_address":"Test Seller Pickup, Ghaziabad","seller_id":"SEL-90C7AA9E","shipment_id":"SHP-E260A02D","shipment_type":"FORWARD","status":"OUT_FOR_DELIVERY","updated_at":"2026-08-30T08:51:36"},{"amount":319.0,"awb":"AWB-DF880DAE","company_id":null,"created_at":"2026-08-30T03:29:47","current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","id":36,"order_id":null,"origin_hub":"HUB001","pickup_address":"Test Seller Pickup, Ghaziabad","seller_id":"SEL-90C7AA9E","shipment_id":"SHP-41B07F46","shipment_type":"FORWARD","status":"OUT_FOR_DELIVERY","updated_at":"2026-08-30T03:29:48"},{"amount":319.0,"awb":"AWB-AA3FADE8","company_id":null,"created_at":"2026-08-30T03:19:37","current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","id":35,"order_id":null,"origin_hub":"HUB001","pickup_address":"Test Seller Pickup, Ghaziabad","seller_id":"SEL-90C7AA9E","shipment_id":"SHP-FD6AAFA7","shipment_type":"FORWARD","status":"OUT_FOR_DELIVERY","updated_at":"2026-08-30T03:19:39"},{"amount":319.0,"awb":"AWB-B033259B","company_id":null,"created_at":"2026-08-30T03:16:55","current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","id":34,"order_id":null,"origin_hub":"HUB001","pickup_address":"Test Seller Pickup, Ghaziabad","seller_id":"SEL-90C7AA9E","shipment_id":"SHP-73138C32","shipment_type":"FORWARD","status":"OUT_FOR_DELIVERY","updated_at":"2026-08-30T03:16:57"},{"amount":319.0,"awb":"AWB-DA154B08","company_id":"COM-533D8456","created_at":"2026-08-30T03:14:37","current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","id":33,"order_id":"ORD-35AA9747","origin_hub":"HUB001","pickup_address":"Test Seller Pickup, Ghaziabad","seller_id":"SEL-90C7AA9E","shipment_id":"SHP-C9E95713","shipment_type":"FORWARD","status":"OUT_FOR_DELIVERY","updated_at":"2026-08-30T03:14:38"},{"amount":319.0,"awb":"AWB-F848131F","company_id":"COM-533D8456","created_at":"2026-08-30T03:12:07","current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","id":32,"order_id":"ORD-57DFB166","origin_hub":"HUB001","pickup_address":"Test Seller Pickup, Ghaziabad","seller_id":"SEL-90C7AA9E","shipment_id":"SHP-CC8D1D07","shipment_type":"FORWARD","status":"OUT_FOR_DELIVERY","updated_at":"2026-08-30T03:12:09"},{"amount":319.0,"awb":"AWB-4769AA91","company_id":"COM-533D8456","created_at":"2026-08-30T03:10:03","current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","id":31,"order_id":"ORD-3B6CF8CC","origin_hub":"HUB001","pickup_address":"Test Seller Pickup, Ghaziabad","seller_id":"SEL-90C7AA9E","shipment_id":"SHP-E7696C4D","shipment_type":"FORWARD","status":"OUT_FOR_DELIVERY","updated_at":"2026-08-30T03:10:04"},{"amount":319.0,"awb":"AWB-CC46317B","company_id":"COM-533D8456","created_at":"2026-08-30T03:07:59","current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","id":30,"order_id":"ORD-AD4924C4","origin_hub":"HUB001","pickup_address":"Test Seller Pickup, Ghaziabad","seller_id":"SEL-90C7AA9E","shipment_id":"SHP-243CF469","shipment_type":"FORWARD","status":"OUT_FOR_DELIVERY","updated_at":"2026-08-30T03:08:01"},{"amount":319.0,"awb":"AWB-8C40E3C0","company_id":"COM-533D8456","created_at":"2026-08-30T03:05:50","current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","id":29,"order_id":"ORD-4720908A","origin_hub":"HUB001","pickup_address":"Test Seller Pickup, Ghaziabad","seller_id":"SEL-90C7AA9E","shipment_id":"SHP-8C65E933","shipment_type":"FORWARD","status":"OUT_FOR_DELIVERY","updated_at":"2026-08-30T03:05:52"},{"amount":319.0,"awb":"AWB-DB9F4939","company_id":"COM-533D8456","created_at":"2026-08-30T03:04:04","current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","id":28,"order_id":"ORD-5B3A38A7","origin_hub":"HUB001","pickup_address":"Test Seller Pickup, Ghaziabad","seller_id":"SEL-90C7AA9E","shipment_id":"SHP-7E341C24","shipment_type":"FORWARD","status":"OUT_FOR_DELIVERY","updated_at":"2026-08-30T03:04:05"},{"amount":319.0,"awb":"AWB-3C929502","company_id":"COM-533D8456","created_at":"2026-08-30T02:59:10","current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","id":27,"order_id":"ORD-D5348BAD","origin_hub":"HUB001","pickup_address":"Test Seller Pickup, Ghaziabad","seller_id":"SEL-90C7AA9E","shipment_id":"SHP-0CFD3540","shipment_type":"FORWARD","status":"OUT_FOR_DELIVERY","updated_at":"2026-08-30T02:59:12"},{"amount":319.0,"awb":"AWB-611080E0","company_id":"COM-533D8456","created_at":"2026-08-30T02:55:59","current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","id":26,"order_id":"ORD-395A1BE5","origin_hub":"HUB001","pickup_address":"Test Seller Pickup, Ghaziabad","seller_id":"SEL-90C7AA9E","shipment_id":"SHP-42412EC1","shipment_type":"FORWARD","status":"AT_DESTINATION_HUB","updated_at":"2026-08-30T02:55:59"},{"amount":319.0,"awb":"AWB-74668427","company_id":"COM-533D8456","created_at":"2026-08-30T02:55:03","current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","id":25,"order_id":"ORD-42478CB8","origin_hub":"HUB001","pickup_address":"Test Seller Pickup, Ghaziabad","seller_id":"SEL-90C7AA9E","shipment_id":"SHP-03395B66","shipment_type":"FORWARD","status":"AT_DESTINATION_HUB","updated_at":"2026-08-30T02:55:03"},{"amount":319.0,"awb":"AWB-D630A1ED","company_id":"COM-533D8456","created_at":"2026-08-30T02:54:11","current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","id":24,"order_id":"ORD-DA36CFBC","origin_hub":"HUB001","pickup_address":"Test Seller Pickup, Ghaziabad","seller_id":"SEL-90C7AA9E","shipment_id":"SHP-40713A31","shipment_type":"FORWARD","status":"AT_DESTINATION_HUB","updated_at":"2026-08-30T02:54:11"},{"amount":319.0,"awb":"AWB-3A95A7BC","company_id":"COM-533D8456","created_at":"2026-08-30T02:51:54","current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","id":23,"order_id":"ORD-A57F7A0E","origin_hub":"HUB001","pickup_address":"Test Seller Pickup, Ghaziabad","seller_id":"SEL-90C7AA9E","shipment_id":"SHP-93F9D5A6","shipment_type":"FORWARD","status":"AT_DESTINATION_HUB","updated_at":"2026-08-30T02:51:54"},{"amount":319.0,"awb":"AWB-32C7F832","company_id":"COM-533D8456","created_at":"2026-08-30T02:50:40","current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","id":22,"order_id":"ORD-0E4BFA9B","origin_hub":"HUB001","pickup_address":"Test Seller Pickup, Ghaziabad","seller_id":"SEL-90C7AA9E","shipment_id":"SHP-83040764","shipment_type":"FORWARD","status":"AT_DESTINATION_HUB","updated_at":"2026-08-30T02:50:40"},{"amount":319.0,"awb":"AWB-C62C8D0B","company_id":"COM-533D8456","created_at":"2026-08-30T02:49:32","current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","id":21,"order_id":"ORD-09482DC4","origin_hub":"HUB001","pickup_address":"Test Seller Pickup, Ghaziabad","seller_id":"SEL-90C7AA9E","shipment_id":"SHP-C6A21844","shipment_type":"FORWARD","status":"AT_DESTINATION_HUB","updated_at":"2026-08-30T02:49:32"},{"amount":319.0,"awb":"AWB-4979DA4B","company_id":"COM-533D8456","created_at":"2026-08-30T02:47:36","current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","id":20,"order_id":"ORD-BC7BDA87","origin_hub":"HUB001","pickup_address":"Test Seller Pickup, Ghaziabad","seller_id":"SEL-90C7AA9E","shipment_id":"SHP-C8EAB427","shipment_type":"FORWARD","status":"CREATED","updated_at":"2026-08-30T02:47:36"},{"amount":319.0,"awb":"AWB-71AEDFFF","company_id":"COM-533D8456","created_at":"2026-08-30T02:44:55","current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","id":19,"order_id":"ORD-296337F3","origin_hub":"HUB001","pickup_address":"Test Seller Pickup, Ghaziabad","seller_id":"SEL-90C7AA9E","shipment_id":"SHP-4F7F1D78","shipment_type":"FORWARD","status":"CREATED","updated_at":"2026-08-30T02:44:55"},{"amount":319.0,"awb":"AWB-B6C4E36C","company_id":"COM-533D8456","created_at":"2026-08-30T02:36:32","current_hub":"HUB001","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_address":"Delyvo Final E2E Address, Ghaziabad","destination_hub":"HUB001","id":18,"order_id":"ORD-33D2BDC4","origin_hub":"HUB001","pickup_address":"Test Seller Pickup, Ghaziabad","seller_id":"SEL-90C7AA9E","shipment_id":"SHP-1B6CA198","shipment_type":"FORWARD","status":"CREATED","updated_at":"2026-08-30T02:36:32"}],"success":true,"total":20}
+
+__HTTP__200
+PASS: 200
+
+===== Admin Partners =====
+{"partners":[{"city":"Ghaziabad","created_at":"2026-08-27T22:19:06","email":"partner@test.com","id":1,"name":"Test Delivery Partner","partner_id":"PTR-5CAAB579","phone":"9876543210","status":"ACTIVE","vehicle_type":"BIKE"}],"success":true,"total":1}
+
+__HTTP__200
+PASS: 200
+
+===== Admin Hubs =====
+{"hubs":[{"city":"Ghaziabad","created_at":"2026-08-27T22:19:06","hub_code":"HUB001","hub_id":"HUB-306C4378","id":1,"name":"Main Hub","state":"Uttar Pradesh","status":"ACTIVE"}],"success":true,"total":1}
+
+__HTTP__200
+PASS: 200
+
+===== 15. FINANCIAL =====
+
+===== Financial Dashboard =====
+{"financial":{"cod":{"collected_cod":2650.0,"pending_cod":7317.0,"total_cod":9967.0},"company":{"paid_amount":10.0,"pending_amount":10.0},"partner":{"paid_earnings":186.0,"pending_earnings":48.0},"platform":{"expenses":265.0,"net":-115.0,"revenue":150.0},"seller":{"paid_payable":165.0,"pending_payable":165.0}},"success":true}
+
+__HTTP__200
+PASS: 200
+
+===== Financial Transactions =====
+{"success":true,"summary":{"net_balance":-115.0,"total_credit":150.0,"total_debit":265.0},"total":14,"transactions":[{"amount":10.0,"company_id":"COM-533D8456","created_at":"2026-08-30T00:31:13","direction":"DEBIT","id":14,"note":"Company settlement payout completed","order_id":null,"partner_id":null,"reference_id":"PAYOUT-38F68EFB","seller_id":null,"shipment_id":null,"status":"POSTED","transaction_id":"TXN-18F39606","transaction_type":"COMPANY_PAYOUT"},{"amount":65.0,"company_id":null,"created_at":"2026-08-30T00:31:13","direction":"DEBIT","id":13,"note":"Seller settlement payout completed","order_id":"ORD-00336B6C","partner_id":null,"reference_id":"PAYOUT-D512FB62","seller_id":"SEL-90C7AA9E","shipment_id":null,"status":"POSTED","transaction_id":"TXN-B66C21D8","transaction_type":"SELLER_PAYOUT"},{"amount":20.0,"company_id":null,"created_at":"2026-08-30T00:31:13","direction":"DEBIT","id":12,"note":"Partner earning payout completed","order_id":null,"partner_id":"PTR-5CAAB579","reference_id":"PAYOUT-18BFD548","seller_id":null,"shipment_id":"SHP-9E01686D","status":"POSTED","transaction_id":"TXN-8C6B8026","transaction_type":"PARTNER_PAYOUT"},{"amount":20.0,"company_id":"COM-533D8456","created_at":"2026-08-30T00:20:05","direction":"DEBIT","id":11,"note":"Delivery partner earning","order_id":"ORD-00336B6C","partner_id":"PTR-5CAAB579","reference_id":"SHP-9E01686D","seller_id":"SEL-90C7AA9E","shipment_id":"SHP-9E01686D","status":"POSTED","transaction_id":"TXN-11251BE2","transaction_type":"PARTNER_EARNING"},{"amount":5.0,"company_id":"COM-533D8456","created_at":"2026-08-30T00:20:05","direction":"CREDIT","id":10,"note":"Platform commission","order_id":"ORD-00336B6C","partner_id":"PTR-5CAAB579","reference_id":"SHP-9E01686D","seller_id":"SEL-90C7AA9E","shipment_id":"SHP-9E01686D","status":"POSTED","transaction_id":"TXN-D3C8978E","transaction_type":"PLATFORM_COMMISSION"},{"amount":20.0,"company_id":"COM-533D8456","created_at":"2026-08-30T00:20:05","direction":"CREDIT","id":9,"note":"Platform delivery charge","order_id":"ORD-00336B6C","partner_id":"PTR-5CAAB579","reference_id":"SHP-9E01686D","seller_id":"SEL-90C7AA9E","shipment_id":"SHP-9E01686D","status":"POSTED","transaction_id":"TXN-43357CDF","transaction_type":"DELIVERY_REVENUE"},{"amount":20.0,"company_id":"COM-533D8456","created_at":"2026-08-30T00:02:44","direction":"DEBIT","id":8,"note":"Delivery partner earning","order_id":"ORD-5DD3D97C","partner_id":"PTR-5CAAB579","reference_id":"SHP-FB45964A","seller_id":"SEL-90C7AA9E","shipment_id":"SHP-FB45964A","status":"POSTED","transaction_id":"TXN-FCA3EEF5","transaction_type":"PARTNER_EARNING"},{"amount":5.0,"company_id":"COM-533D8456","created_at":"2026-08-30T00:02:44","direction":"CREDIT","id":7,"note":"Platform commission","order_id":"ORD-5DD3D97C","partner_id":"PTR-5CAAB579","reference_id":"SHP-FB45964A","seller_id":"SEL-90C7AA9E","shipment_id":"SHP-FB45964A","status":"POSTED","transaction_id":"TXN-8C04EBD3","transaction_type":"PLATFORM_COMMISSION"},{"amount":20.0,"company_id":"COM-533D8456","created_at":"2026-08-30T00:02:44","direction":"CREDIT","id":6,"note":"Platform delivery charge","order_id":"ORD-5DD3D97C","partner_id":"PTR-5CAAB579","reference_id":"SHP-FB45964A","seller_id":"SEL-90C7AA9E","shipment_id":"SHP-FB45964A","status":"POSTED","transaction_id":"TXN-721C3B39","transaction_type":"DELIVERY_REVENUE"},{"amount":0.0,"company_id":"COM-533D8456","created_at":"2026-08-29T22:22:01","direction":"DEBIT","id":5,"note":"Company settlement payout completed","order_id":null,"partner_id":null,"reference_id":"PAYOUT-D15CB8C4","seller_id":null,"shipment_id":null,"status":"POSTED","transaction_id":"TXN-7ACEAE02","transaction_type":"COMPANY_PAYOUT"},{"amount":100.0,"company_id":null,"created_at":"2026-08-29T22:12:39","direction":"DEBIT","id":4,"note":"Seller settlement payout completed","order_id":null,"partner_id":null,"reference_id":"PAYOUT-1A302F8F","seller_id":"SEL-90C7AA9E","shipment_id":null,"status":"POSTED","transaction_id":"TXN-C3DF8952","transaction_type":"SELLER_PAYOUT"},{"amount":15.0,"company_id":null,"created_at":"2026-08-29T21:41:24","direction":"DEBIT","id":3,"note":"Partner earning payout completed","order_id":null,"partner_id":"PTR-5CAAB579","reference_id":"PAYOUT-F6894F43","seller_id":null,"shipment_id":"SHP-14C229F6","status":"POSTED","transaction_id":"TXN-BC577ED3","transaction_type":"PARTNER_PAYOUT"},{"amount":15.0,"company_id":null,"created_at":"2026-08-29T21:21:47","direction":"DEBIT","id":2,"note":"Partner delivery earning payable","order_id":null,"partner_id":"PTR-5CAAB579","reference_id":"ERN-9E66AE70","seller_id":null,"shipment_id":"SHP-14C229F6","status":"POSTED","transaction_id":"TXN-38A0BE26","transaction_type":"PARTNER_DELIVERY_EARNING"},{"amount":100.0,"company_id":null,"created_at":"2026-08-29T21:19:53","direction":"CREDIT","id":1,"note":"COD collected by delivery partner","order_id":null,"partner_id":"PTR-5CAAB579","reference_id":"PAY-51E5E891","seller_id":null,"shipment_id":"SHP-14C229F6","status":"POSTED","transaction_id":"TXN-6CA66F86","transaction_type":"COD_COLLECTION"}]}
+
+__HTTP__200
+PASS: 200
+
+===== Financial Payouts =====
+{"payouts":{"paid":{"company":10.0,"partner":186.0,"seller":165.0,"total":361.0},"pending":{"company":10.0,"partner":48.0,"seller":165.0,"total":223.0}},"success":true}
+
+__HTTP__200
+PASS: 200
+
+===== 16. SELLER DASHBOARD =====
+
+===== Seller Dashboard =====
+{"low_stock_products":[],"recent_orders":[{"created_at":"2026-08-30T08:51:34","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_fee":20.0,"order_id":"ORD-F2682D52","order_status":"PLACED","payment_status":"PENDING","payment_type":"COD","subtotal":299.0,"total_amount":319.0,"updated_at":"2026-08-30T08:51:34"},{"created_at":"2026-08-30T03:29:47","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_fee":20.0,"order_id":"ORD-FDD75D6E","order_status":"PLACED","payment_status":"PENDING","payment_type":"COD","subtotal":299.0,"total_amount":319.0,"updated_at":"2026-08-30T03:29:47"},{"created_at":"2026-08-30T03:19:37","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_fee":20.0,"order_id":"ORD-AEC8C0BC","order_status":"PLACED","payment_status":"PENDING","payment_type":"COD","subtotal":299.0,"total_amount":319.0,"updated_at":"2026-08-30T03:19:37"},{"created_at":"2026-08-30T03:16:55","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_fee":20.0,"order_id":"ORD-A5034DAC","order_status":"PLACED","payment_status":"PENDING","payment_type":"COD","subtotal":299.0,"total_amount":319.0,"updated_at":"2026-08-30T03:16:55"},{"created_at":"2026-08-30T03:14:37","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_fee":20.0,"order_id":"ORD-35AA9747","order_status":"PLACED","payment_status":"PENDING","payment_type":"COD","subtotal":299.0,"total_amount":319.0,"updated_at":"2026-08-30T03:14:37"},{"created_at":"2026-08-30T03:12:07","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_fee":20.0,"order_id":"ORD-57DFB166","order_status":"PLACED","payment_status":"PENDING","payment_type":"COD","subtotal":299.0,"total_amount":319.0,"updated_at":"2026-08-30T03:12:07"},{"created_at":"2026-08-30T03:10:02","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_fee":20.0,"order_id":"ORD-3B6CF8CC","order_status":"PLACED","payment_status":"PENDING","payment_type":"COD","subtotal":299.0,"total_amount":319.0,"updated_at":"2026-08-30T03:10:03"},{"created_at":"2026-08-30T03:07:59","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_fee":20.0,"order_id":"ORD-AD4924C4","order_status":"PLACED","payment_status":"PENDING","payment_type":"COD","subtotal":299.0,"total_amount":319.0,"updated_at":"2026-08-30T03:07:59"},{"created_at":"2026-08-30T03:05:50","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_fee":20.0,"order_id":"ORD-4720908A","order_status":"PLACED","payment_status":"PENDING","payment_type":"COD","subtotal":299.0,"total_amount":319.0,"updated_at":"2026-08-30T03:05:50"},{"created_at":"2026-08-30T03:04:04","customer_name":"Delyvo Final E2E Customer","customer_phone":"9999999988","delivery_fee":20.0,"order_id":"ORD-5B3A38A7","order_status":"PLACED","payment_status":"PENDING","payment_type":"COD","subtotal":299.0,"total_amount":319.0,"updated_at":"2026-08-30T03:04:04"}],"seller":{"created_at":"2026-08-28T00:19:06","name":"Test Seller","phone":"9999999998","seller_id":"SEL-90C7AA9E","status":"ACTIVE"},"success":true,"summary":{"orders":{"cancelled":1,"confirmed":1,"delivered":0,"placed":24,"processing":0,"shipped":0,"total":26,"total_order_value":7816.0},"products":{"active":1,"inactive":0,"total":1,"total_stock":6}}}
+
+__HTTP__200
+PASS: 200
+
+===== Seller Settlements =====
+{"seller_id":"SEL-90C7AA9E","settlements":[{"company_charge":10.0,"company_id":"COM-533D8456","created_at":"2026-08-30T00:20:05","delivery_charge":20.0,"gross_amount":100.0,"id":4,"net_payable":65.0,"note":"Automatic settlement created after delivery","order_id":"ORD-00336B6C","other_charge":0.0,"paid_at":"2026-08-30T00:31:13","payout_id":"PAYOUT-D512FB62","platform_charge":5.0,"seller_id":"SEL-90C7AA9E","settlement_id":"SSET-7213A67D","shipment_id":"SHP-9E01686D","status":"PAID"},{"company_charge":10.0,"company_id":"COM-533D8456","created_at":"2026-08-30T00:02:44","delivery_charge":20.0,"gross_amount":100.0,"id":3,"net_payable":65.0,"note":"Automatic settlement created after delivery","order_id":"ORD-5DD3D97C","other_charge":0.0,"paid_at":null,"payout_id":null,"platform_charge":5.0,"seller_id":"SEL-90C7AA9E","settlement_id":"SSET-1266DEE6","shipment_id":"SHP-FB45964A","status":"PENDING"},{"company_charge":0.0,"company_id":"COM-533D8456","created_at":"2026-08-29T22:21:21","delivery_charge":0.0,"gross_amount":100.0,"id":2,"net_payable":100.0,"note":"Automatic settlement created after delivery","order_id":null,"other_charge":0.0,"paid_at":null,"payout_id":null,"platform_charge":0.0,"seller_id":"SEL-90C7AA9E","settlement_id":"SSET-3A9C8F7B","shipment_id":"SHP-D008E9F3","status":"PENDING"},{"company_charge":0.0,"company_id":null,"created_at":"2026-08-29T22:12:18","delivery_charge":0.0,"gross_amount":100.0,"id":1,"net_payable":100.0,"note":"Automatic settlement created after delivery","order_id":null,"other_charge":0.0,"paid_at":"2026-08-29T22:12:39","payout_id":"PAYOUT-1A302F8F","platform_charge":0.0,"seller_id":"SEL-90C7AA9E","settlement_id":"SSET-05575F62","shipment_id":"SHP-964E432C","status":"PAID"}],"success":true,"summary":{"paid_amount":165.0,"pending_amount":165.0,"total_payable":330.0}}
+
+__HTTP__200
+PASS: 200
+
+===== Seller Order Summary =====
+{"seller_id":"SEL-90C7AA9E","success":true,"summary":{"cancelled_orders":1,"confirmed_orders":1,"delivered_orders":0,"placed_orders":24,"processing_orders":0,"shipped_orders":0,"total_order_value":7816.0,"total_orders":26}}
+
+__HTTP__200
+PASS: 200
+
+===== 17. FINAL DATABASE STATE =====
+Delyvo Company module registered
+Delyvo Admin module registered
+Delyvo Hub module registered
+Delyvo Market multi-seller API registered
+Delyvo Market customer order management registered
+
+sellers: 1
+products: 1
+orders: 26
+order_items: 24
+shipments: 37
+shipment_events: 120
+hubs: 1
+delivery_partners: 1
+delivery_assignments: 31
+payments: 33
+partner_earnings: 11
+hub_movements: 0
+
+======================================================
+              FINAL E2E QA RESULT
+======================================================
+✅ ALL HTTP CHECKS PASSED
+
+ORDER_ID=ORD-F2682D52
+SHIPMENT_ID=SHP-E260A02D
+AWB=AWB-CB83060F
+ASSIGNMENT_ID=ASN-BD837B59
+
+======================================================
+ FLOW:
+ Customer
+    ↓
+ Market Order
+    ↓
+ Seller
+    ↓
+ Shipment + AWB
+    ↓
+ Hub
+    ↓
+ Delivery Partner
+    ↓
+ Pickup
+    ↓
+ COD Collection
+    ↓
+ Delivery
+    ↓
+ Payment / Earnings
+    ↓
+ Admin + Seller + Partner
+======================================================

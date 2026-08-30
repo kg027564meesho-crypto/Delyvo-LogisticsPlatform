@@ -1,0 +1,119 @@
+================ COMPLETE FINAL INVENTORY ================
+=== ROUTES ===
+app.py=106
+admin_module.py=17
+company_module.py=10
+hub_module.py=7
+
+=== ACTIVE TEMPLATES ===
+templates/admin_dashboard.html
+templates/admin_login.html
+templates/admin_partners.html
+templates/company_dashboard.html
+templates/delyvo_home.html
+templates/delyvo_market.html
+templates/hub_dashboard.html
+templates/partner_dashboard.html
+templates/seller_dashboard.html
+
+=== ACTIVE STATIC ===
+static/admin_partners.css
+static/hub_app.css
+static/icons
+static/partner_app.css
+static/partner_dashboard.css
+
+=== TODO / PLACEHOLDER ===
+app.py:5363:    return app.send_static_file("market-placeholder.html") if False else render_template("delyvo_market.html")
+app.py:6669:    placeholders = ",".join(["?"] * len(order_ids))
+app.py:6675:        WHERE order_id IN ({placeholders})
+templates/admin_partners.html:146:        placeholder="Search AWB, shipment, customer, phone..."
+templates/admin_partners.html:188:        placeholder="Search earning, assignment, shipment, payout..."
+templates/admin_partners.html:238:        placeholder="Search partner, phone, city..."
+templates/seller_dashboard.html:677:<input id="seller87ProductName" type="text" placeholder="Product name">
+templates/seller_dashboard.html:680:<input id="seller87ProductSku" type="text" placeholder="SKU">
+templates/seller_dashboard.html:684:placeholder="Product description"></textarea>
+templates/seller_dashboard.html:691:placeholder="299">
+templates/seller_dashboard.html:698:placeholder="10">
+templates/seller_dashboard.html:727:placeholder="Customer name">
+templates/seller_dashboard.html:732:placeholder="Phone">
+templates/seller_dashboard.html:736:placeholder="Delivery address"></textarea>
+templates/seller_dashboard.html:741:placeholder="PROD-XXXXXXXX">
+templates/seller_dashboard.html:1981:                placeholder="Product name">
+templates/seller_dashboard.html:1989:                placeholder="SKU">
+templates/seller_dashboard.html:1996:                placeholder="Product description"></textarea>
+templates/seller_dashboard.html:2006:                placeholder="299">
+templates/seller_dashboard.html:2016:                placeholder="10">
+templates/seller_dashboard.html:2044:                placeholder="Customer name">
+templates/seller_dashboard.html:2052:                placeholder="Phone">
+templates/seller_dashboard.html:2059:                placeholder="Delivery address"></textarea>
+templates/seller_dashboard.html:2067:                placeholder="PROD-XXXXXXXX">
+templates/delyvo_market.html:294:        placeholder="Search products, sellers..."
+templates/delyvo_market.html:392:<input id="customerName" placeholder="Your name">
+templates/delyvo_market.html:393:<input id="customerPhone" placeholder="Phone number">
+templates/delyvo_market.html:394:<textarea id="address" placeholder="Delivery address"></textarea>
+templates/delyvo_market.html:417:    placeholder="Enter Order ID"
+templates/company_dashboard.html:43:<input id="companyId" placeholder="Company ID e.g. COM-XXXXXXXX">
+templates/admin_dashboard.html:477:   placeholder="Search shipment, AWB, customer, phone or hub..."
+templates/admin_dashboard.html:521:   placeholder="Search partner by name, phone, ID or city..."
+templates/admin_dashboard.html:547:   placeholder="Search hub by name, code, city or state..."
+templates/admin_dashboard.html:572:   placeholder="Search seller by ID, name, email, phone or city..."
+templates/admin_dashboard.html:626:   placeholder="Search product, SKU or seller..."
+templates/admin_dashboard.html:704:   placeholder="Search order, customer, seller, phone or shipment..."
+templates/admin_dashboard.html:769:   placeholder="Search payment, AWB, customer or shipment..."
+templates/admin_dashboard.html:795:   placeholder="Search company by name, email, phone or city..."
+templates/admin_dashboard.html:3011:          placeholder="Enter amount"
+templates/admin_dashboard.html:3020:          placeholder="Bank/UPI reference"
+templates/admin_dashboard.html:3029:          placeholder="Withdrawal note"
+templates/admin_dashboard.html:4303:     placeholder="Enter stock quantity"
+templates/hub_dashboard.html:178:placeholder="Hub Code e.g. HUB-001">
+
+=== DATABASES ===
+app.db: 0 tables
+  
+database.db: 0 tables
+  
+delyvo.db: 0 tables
+  
+logistics.db: 0 tables
+  
+data/platform.db: 24 tables
+  admins, bag_shipments, bags, companies, company_settlements, delivery_assignments, delivery_partners, financial_settings, hub_movements, hubs, order_items, orders, owner_ledger, owner_withdrawals, partner_earnings, partner_seats, payments, platform_transactions, products, seller_settlements, sellers, shipment_events, shipments, sqlite_sequence
+
+=== PYTHON ===
+PYTHON_COMPILE=PASS
+
+=== HEALTH ===
+{"database":"CONNECTED","status":"ONLINE","success":true}
+
+
+=== E2E ===
+E2E_EXIT_CODE=0
+ORDER_ID=ORD-3B6CF8CC
+SHIPMENT_ID=SHP-E7696C4D
+AWB=AWB-4769AA91
+ASSIGNMENT_ID=ASN-E2E6F98D
+✅ ALL HTTP CHECKS PASSED
+ORDER_ID=ORD-3B6CF8CC
+SHIPMENT_ID=SHP-E7696C4D
+AWB=AWB-4769AA91
+ASSIGNMENT_ID=ASN-E2E6F98D
+
+=== ACTIVE FILE SIZES ===
+6762 app.py
+1009 admin_module.py
+567 company_module.py
+246 hub_module.py
+4358 templates/admin_dashboard.html
+138 templates/admin_login.html
+1608 templates/admin_partners.html
+218 templates/company_dashboard.html
+122 templates/delyvo_home.html
+2132 templates/delyvo_market.html
+666 templates/hub_dashboard.html
+1156 templates/partner_dashboard.html
+2776 templates/seller_dashboard.html
+1131 static/admin_partners.css
+52 static/hub_app.css
+582 static/partner_app.css
+502 static/partner_dashboard.css
