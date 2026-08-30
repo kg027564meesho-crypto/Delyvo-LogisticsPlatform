@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Delyvo Logistics</title>
+    <title>Delyvo Partner</title>
     <link rel="stylesheet" href="/static/partner_app.css">
 </head>
 
@@ -19,9 +19,6 @@
 
 <div id="homePage" class="page active">
 
-
-
-
 <div class="welcome">
     <h1 id="appWelcome">Welcome 👋</h1>
     <p>Your delivery partner dashboard</p>
@@ -29,7 +26,7 @@
 
 <header class="topbar">
     <div>
-        <div class="brand">Delyvo Logistics</div>
+        <div class="brand">Delyvo Partner</div>
         <div class="subtitle">Delivery Operations</div>
     </div>
 
@@ -136,22 +133,6 @@
         <h1>Deliveries</h1>
         <p>Manage your assigned shipments</p>
     </div>
-
-    <section class="section seat-section">
-        <div class="section-head">
-            <div>
-                <h2>Partner Seat</h2>
-                <div class="section-subtitle">
-                    Your hub seat reservation
-                </div>
-            </div>
-            <button onclick="loadPartnerSeat()">Refresh</button>
-        </div>
-
-        <div id="partnerSeatBox">
-            <div class="empty">Loading seat...</div>
-        </div>
-    </section>
 
     <section class="section new-orders-section">
         <div class="section-head">
@@ -986,163 +967,12 @@ async function loadAvailableOrders() {
     }
 }
 
-
-function renderPartnerSeat(seat) {
-    const box = document.getElementById("partnerSeatBox");
-
-    if (!box) return;
-
-    if (!seat) {
-        box.innerHTML = `
-            <div class="seat-empty">
-                <div class="seat-icon">💺</div>
-                <strong>No seat reserved</strong>
-                <span>
-                    Your hub will reserve a seat for you when available.
-                </span>
-            </div>
-        `;
-        return;
-    }
-
-    const status = String(seat.status || "").toUpperCase();
-    const confirmed = status === "CONFIRMED";
-
-    box.innerHTML = `
-        <div class="seat-card ${confirmed ? "seat-confirmed" : "seat-reserved"}">
-
-            <div class="seat-card-top">
-                <div>
-                    <div class="seat-label">SEAT NUMBER</div>
-                    <div class="seat-number">
-                        ${escapeHtml(seat.seat_number || "-")}
-                    </div>
-                </div>
-
-                <span class="seat-status ${confirmed ? "confirmed" : "reserved"}">
-                    ${confirmed ? "CONFIRMED" : "RESERVED"}
-                </span>
-            </div>
-
-            <div class="seat-info">
-                <div>
-                    <span>Seat ID</span>
-                    <b>${escapeHtml(seat.seat_id || "-")}</b>
-                </div>
-
-                <div>
-                    <span>Hub</span>
-                    <b>${escapeHtml(seat.hub_code || "-")}</b>
-                </div>
-            </div>
-
-            ${
-                confirmed
-                ? `
-                    <div class="seat-confirmed-message">
-                        ✓ Your seat is confirmed.
-                    </div>
-                `
-                : `
-                    <button
-                        class="primary seat-confirm-btn"
-                        onclick="confirmPartnerSeat('${escapeHtml(seat.seat_id || "")}')"
-                    >
-                        CONFIRM SEAT
-                    </button>
-                `
-            }
-
-        </div>
-    `;
-}
-
-
-async function loadPartnerSeat() {
-    const box = document.getElementById("partnerSeatBox");
-
-    if (!box) return;
-
-    box.innerHTML =
-        '<div class="empty">Loading seat...</div>';
-
-    try {
-        const response = await fetch(
-            `/api/partners/${encodeURIComponent(partnerId)}/seat`
-        );
-
-        const data = await response.json();
-
-        if (!response.ok || !data.success) {
-            throw new Error(
-                data.message || "Seat request failed"
-            );
-        }
-
-        renderPartnerSeat(data.seat || null);
-
-    } catch (error) {
-        box.innerHTML =
-            `<div class="error">${escapeHtml(error.message)}</div>`;
-    }
-}
-
-
-async function confirmPartnerSeat(seatId) {
-
-    if (!seatId) return;
-
-    const box = document.getElementById("partnerSeatBox");
-
-    if (box) {
-        box.innerHTML =
-            '<div class="empty">Confirming your seat...</div>';
-    }
-
-    try {
-
-        const response = await fetch(
-            `/api/partner-seats/${encodeURIComponent(seatId)}/confirm`,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    partner_id: partnerId
-                })
-            }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok || !data.success) {
-            throw new Error(
-                data.message || "Seat confirmation failed"
-            );
-        }
-
-        renderPartnerSeat(data.seat || null);
-
-        alert("Seat confirmed successfully.");
-
-    } catch (error) {
-
-        if (box) {
-            box.innerHTML =
-                `<div class="error">${escapeHtml(error.message)}</div>`;
-        }
-    }
-}
-
-
 async function loadAll() {
     try {
         await loadDashboard();
         await loadPendingAssignments();
         await loadDeliveryHistory();
         await loadAvailableOrders();
-        await loadPartnerSeat();
     } catch (error) {
         console.error(error);
     }

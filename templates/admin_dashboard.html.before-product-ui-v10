@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Delyvo Logistics - Admin Control Center</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+ margin:0;
+ font-family:Arial,Helvetica,sans-serif;
+ background:#f4f7fb;
+ color:#172033;
+}
+
+header{
+ background:#111827;
+ color:white;
+ padding:16px 20px;
+ position:sticky;
+ top:0;
+ z-index:10;
+}
+
+.header-inner{
+ max-width:1200px;
+ margin:auto;
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+}
+
+.logo{
+ font-size:23px;
+ font-weight:800;
+}
+
+.logo span{color:#39d98a}
+
+.online{
+ color:#8ff0bd;
+ font-size:13px;
+}
+
+.container{
+ max-width:1200px;
+ margin:auto;
+ padding:20px;
+}
+
+.hero{
+ background:linear-gradient(135deg,#111827,#1f3b55);
+ color:white;
+ padding:25px;
+ border-radius:18px;
+ margin-bottom:20px;
+}
+
+.hero h1{margin:0 0 8px}
+.hero p{margin:0;color:#cbd5e1}
+
+.stats{
+ display:grid;
+ grid-template-columns:repeat(4,1fr);
+ gap:14px;
+ margin-bottom:20px;
+}
+
+.stat{
+ background:white;
+ border-radius:16px;
+ padding:18px;
+ box-shadow:0 3px 14px #00000010;
+}
+
+.label{
+ color:#64748b;
+ font-size:13px;
+}
+
+.number{
+ font-size:30px;
+ font-weight:800;
+ margin-top:7px;
+}
+
+.section{
+ background:white;
+ border-radius:16px;
+ padding:18px;
+ margin-bottom:18px;
+ box-shadow:0 3px 14px #00000010;
+}
+
+.section-head{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ gap:10px;
+ margin-bottom:14px;
+}
+
+.section h2{
+ margin:0;
+ font-size:19px;
+}
+
+button{
+ border:0;
+ border-radius:9px;
+ padding:10px 14px;
+ background:#111827;
+ color:white;
+ font-weight:700;
+ cursor:pointer;
+}
+
+button:hover{
+ background:#263449;
+}
+
+.result{
+ overflow:auto;
+}
+
+table{
+ width:100%;
+ border-collapse:collapse;
+ min-width:700px;
+}
+
+th,td{
+ text-align:left;
+ padding:10px;
+ border-bottom:1px solid #e5e7eb;
+ font-size:13px;
+}
+
+th{
+ background:#f8fafc;
+ color:#475569;
+}
+
+.status{
+ font-weight:700;
+}
+
+.empty{
+ color:#64748b;
+ padding:15px 0;
+}
+
+@media(max-width:800px){
+ .stats{grid-template-columns:repeat(2,1fr)}
+}
+
+@media(max-width:500px){
+ .container{padding:12px}
+ .stats{grid-template-columns:1fr 1fr}
+ .number{font-size:24px}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<div class="header-inner">
+ <div class="logo">Delyvo <span>Logistics</span></div>
+ <div class="online">● Core Server Online</div>
+</div>
+</header>
+
+<div class="container">
+
+<div class="hero">
+ <h1>Delyvo Control Center</h1>
+ <p>Central administration for shipments, partners, hubs, sellers, companies and payments.</p>
+</div>
+
+<div class="stats">
+
+<div class="stat">
+ <div class="label">Companies</div>
+ <div id="companies" class="number">0</div>
+</div>
+
+<div class="stat">
+ <div class="label">Sellers</div>
+ <div id="sellers" class="number">0</div>
+</div>
+
+<div class="stat">
+ <div class="label">Shipments</div>
+ <div id="shipments" class="number">0</div>
+</div>
+
+<div class="stat">
+ <div class="label">Partners</div>
+ <div id="partners" class="number">0</div>
+</div>
+
+<div class="stat">
+ <div class="label">Hubs</div>
+ <div id="hubs" class="number">0</div>
+</div>
+
+<div class="stat">
+ <div class="label">Products</div>
+ <div id="products" class="number">0</div>
+</div>
+
+<div class="stat">
+ <div class="label">Orders</div>
+ <div id="orders" class="number">0</div>
+</div>
+
+<div class="stat">
+ <div class="label">Payments</div>
+ <div id="payments" class="number">0</div>
+</div>
+
+</div>
+
+<div class="section">
+
+<div class="section-head">
+ <h2>Recent Shipments</h2>
+ <button onclick="loadShipments()">Refresh</button>
+</div>
+
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:10px;margin-bottom:12px">
+ <input
+   id="shipmentSearch"
+   type="text"
+   placeholder="Search shipment, AWB or customer..."
+   oninput="filterShipments()"
+   style="width:100%;padding:11px;border:1px solid #d1d5db;border-radius:9px;font-size:14px"
+ >
+
+ <select
+   id="shipmentStatusFilter"
+   onchange="filterShipments()"
+   style="width:100%;padding:11px;border:1px solid #d1d5db;border-radius:9px;font-size:14px"
+ >
+   <option value="">All Status</option>
+   <option value="DELIVERED">DELIVERED</option>
+   <option value="RTO">RTO</option>
+   <option value="ASSIGNED">ASSIGNED</option>
+   <option value="PICKED_UP">PICKED_UP</option>
+   <option value="OUT_FOR_DELIVERY">OUT_FOR_DELIVERY</option>
+   <option value="AT_ORIGIN_HUB">AT_ORIGIN_HUB</option>
+   <option value="AT_DESTINATION_HUB">AT_DESTINATION_HUB</option>
+ </select>
+</div>
+
+<div id="shipmentBox" class="result">
+Loading...
+</div>
+
+</div>
+
+<div class="section">
+
+<div class="section-head">
+ <h2>Delivery Partners</h2>
+ <div>
+  <button onclick="addPartner()">+ Add Partner</button>
+  <button onclick="loadPartners()">Refresh</button>
+ </div>
+</div>
+
+<div style="margin-bottom:12px">
+ <input
+   id="partnerSearch"
+   type="text"
+   placeholder="Search partner by name, phone, ID or city..."
+   oninput="filterPartners()"
+   style="width:100%;padding:11px;border:1px solid #d1d5db;border-radius:9px;font-size:14px"
+ >
+</div>
+
+<div id="partnerBox" class="result">
+Loading...
+</div>
+
+</div>
+
+<div class="section">
+
+<div class="section-head">
+ <h2>Hubs</h2>
+ <div>
+  <button onclick="addHub()">+ Add Hub</button>
+  <button onclick="loadHubs()">Refresh</button>
+ </div>
+</div>
+
+<div style="margin-bottom:12px">
+ <input
+   id="hubSearch"
+   type="text"
+   placeholder="Search hub by name, code, city or state..."
+   oninput="filterHubs()"
+   style="width:100%;padding:11px;border:1px solid #d1d5db;border-radius:9px;font-size:14px"
+ >
+</div>
+
+<div id="hubBox" class="result">
+Loading...
+</div>
+
+</div>
+
+<div class="section">
+
+<div class="section-head">
+ <h2>Sellers</h2>
+ <div>
+  <button onclick="loadSellers()">Refresh</button>
+ </div>
+</div>
+
+<div style="margin-bottom:12px">
+ <input
+   id="sellerSearch"
+   type="text"
+   placeholder="Search seller by ID, name, email, phone or city..."
+   oninput="filterSellers()"
+   style="width:100%;padding:11px;border:1px solid #d1d5db;border-radius:9px;font-size:14px"
+ >
+</div>
+
+<div id="sellerBox" class="result">
+Loading...
+</div>
+
+</div>
+
+<div class="section">
+
+<div class="section-head">
+ <h2>Orders</h2>
+ <button onclick="loadOrders()">Refresh</button>
+</div>
+
+<div style="margin-bottom:12px">
+ <input
+   id="orderSearch"
+   type="text"
+   placeholder="Search orders..."
+   oninput="filterOrders()"
+   style="width:100%;padding:11px;border:1px solid #d1d5db;border-radius:9px;font-size:14px"
+ >
+</div>
+
+<div id="orderBox" class="result">
+Loading...
+</div>
+
+</div>
+
+<div class="section">
+
+<div class="section-head">
+ <h2>Payments</h2>
+ <button onclick="loadPayments()">Refresh</button>
+</div>
+
+<div id="paymentSummary" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">
+ <div class="stat">
+  <div class="label">Total Payments</div>
+  <div id="totalPayments" class="number">0</div>
+ </div>
+ <div class="stat">
+  <div class="label">Collected COD</div>
+  <div id="collectedCOD" class="number">₹0</div>
+ </div>
+ <div class="stat">
+  <div class="label">Pending COD</div>
+  <div id="pendingCOD" class="number">₹0</div>
+ </div>
+</div>
+
+<div style="margin-bottom:12px">
+ <input
+   id="paymentSearch"
+   type="text"
+   placeholder="Search payment, AWB, customer or shipment..."
+   oninput="filterPayments()"
+   style="width:100%;padding:11px;border:1px solid #d1d5db;border-radius:9px;font-size:14px"
+ >
+</div>
+
+<div id="paymentBox" class="result">
+Loading...
+</div>
+
+</div>
+
+<div class="section">
+
+<div class="section-head">
+ <h2>Companies</h2>
+ <div>
+  <button onclick="addCompany()">+ Add Company</button>
+  <button onclick="loadCompanies()">Refresh</button>
+ </div>
+</div>
+
+<div style="margin-bottom:12px">
+ <input
+   id="companySearch"
+   type="text"
+   placeholder="Search company by name, email, phone or city..."
+   oninput="filterCompanies()"
+   style="width:100%;padding:11px;border:1px solid #d1d5db;border-radius:9px;font-size:14px"
+ >
+</div>
+
+<div id="companyBox" class="result">
+Loading...
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+async function getJSON(url){
+ const response = await fetch(url);
+ return await response.json();
+}
+
+async function loadDashboard(){
+
+ try{
+
+  const data = await getJSON("/api/admin/dashboard");
+
+  if(!data.success) return;
+
+  const s = data.statistics || {};
+
+  document.getElementById("companies").textContent=s.companies||0;
+  document.getElementById("sellers").textContent=s.sellers||0;
+  document.getElementById("shipments").textContent=s.shipments||0;
+  document.getElementById("partners").textContent=s.partners||0;
+  document.getElementById("hubs").textContent=s.hubs||0;
+  document.getElementById("products").textContent=s.products||0;
+  document.getElementById("orders").textContent=s.orders||0;
+  document.getElementById("payments").textContent=s.payments||0;
+
+ }catch(e){
+  console.error(e);
+ }
+}
+
+async function loadShipments(){
+
+ const box=document.getElementById("shipmentBox");
+
+ try{
+
+  const data=await getJSON("/api/admin/shipments/recent");
+
+  window.delyvoShipments=data.shipments || [];
+
+  renderShipments(window.delyvoShipments);
+
+ }catch(e){
+
+  box.innerHTML='<div class="empty">Unable to load shipments.</div>';
+
+ }
+}
+
+function renderShipments(shipments){
+
+ const box=document.getElementById("shipmentBox");
+
+ if(!shipments.length){
+
+  box.innerHTML='<div class="empty">No shipments found.</div>';
+
+  return;
+ }
+
+ let html="<table><tr>"+
+ "<th>Shipment</th>"+
+ "<th>AWB</th>"+
+ "<th>Customer</th>"+
+ "<th>Amount</th>"+
+ "<th>Hub</th>"+
+ "<th>Status</th>"+
+ "<th>Details</th>"+
+ "</tr>";
+
+ shipments.forEach(x=>{
+
+  html+=`<tr>
+   <td>${x.shipment_id||"-"}</td>
+   <td>${x.awb||"-"}</td>
+   <td>${x.customer_name||"-"}</td>
+   <td>₹${x.amount||0}</td>
+   <td>${x.current_hub||"-"}</td>
+   <td class="status">${x.status||"-"}</td>
+   <td>
+    <button onclick='showShipmentDetails(${JSON.stringify(x)})'>
+     View
+    </button>
+   </td>
+  </tr>`;
+
+ });
+
+ html+="</table>";
+
+ box.innerHTML=html;
+}
+
+function filterShipments(){
+
+ const q=(document.getElementById("shipmentSearch").value||"")
+   .trim()
+   .toLowerCase();
+
+ const status=(document.getElementById("shipmentStatusFilter").value||"")
+   .trim()
+   .toUpperCase();
+
+ const shipments=window.delyvoShipments || [];
+
+ const filtered=shipments.filter(x=>{
+
+  const matchesSearch=[
+   x.shipment_id,
+   x.awb,
+   x.customer_name,
+   x.customer_phone,
+   x.pickup_address,
+   x.delivery_address,
+   x.current_hub
+  ].some(v=>String(v||"").toLowerCase().includes(q));
+
+  const matchesStatus=!status ||
+   String(x.status||"").toUpperCase()===status;
+
+  return matchesSearch && matchesStatus;
+
+ });
+
+ renderShipments(filtered);
+}
+
+function showShipmentDetails(x){
+
+ const details=[
+  "Shipment ID: "+(x.shipment_id||"-"),
+  "AWB: "+(x.awb||"-"),
+  "Customer: "+(x.customer_name||"-"),
+  "Phone: "+(x.customer_phone||"-"),
+  "Pickup: "+(x.pickup_address||"-"),
+  "Delivery: "+(x.delivery_address||"-"),
+  "Amount: ₹"+(x.amount||0),
+  "Origin Hub: "+(x.origin_hub||"-"),
+  "Current Hub: "+(x.current_hub||"-"),
+  "Destination Hub: "+(x.destination_hub||"-"),
+  "Status: "+(x.status||"-"),
+  "Created: "+(x.created_at||"-"),
+  "Updated: "+(x.updated_at||"-")
+ ].join("\\n");
+
+ alert(details);
+}
+
+
+async function loadPartners(){
+
+ const box=document.getElementById("partnerBox");
+
+ try{
+
+  const data=await getJSON("/api/admin/partners");
+
+  window.delyvoPartners=data.partners || [];
+
+  renderPartners(window.delyvoPartners);
+
+ }catch(e){
+
+  box.innerHTML='<div class="empty">Unable to load partners.</div>';
+
+ }
+}
+
+function renderPartners(partners){
+
+ const box=document.getElementById("partnerBox");
+
+ if(!partners.length){
+
+  box.innerHTML='<div class="empty">No partners found.</div>';
+
+  return;
+ }
+
+ let html="<table><tr>"+
+ "<th>Partner ID</th>"+
+ "<th>Name</th>"+
+ "<th>Phone</th>"+
+ "<th>City</th>"+
+ "<th>Vehicle</th>"+
+ "<th>Status</th>"+
+ "<th>Action</th>"+
+ "</tr>";
+
+ partners.forEach(x=>{
+
+  const active=String(x.status||"").toUpperCase()==="ACTIVE";
+
+  html+=`<tr>
+   <td>${x.partner_id||"-"}</td>
+   <td>${x.name||"-"}</td>
+   <td>${x.phone||"-"}</td>
+   <td>${x.city||"-"}</td>
+   <td>${x.vehicle_type||"-"}</td>
+   <td class="status">${x.status||"-"}</td>
+   <td>
+    <button onclick="togglePartnerStatus('${x.partner_id}', ${active})">
+     ${active ? "Set Inactive" : "Set Active"}
+    </button>
+   </td>
+  </tr>`;
+
+ });
+
+ html+="</table>";
+
+ box.innerHTML=html;
+}
+
+function filterPartners(){
+
+ const q=(document.getElementById("partnerSearch").value||"")
+   .trim()
+   .toLowerCase();
+
+ const partners=window.delyvoPartners || [];
+
+ const filtered=partners.filter(x=>{
+
+  return [
+   x.partner_id,
+   x.name,
+   x.phone,
+   x.city,
+   x.vehicle_type,
+   x.status
+  ].some(v=>String(v||"").toLowerCase().includes(q));
+
+ });
+
+ renderPartners(filtered);
+}
+
+async function togglePartnerStatus(partnerId, currentlyActive){
+
+ const newStatus=currentlyActive ? "INACTIVE" : "ACTIVE";
+
+ if(!confirm("Change partner status to " + newStatus + "?")){
+  return;
+ }
+
+ try{
+
+  const data=await postJSON(
+   "/api/partners/" + encodeURIComponent(partnerId) + "/status",
+   {status:newStatus}
+  );
+
+  alert(
+   data.message ||
+   (data.success
+    ? "Partner status updated successfully"
+    : "Unable to update partner status")
+  );
+
+  loadDashboard();
+  loadPartners();
+
+ }catch(e){
+
+  alert("Partner status update failed");
+
+ }
+}
+
+
+async function loadHubs(){
+
+ const box=document.getElementById("hubBox");
+
+ try{
+
+  const data=await getJSON("/api/admin/hubs");
+
+  window.delyvoHubs=data.hubs || [];
+
+  renderHubs(window.delyvoHubs);
+
+ }catch(e){
+
+  box.innerHTML='<div class="empty">Unable to load hubs.</div>';
+
+ }
+}
+
+function renderHubs(hubs){
+
+ const box=document.getElementById("hubBox");
+
+ if(!hubs.length){
+
+  box.innerHTML='<div class="empty">No hubs found.</div>';
+
+  return;
+ }
+
+ let html="<table><tr>"+
+ "<th>Hub Code</th>"+
+ "<th>Name</th>"+
+ "<th>City</th>"+
+ "<th>State</th>"+
+ "<th>Status</th>"+
+ "<th>Action</th>"+
+ "</tr>";
+
+ hubs.forEach(x=>{
+
+  const active=String(x.status||"").toUpperCase()==="ACTIVE";
+
+  html+=`<tr>
+   <td>${x.hub_code||"-"}</td>
+   <td>${x.name||"-"}</td>
+   <td>${x.city||"-"}</td>
+   <td>${x.state||"-"}</td>
+   <td class="status">${x.status||"-"}</td>
+   <td>
+    <button onclick="toggleHubStatus('${x.hub_id}', ${active})">
+     ${active ? "Set Inactive" : "Set Active"}
+    </button>
+   </td>
+  </tr>`;
+
+ });
+
+ html+="</table>";
+
+ box.innerHTML=html;
+}
+
+function filterHubs(){
+
+ const q=(document.getElementById("hubSearch").value||"")
+   .trim()
+   .toLowerCase();
+
+ const hubs=window.delyvoHubs || [];
+
+ const filtered=hubs.filter(x=>{
+
+  return [
+   x.hub_id,
+   x.hub_code,
+   x.name,
+   x.city,
+   x.state,
+   x.status
+  ].some(v=>String(v||"").toLowerCase().includes(q));
+
+ });
+
+ renderHubs(filtered);
+}
+
+async function toggleHubStatus(hubId, currentlyActive){
+
+ const newStatus=currentlyActive ? "INACTIVE" : "ACTIVE";
+
+ if(!confirm("Change hub status to " + newStatus + "?")){
+  return;
+ }
+
+ try{
+
+  const data=await postJSON(
+   "/api/hubs/" + encodeURIComponent(hubId) + "/status",
+   {status:newStatus}
+  );
+
+  alert(
+   data.message ||
+   (data.success
+    ? "Hub status updated successfully"
+    : "Unable to update hub status")
+  );
+
+  loadDashboard();
+  loadHubs();
+
+ }catch(e){
+
+  alert("Hub status update failed");
+
+ }
+}
+
+
+async function loadCompanies(){
+
+ const box=document.getElementById("companyBox");
+
+ try{
+
+  const data=await getJSON("/api/admin/companies");
+
+  window.delyvoCompanies=data.companies || [];
+
+  renderCompanies(window.delyvoCompanies);
+
+ }catch(e){
+
+  box.innerHTML='<div class="empty">Unable to load companies.</div>';
+
+ }
+}
+
+function renderCompanies(companies){
+
+ const box=document.getElementById("companyBox");
+
+ if(!companies.length){
+
+  box.innerHTML='<div class="empty">No companies found.</div>';
+
+  return;
+ }
+
+ let html="<table><tr>"+
+ "<th>Name</th>"+
+ "<th>Email</th>"+
+ "<th>Phone</th>"+
+ "<th>City</th>"+
+ "<th>Status</th>"+
+ "<th>Action</th>"+
+ "</tr>";
+
+ companies.forEach(x=>{
+
+  const active=String(x.status||"").toUpperCase()==="ACTIVE";
+
+  html+=`<tr>
+   <td>${x.name||"-"}</td>
+   <td>${x.email||"-"}</td>
+   <td>${x.phone||"-"}</td>
+   <td>${x.city||"-"}</td>
+   <td class="status">${x.status||"-"}</td>
+   <td>
+    <button onclick="toggleCompanyStatus('${x.company_id}', ${active})">
+     ${active ? "Set Inactive" : "Set Active"}
+    </button>
+   </td>
+  </tr>`;
+
+ });
+
+ html+="</table>";
+
+ box.innerHTML=html;
+}
+
+function filterCompanies(){
+
+ const q=(document.getElementById("companySearch").value||"")
+   .trim()
+   .toLowerCase();
+
+ const companies=window.delyvoCompanies || [];
+
+ const filtered=companies.filter(x=>{
+
+  return [
+   x.company_id,
+   x.name,
+   x.email,
+   x.phone,
+   x.city,
+   x.state,
+   x.pincode,
+   x.status
+  ].some(v=>String(v||"").toLowerCase().includes(q));
+
+ });
+
+ renderCompanies(filtered);
+}
+
+async function toggleCompanyStatus(companyId, currentlyActive){
+
+ const newStatus=currentlyActive ? "INACTIVE" : "ACTIVE";
+
+ if(!confirm("Change company status to " + newStatus + "?")){
+  return;
+ }
+
+ try{
+
+  const data=await postJSON(
+   "/api/companies/" + encodeURIComponent(companyId) + "/status",
+   {status:newStatus}
+  );
+
+  alert(
+   data.message ||
+   (data.success
+    ? "Company status updated successfully"
+    : "Unable to update company status")
+  );
+
+  loadDashboard();
+  loadCompanies();
+
+ }catch(e){
+
+  alert("Company status update failed");
+
+ }
+}
+
+
+async function loadSellers(){
+
+ const box=document.getElementById("sellerBox");
+
+ try{
+
+  const data=await getJSON("/api/sellers");
+
+  window.delyvoSellers=data.sellers || [];
+
+  renderSellers(window.delyvoSellers);
+
+ }catch(e){
+
+  box.innerHTML='<div class="empty">Unable to load sellers.</div>';
+
+ }
+}
+
+function renderSellers(sellers){
+
+ const box=document.getElementById("sellerBox");
+
+ if(!sellers.length){
+
+  box.innerHTML='<div class="empty">No sellers found.</div>';
+
+  return;
+ }
+
+ let html="<table><tr>"+
+ "<th>Seller ID</th>"+
+ "<th>Name</th>"+
+ "<th>Email</th>"+
+ "<th>Phone</th>"+
+ "<th>City</th>"+
+ "<th>Company</th>"+
+ "<th>Status</th>"+
+ "<th>Action</th>"+
+ "</tr>";
+
+ sellers.forEach(x=>{
+
+  const active=String(x.status||"").toUpperCase()==="ACTIVE";
+
+  html+=`<tr>
+   <td>${x.seller_id||"-"}</td>
+   <td>${x.name||"-"}</td>
+   <td>${x.email||"-"}</td>
+   <td>${x.phone||"-"}</td>
+   <td>${x.city||"-"}</td>
+   <td>${x.company_name||"-"}</td>
+   <td class="status">${x.status||"-"}</td>
+   <td>
+    <button onclick="toggleSellerStatus('${x.seller_id}', ${active})">
+     ${active ? "Set Inactive" : "Set Active"}
+    </button>
+   </td>
+  </tr>`;
+
+ });
+
+ html+="</table>";
+
+ box.innerHTML=html;
+}
+
+function filterSellers(){
+
+ const q=(document.getElementById("sellerSearch").value||"")
+  .trim()
+  .toLowerCase();
+
+ const sellers=window.delyvoSellers || [];
+
+ const filtered=sellers.filter(x=>[
+   x.seller_id,
+   x.id,
+   x.name,
+   x.email,
+   x.phone,
+   x.city,
+   x.company_name,
+   x.status
+ ].some(v=>String(v||"").toLowerCase().includes(q)));
+
+ renderSellers(filtered);
+}
+
+async function toggleSellerStatus(sellerId, currentlyActive){
+
+ const newStatus=currentlyActive ? "INACTIVE" : "ACTIVE";
+
+ if(!confirm("Change seller status to " + newStatus + "?")){
+  return;
+ }
+
+ try{
+
+  const data=await postJSON(
+   "/api/sellers/" + encodeURIComponent(sellerId) + "/status",
+   {status:newStatus}
+  );
+
+  alert(
+   data.message ||
+   (data.success
+    ? "Seller status updated successfully"
+    : "Unable to update seller status")
+  );
+
+  loadDashboard();
+  loadSellers();
+
+ }catch(e){
+
+  alert("Seller status update failed");
+
+ }
+}
+
+async function loadOrders(){
+
+ const box=document.getElementById("orderBox");
+
+ try{
+
+  // Existing seller order API. Current seller has no orders.
+  const data=await getJSON("/api/sellers/SEL-90C7AA9E/orders");
+
+  window.delyvoOrders=data.orders || [];
+
+  renderOrders(window.delyvoOrders);
+
+ }catch(e){
+
+  box.innerHTML='<div class="empty">Unable to load orders.</div>';
+
+ }
+}
+
+function renderOrders(orders){
+
+ const box=document.getElementById("orderBox");
+
+ if(!orders.length){
+
+  box.innerHTML='<div class="empty">No orders found.</div>';
+
+  return;
+ }
+
+ let html="<table><tr>"+
+ "<th>Order ID</th>"+
+ "<th>Customer</th>"+
+ "<th>Amount</th>"+
+ "<th>Status</th>"+
+ "<th>Created</th>"+
+ "</tr>";
+
+ orders.forEach(x=>{
+
+  html+=`<tr>
+   <td>${x.order_id||x.id||"-"}</td>
+   <td>${x.customer_name||x.customer||"-"}</td>
+   <td>₹${x.amount||x.total_amount||0}</td>
+   <td class="status">${x.status||"-"}</td>
+   <td>${x.created_at||"-"}</td>
+  </tr>`;
+
+ });
+
+ html+="</table>";
+
+ box.innerHTML=html;
+}
+
+function filterOrders(){
+
+ const q=(document.getElementById("orderSearch").value||"")
+  .trim()
+  .toLowerCase();
+
+ const orders=window.delyvoOrders || [];
+
+ renderOrders(
+  orders.filter(x=>[
+   x.order_id,
+   x.id,
+   x.customer_name,
+   x.customer,
+   x.status,
+   x.amount,
+   x.total_amount
+  ].some(v=>String(v||"").toLowerCase().includes(q)))
+ );
+}
+
+async function loadPayments(){
+
+ const box=document.getElementById("paymentBox");
+
+ try{
+
+  const [paymentsData, summaryData] = await Promise.all([
+   getJSON("/api/payments"),
+   getJSON("/api/payments/summary")
+  ]);
+
+  window.delyvoPayments=paymentsData.payments || [];
+
+  const s=summaryData.summary || {};
+
+  document.getElementById("totalPayments").textContent=s.total_payments||0;
+  document.getElementById("collectedCOD").textContent="₹"+(s.collected_cod_amount||0);
+  document.getElementById("pendingCOD").textContent="₹"+(s.pending_cod_amount||0);
+
+  renderPayments(window.delyvoPayments);
+
+ }catch(e){
+
+  box.innerHTML='<div class="empty">Unable to load payments.</div>';
+
+ }
+}
+
+function renderPayments(payments){
+
+ const box=document.getElementById("paymentBox");
+
+ if(!payments.length){
+
+  box.innerHTML='<div class="empty">No payments found.</div>';
+
+  return;
+ }
+
+ let html="<table><tr>"+
+ "<th>Payment ID</th>"+
+ "<th>AWB</th>"+
+ "<th>Customer</th>"+
+ "<th>Amount</th>"+
+ "<th>Collected By</th>"+
+ "<th>Type</th>"+
+ "<th>Status</th>"+
+ "</tr>";
+
+ payments.forEach(x=>{
+
+  html+=`<tr>
+   <td>${x.payment_id||"-"}</td>
+   <td>${x.awb||"-"}</td>
+   <td>${x.customer_name||"-"}</td>
+   <td>₹${x.collected_amount||x.amount||0}</td>
+   <td>${x.collected_by||"-"}</td>
+   <td>${x.payment_type||"-"}</td>
+   <td class="status">${x.status||"-"}</td>
+  </tr>`;
+
+ });
+
+ html+="</table>";
+
+ box.innerHTML=html;
+}
+
+function filterPayments(){
+
+ const q=(document.getElementById("paymentSearch").value||"")
+  .trim()
+  .toLowerCase();
+
+ const payments=window.delyvoPayments || [];
+
+ renderPayments(
+  payments.filter(x=>[
+   x.payment_id,
+   x.awb,
+   x.customer_name,
+   x.shipment_id,
+   x.collected_by,
+   x.payment_type,
+   x.status,
+   x.amount,
+   x.collected_amount
+  ].some(v=>String(v||"").toLowerCase().includes(q)))
+ );
+}
+
+async function addPartner(){
+
+ const name=prompt("Partner name:");
+ if(!name) return;
+
+ const phone=prompt("Phone number:");
+ if(!phone) return;
+
+ const city=prompt("City:");
+ if(!city) return;
+
+ const email=prompt("Email (optional):") || "";
+
+ const vehicle=prompt("Vehicle type (BIKE/CAR):") || "BIKE";
+
+ try{
+  const data=await postJSON("/api/partners",{
+   name:name,
+   phone:phone,
+   city:city,
+   email:email,
+   vehicle_type:vehicle
+  });
+
+  alert(data.message || (data.success ? "Partner added successfully" : "Unable to add partner"));
+  loadDashboard();
+  loadPartners();
+
+ }catch(e){
+  alert("Partner request failed");
+ }
+}
+
+async function addHub(){
+
+ const name=prompt("Hub name:");
+ if(!name) return;
+
+ const code=prompt("Hub code:");
+ if(!code) return;
+
+ const city=prompt("City:");
+ if(!city) return;
+
+ const state=prompt("State:") || "Uttar Pradesh";
+
+ try{
+  const data=await postJSON("/api/hubs",{
+   name:name,
+   hub_code:code,
+   city:city,
+   state:state
+  });
+
+  alert(data.message || (data.success ? "Hub added successfully" : "Unable to add hub"));
+  loadDashboard();
+  loadHubs();
+
+ }catch(e){
+  alert("Hub request failed");
+ }
+}
+
+async function addCompany(){
+
+ const name=prompt("Company name:");
+ if(!name) return;
+
+ const email=prompt("Email:");
+ if(!email) return;
+
+ const phone=prompt("Phone:");
+ if(!phone) return;
+
+ const city=prompt("City:");
+ if(!city) return;
+
+ const state=prompt("State:") || "Uttar Pradesh";
+
+ const pincode=prompt("Pincode:") || "";
+
+ try{
+  const data=await postJSON("/api/companies",{
+   name:name,
+   email:email,
+   phone:phone,
+   city:city,
+   state:state,
+   pincode:pincode
+  });
+
+  alert(data.message || (data.success ? "Company added successfully" : "Unable to add company"));
+  loadDashboard();
+  loadCompanies();
+
+ }catch(e){
+  alert("Company request failed");
+ }
+}
+
+loadDashboard();
+loadShipments();
+loadPartners();
+loadHubs();
+loadSellers();
+loadOrders();
+loadPayments();
+loadCompanies();
+
+</script>
+
+</body>
+</html>

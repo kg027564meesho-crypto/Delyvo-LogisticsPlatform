@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Delyvo Logistics - Admin Control Center</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+ margin:0;
+ font-family:Arial,Helvetica,sans-serif;
+ background:#f4f7fb;
+ color:#172033;
+}
+
+header{
+ background:#111827;
+ color:white;
+ padding:16px 20px;
+ position:sticky;
+ top:0;
+ z-index:10;
+}
+
+.header-inner{
+ max-width:1200px;
+ margin:auto;
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+}
+
+.logo{
+ font-size:23px;
+ font-weight:800;
+}
+
+.logo span{color:#39d98a}
+
+.online{
+ color:#8ff0bd;
+ font-size:13px;
+}
+
+.container{
+ max-width:1200px;
+ margin:auto;
+ padding:20px;
+}
+
+.hero{
+ background:linear-gradient(135deg,#111827,#1f3b55);
+ color:white;
+ padding:25px;
+ border-radius:18px;
+ margin-bottom:20px;
+}
+
+.hero h1{margin:0 0 8px}
+.hero p{margin:0;color:#cbd5e1}
+
+.stats{
+ display:grid;
+ grid-template-columns:repeat(4,1fr);
+ gap:14px;
+ margin-bottom:20px;
+}
+
+.stat{
+ background:white;
+ border-radius:16px;
+ padding:18px;
+ box-shadow:0 3px 14px #00000010;
+}
+
+.label{
+ color:#64748b;
+ font-size:13px;
+}
+
+.number{
+ font-size:30px;
+ font-weight:800;
+ margin-top:7px;
+}
+
+.section{
+ background:white;
+ border-radius:16px;
+ padding:18px;
+ margin-bottom:18px;
+ box-shadow:0 3px 14px #00000010;
+}
+
+.section-head{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ gap:10px;
+ margin-bottom:14px;
+}
+
+.section h2{
+ margin:0;
+ font-size:19px;
+}
+
+button{
+ border:0;
+ border-radius:9px;
+ padding:10px 14px;
+ background:#111827;
+ color:white;
+ font-weight:700;
+ cursor:pointer;
+}
+
+button:hover{
+ background:#263449;
+}
+
+.result{
+ overflow:auto;
+}
+
+table{
+ width:100%;
+ border-collapse:collapse;
+ min-width:700px;
+}
+
+th,td{
+ text-align:left;
+ padding:10px;
+ border-bottom:1px solid #e5e7eb;
+ font-size:13px;
+}
+
+th{
+ background:#f8fafc;
+ color:#475569;
+}
+
+.status{
+ font-weight:700;
+}
+
+.empty{
+ color:#64748b;
+ padding:15px 0;
+}
+
+@media(max-width:800px){
+ .stats{grid-template-columns:repeat(2,1fr)}
+}
+
+@media(max-width:500px){
+ .container{padding:12px}
+ .stats{grid-template-columns:1fr 1fr}
+ .number{font-size:24px}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<div class="header-inner">
+ <div class="logo">Delyvo <span>Logistics</span></div>
+ <div class="online">● Core Server Online</div>
+</div>
+</header>
+
+<div class="container">
+
+<div class="hero">
+ <h1>Delyvo Control Center</h1>
+ <p>Central administration for shipments, partners, hubs, sellers, companies and payments.</p>
+</div>
+
+<div class="stats">
+
+<div class="stat">
+ <div class="label">Companies</div>
+ <div id="companies" class="number">0</div>
+</div>
+
+<div class="stat">
+ <div class="label">Sellers</div>
+ <div id="sellers" class="number">0</div>
+</div>
+
+<div class="stat">
+ <div class="label">Shipments</div>
+ <div id="shipments" class="number">0</div>
+</div>
+
+<div class="stat">
+ <div class="label">Partners</div>
+ <div id="partners" class="number">0</div>
+</div>
+
+<div class="stat">
+ <div class="label">Hubs</div>
+ <div id="hubs" class="number">0</div>
+</div>
+
+<div class="stat">
+ <div class="label">Products</div>
+ <div id="products" class="number">0</div>
+</div>
+
+<div class="stat">
+ <div class="label">Orders</div>
+ <div id="orders" class="number">0</div>
+</div>
+
+<div class="stat">
+ <div class="label">Payments</div>
+ <div id="payments" class="number">0</div>
+</div>
+
+</div>
+
+<div class="section">
+
+<div class="section-head">
+ <h2>Recent Shipments</h2>
+ <button onclick="loadShipments()">Refresh</button>
+</div>
+
+<div id="shipmentBox" class="result">
+Loading...
+</div>
+
+</div>
+
+<div class="section">
+
+<div class="section-head">
+ <h2>Delivery Partners</h2>
+ <div>
+  <button onclick="addPartner()">+ Add Partner</button>
+  <button onclick="loadPartners()">Refresh</button>
+ </div>
+</div>
+
+<div style="margin-bottom:12px">
+ <input
+   id="partnerSearch"
+   type="text"
+   placeholder="Search partner by name, phone, ID or city..."
+   oninput="filterPartners()"
+   style="width:100%;padding:11px;border:1px solid #d1d5db;border-radius:9px;font-size:14px"
+ >
+</div>
+
+<div id="partnerBox" class="result">
+Loading...
+</div>
+
+</div>
+
+<div class="section">
+
+<div class="section-head">
+ <h2>Hubs</h2>
+ <div>
+  <button onclick="addHub()">+ Add Hub</button>
+  <button onclick="loadHubs()">Refresh</button>
+ </div>
+</div>
+
+<div id="hubBox" class="result">
+Loading...
+</div>
+
+</div>
+
+<div class="section">
+
+<div class="section-head">
+ <h2>Companies</h2>
+ <div>
+  <button onclick="addCompany()">+ Add Company</button>
+  <button onclick="loadCompanies()">Refresh</button>
+ </div>
+</div>
+
+<div id="companyBox" class="result">
+Loading...
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+async function getJSON(url){
+ const response = await fetch(url);
+ return await response.json();
+}
+
+async function loadDashboard(){
+
+ try{
+
+  const data = await getJSON("/api/admin/dashboard");
+
+  if(!data.success) return;
+
+  const s = data.statistics || {};
+
+  document.getElementById("companies").textContent=s.companies||0;
+  document.getElementById("sellers").textContent=s.sellers||0;
+  document.getElementById("shipments").textContent=s.shipments||0;
+  document.getElementById("partners").textContent=s.partners||0;
+  document.getElementById("hubs").textContent=s.hubs||0;
+  document.getElementById("products").textContent=s.products||0;
+  document.getElementById("orders").textContent=s.orders||0;
+  document.getElementById("payments").textContent=s.payments||0;
+
+ }catch(e){
+  console.error(e);
+ }
+}
+
+async function loadShipments(){
+
+ const box=document.getElementById("shipmentBox");
+
+ try{
+
+  const data=await getJSON("/api/admin/shipments/recent");
+
+  if(!data.shipments || !data.shipments.length){
+   box.innerHTML='<div class="empty">No shipments found.</div>';
+   return;
+  }
+
+  let html="<table><tr>"+
+  "<th>Shipment</th>"+
+  "<th>AWB</th>"+
+  "<th>Customer</th>"+
+  "<th>Amount</th>"+
+  "<th>Hub</th>"+
+  "<th>Status</th>"+
+  "</tr>";
+
+  data.shipments.forEach(x=>{
+
+   html+=`<tr>
+   <td>${x.shipment_id||"-"}</td>
+   <td>${x.awb||"-"}</td>
+   <td>${x.customer_name||"-"}</td>
+   <td>₹${x.amount||0}</td>
+   <td>${x.current_hub||"-"}</td>
+   <td class="status">${x.status||"-"}</td>
+   </tr>`;
+
+  });
+
+  html+="</table>";
+  box.innerHTML=html;
+
+ }catch(e){
+  box.innerHTML='<div class="empty">Unable to load shipments.</div>';
+ }
+}
+
+async function loadPartners(){
+
+ const box=document.getElementById("partnerBox");
+
+ try{
+
+  const data=await getJSON("/api/admin/partners");
+
+  window.delyvoPartners=data.partners || [];
+
+  renderPartners(window.delyvoPartners);
+
+ }catch(e){
+
+  box.innerHTML='<div class="empty">Unable to load partners.</div>';
+
+ }
+}
+
+function renderPartners(partners){
+
+ const box=document.getElementById("partnerBox");
+
+ if(!partners.length){
+
+  box.innerHTML='<div class="empty">No partners found.</div>';
+
+  return;
+ }
+
+ let html="<table><tr>"+
+ "<th>Partner ID</th>"+
+ "<th>Name</th>"+
+ "<th>Phone</th>"+
+ "<th>City</th>"+
+ "<th>Vehicle</th>"+
+ "<th>Status</th>"+
+ "<th>Action</th>"+
+ "</tr>";
+
+ partners.forEach(x=>{
+
+  const active=String(x.status||"").toUpperCase()==="ACTIVE";
+
+  html+=`<tr>
+   <td>${x.partner_id||"-"}</td>
+   <td>${x.name||"-"}</td>
+   <td>${x.phone||"-"}</td>
+   <td>${x.city||"-"}</td>
+   <td>${x.vehicle_type||"-"}</td>
+   <td class="status">${x.status||"-"}</td>
+   <td>
+    <button onclick="togglePartnerStatus('${x.partner_id}', ${active})">
+     ${active ? "Set Inactive" : "Set Active"}
+    </button>
+   </td>
+  </tr>`;
+
+ });
+
+ html+="</table>";
+
+ box.innerHTML=html;
+}
+
+function filterPartners(){
+
+ const q=(document.getElementById("partnerSearch").value||"")
+   .trim()
+   .toLowerCase();
+
+ const partners=window.delyvoPartners || [];
+
+ const filtered=partners.filter(x=>{
+
+  return [
+   x.partner_id,
+   x.name,
+   x.phone,
+   x.city,
+   x.vehicle_type,
+   x.status
+  ].some(v=>String(v||"").toLowerCase().includes(q));
+
+ });
+
+ renderPartners(filtered);
+}
+
+async function togglePartnerStatus(partnerId, currentlyActive){
+
+ const newStatus=currentlyActive ? "INACTIVE" : "ACTIVE";
+
+ if(!confirm("Change partner status to " + newStatus + "?")){
+  return;
+ }
+
+ try{
+
+  const data=await postJSON(
+   "/api/partners/" + encodeURIComponent(partnerId) + "/status",
+   {status:newStatus}
+  );
+
+  alert(
+   data.message ||
+   (data.success
+    ? "Partner status updated successfully"
+    : "Unable to update partner status")
+  );
+
+  loadDashboard();
+  loadPartners();
+
+ }catch(e){
+
+  alert("Partner status update failed");
+
+ }
+}
+
+
+async function loadHubs(){
+
+ const box=document.getElementById("hubBox");
+
+ try{
+
+  const data=await getJSON("/api/admin/hubs");
+
+  if(!data.hubs || !data.hubs.length){
+   box.innerHTML='<div class="empty">No hubs found.</div>';
+   return;
+  }
+
+  let html="<table><tr>"+
+  "<th>Hub Code</th>"+
+  "<th>Name</th>"+
+  "<th>City</th>"+
+  "<th>State</th>"+
+  "<th>Status</th>"+
+  "</tr>";
+
+  data.hubs.forEach(x=>{
+
+   html+=`<tr>
+   <td>${x.hub_code||"-"}</td>
+   <td>${x.name||"-"}</td>
+   <td>${x.city||"-"}</td>
+   <td>${x.state||"-"}</td>
+   <td class="status">${x.status||"-"}</td>
+   </tr>`;
+
+  });
+
+  html+="</table>";
+  box.innerHTML=html;
+
+ }catch(e){
+  box.innerHTML='<div class="empty">Unable to load hubs.</div>';
+ }
+}
+
+async function loadCompanies(){
+
+ const box=document.getElementById("companyBox");
+
+ try{
+
+  const data=await getJSON("/api/admin/companies");
+
+  if(!data.companies || !data.companies.length){
+   box.innerHTML='<div class="empty">No companies found.</div>';
+   return;
+  }
+
+  let html="<table><tr>"+
+  "<th>Name</th>"+
+  "<th>Email</th>"+
+  "<th>Phone</th>"+
+  "<th>City</th>"+
+  "<th>Status</th>"+
+  "</tr>";
+
+  data.companies.forEach(x=>{
+
+   html+=`<tr>
+   <td>${x.name||"-"}</td>
+   <td>${x.email||"-"}</td>
+   <td>${x.phone||"-"}</td>
+   <td>${x.city||"-"}</td>
+   <td class="status">${x.status||"-"}</td>
+   </tr>`;
+
+  });
+
+  html+="</table>";
+  box.innerHTML=html;
+
+ }catch(e){
+  box.innerHTML='<div class="empty">Unable to load companies.</div>';
+ }
+}
+
+
+async function postJSON(url, data){
+ const response = await fetch(url,{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify(data)
+ });
+ return await response.json();
+}
+
+async function addPartner(){
+
+ const name=prompt("Partner name:");
+ if(!name) return;
+
+ const phone=prompt("Phone number:");
+ if(!phone) return;
+
+ const city=prompt("City:");
+ if(!city) return;
+
+ const email=prompt("Email (optional):") || "";
+
+ const vehicle=prompt("Vehicle type (BIKE/CAR):") || "BIKE";
+
+ try{
+  const data=await postJSON("/api/partners",{
+   name:name,
+   phone:phone,
+   city:city,
+   email:email,
+   vehicle_type:vehicle
+  });
+
+  alert(data.message || (data.success ? "Partner added successfully" : "Unable to add partner"));
+  loadDashboard();
+  loadPartners();
+
+ }catch(e){
+  alert("Partner request failed");
+ }
+}
+
+async function addHub(){
+
+ const name=prompt("Hub name:");
+ if(!name) return;
+
+ const code=prompt("Hub code:");
+ if(!code) return;
+
+ const city=prompt("City:");
+ if(!city) return;
+
+ const state=prompt("State:") || "Uttar Pradesh";
+
+ try{
+  const data=await postJSON("/api/hubs",{
+   name:name,
+   hub_code:code,
+   city:city,
+   state:state
+  });
+
+  alert(data.message || (data.success ? "Hub added successfully" : "Unable to add hub"));
+  loadDashboard();
+  loadHubs();
+
+ }catch(e){
+  alert("Hub request failed");
+ }
+}
+
+async function addCompany(){
+
+ const name=prompt("Company name:");
+ if(!name) return;
+
+ const email=prompt("Email:");
+ if(!email) return;
+
+ const phone=prompt("Phone:");
+ if(!phone) return;
+
+ const city=prompt("City:");
+ if(!city) return;
+
+ const state=prompt("State:") || "Uttar Pradesh";
+
+ const pincode=prompt("Pincode:") || "";
+
+ try{
+  const data=await postJSON("/api/companies",{
+   name:name,
+   email:email,
+   phone:phone,
+   city:city,
+   state:state,
+   pincode:pincode
+  });
+
+  alert(data.message || (data.success ? "Company added successfully" : "Unable to add company"));
+  loadDashboard();
+  loadCompanies();
+
+ }catch(e){
+  alert("Company request failed");
+ }
+}
+
+loadDashboard();
+loadShipments();
+loadPartners();
+loadHubs();
+loadCompanies();
+
+</script>
+
+</body>
+</html>

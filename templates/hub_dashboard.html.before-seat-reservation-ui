@@ -8,7 +8,7 @@
 <meta name="viewport"
 content="width=device-width,initial-scale=1.0">
 
-<title>Delyvo Logistics - Hub</title>
+<title>Delyvo Hub</title>
 
 <style>
 
@@ -151,7 +151,7 @@ grid-template-columns:repeat(2,1fr);
 <header>
 
 <div class="logo">
-Delyvo Logistics
+Delyvo Hub
 </div>
 
 </header>
@@ -496,73 +496,6 @@ box.textContent=
 }
 
 
-
-async function reservePartnerSeat(){
-
-    const partnerId =
-        document.getElementById("seatPartner").value.trim();
-
-    const seatNumber =
-        document.getElementById("seatNumber").value.trim();
-
-    const message =
-        document.getElementById("seatReservationMessage");
-
-    if(!currentHub){
-        message.textContent="Hub not selected.";
-        return;
-    }
-
-    if(!partnerId || !seatNumber){
-        message.textContent=
-            "Select a partner and enter a seat number.";
-        return;
-    }
-
-    message.textContent="Reserving seat...";
-
-    try{
-
-        const r = await fetch(
-            "/api/hubs/" +
-            encodeURIComponent(currentHub) +
-            "/seats/reserve",
-            {
-                method:"POST",
-                headers:{
-                    "Content-Type":"application/json"
-                },
-                body:JSON.stringify({
-                    partner_id:partnerId,
-                    seat_number:seatNumber
-                })
-            }
-        );
-
-        const data = await r.json();
-
-        if(!r.ok || !data.success){
-            throw new Error(
-                data.message ||
-                "Seat reservation failed"
-            );
-        }
-
-        message.textContent =
-            "Seat " +
-            (data.seat.seat_number || seatNumber) +
-            " reserved successfully.";
-
-        document.getElementById("seatNumber").value="";
-
-    }catch(e){
-
-        message.textContent =
-            e.message || "Seat reservation failed.";
-
-    }
-}
-
 async function loadPartners(){
 
 if(!currentHub){
@@ -590,26 +523,6 @@ const data=await r.json();
 document.getElementById("partnerCount")
 .textContent=
 data.total || 0;
-
-const seatPartner =
-document.getElementById("seatPartner");
-
-if (seatPartner) {
-    seatPartner.innerHTML =
-        '<option value="">Select Partner</option>' +
-        (data.partners || []).map(x => `
-            <option value="${escapeHtml(
-                x.partner_id || x.id || ""
-            )}">
-                ${escapeHtml(
-                    x.name ||
-                    x.partner_name ||
-                    x.partner_id ||
-                    "-"
-                )}
-            </option>
-        `).join("");
-}
 
 
 if(!data.partners ||

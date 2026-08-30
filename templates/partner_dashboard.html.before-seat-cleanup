@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Delyvo Logistics</title>
+    <title>Delyvo Partner</title>
     <link rel="stylesheet" href="/static/partner_app.css">
 </head>
 
@@ -19,6 +19,16 @@
 
 <div id="homePage" class="page active">
 
+<div class="seat-card">
+    <div class="seat-card-top">
+        <div>
+            <div class="seat-label">MY HUB SEAT</div>
+            <div id="mySeatNumber" class="seat-number">-</div>
+        </div>
+        <span id="mySeatStatus" class="seat-status">LOADING</span>
+    </div>
+    <div id="mySeatHub" class="seat-hub">Hub: -</div>
+</div>
 
 
 
@@ -29,7 +39,7 @@
 
 <header class="topbar">
     <div>
-        <div class="brand">Delyvo Logistics</div>
+        <div class="brand">Delyvo Partner</div>
         <div class="subtitle">Delivery Operations</div>
     </div>
 
@@ -1136,9 +1146,53 @@ async function confirmPartnerSeat(seatId) {
 }
 
 
+async function loadMySeat() {
+    const number = document.getElementById("mySeatNumber");
+    const status = document.getElementById("mySeatStatus");
+    const hub = document.getElementById("mySeatHub");
+
+    if (!number || !status || !hub) return;
+
+    try {
+        const response = await fetch(
+            `/api/partners/${encodeURIComponent(partnerId)}/seat`
+        );
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || "Seat request failed");
+        }
+
+        const seat = data.seat;
+
+        if (!seat) {
+            number.textContent = "-";
+            status.textContent = "NOT ASSIGNED";
+            hub.textContent = "Hub: -";
+            return;
+        }
+
+        number.textContent = seat.seat_number || "-";
+        status.textContent = String(
+            seat.status || "RESERVED"
+        ).toUpperCase();
+
+        hub.textContent = "Hub: " + (
+            seat.hub_code || "-"
+        );
+
+    } catch (error) {
+        number.textContent = "-";
+        status.textContent = "ERROR";
+        hub.textContent = "Seat unavailable";
+    }
+}
+
 async function loadAll() {
     try {
         await loadDashboard();
+        await loadMySeat();
         await loadPendingAssignments();
         await loadDeliveryHistory();
         await loadAvailableOrders();

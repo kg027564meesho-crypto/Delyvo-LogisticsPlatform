@@ -443,108 +443,6 @@ let cart = [];
 let category = "all";
 let selectedSeller = "";
 
-let customerOrders = JSON.parse(
-    localStorage.getItem("delyvo_customer_orders") || "[]"
-);
-
-function saveCustomerOrders(){
-    localStorage.setItem(
-        "delyvo_customer_orders",
-        JSON.stringify(customerOrders.slice(0, 20))
-    );
-}
-
-function rememberOrder(orderId){
-    if(!orderId) return;
-
-    customerOrders = [
-        orderId,
-        ...customerOrders.filter(x => x !== orderId)
-    ].slice(0, 20);
-
-    saveCustomerOrders();
-}
-
-
-
-function marketOrderStatusLabel(status){
-
-    const value = String(status || "").toUpperCase();
-
-    const labels = {
-        NEW: "New",
-        PLACED: "Order Placed",
-        ASSIGNED: "Assigned",
-        PICKED_UP: "Picked Up",
-        IN_TRANSIT: "In Transit",
-        OUT_FOR_DELIVERY: "Out for Delivery",
-        DELIVERED: "Delivered",
-        CANCELLED: "Cancelled",
-        RETURN_REQUESTED: "Return Requested",
-        RETURNED: "Returned"
-    };
-
-    return labels[value] || value || "Unknown";
-}
-
-function marketShipmentStatusLabel(status){
-
-    const value = String(status || "").toUpperCase();
-
-    const labels = {
-        CREATED: "Shipment Created",
-        ASSIGNED: "Shipment Assigned",
-        PICKED_UP: "Picked Up",
-        IN_TRANSIT: "In Transit",
-        OUT_FOR_DELIVERY: "Out for Delivery",
-        DELIVERED: "Delivered",
-        CANCELLED: "Cancelled",
-        RETURN_REQUESTED: "Return Requested",
-        RETURNED: "Returned"
-    };
-
-    return labels[value] || value || "—";
-}
-
-function paymentStatusLabel(status){
-
-    const value = String(status || "").toUpperCase();
-
-    if(value === "PAID"){
-        return "PAID";
-    }
-
-    if(value === "PENDING"){
-        return "PENDING";
-    }
-
-    if(value === "FAILED"){
-        return "FAILED";
-    }
-
-    if(value === "COLLECTED"){
-        return "COLLECTED";
-    }
-
-    return value || "—";
-}
-
-
-async function copyMarketText(value){
-    const text = String(value || "");
-
-    if(!text){
-        return;
-    }
-
-    try{
-        await navigator.clipboard.writeText(text);
-        alert("Copied.");
-    }catch(e){
-        alert(text);
-    }
-}
-
 function money(x){
     return "₹" + Number(x || 0).toFixed(0);
 }
@@ -760,51 +658,39 @@ function setCategory(c,button){
 
 function filterProducts(){
 
-    const q = String(
-        document.getElementById("search").value || ""
-    ).trim().toLowerCase();
+    const q =
+        document
+            .getElementById("search")
+            .value
+            .toLowerCase()
+            .trim();
 
-    let list = products.slice();
+    let list = products.filter(p => {
 
-    if(selectedSeller){
-        list = list.filter(
-            p => String(p.seller_id || "") === selectedSeller
-        );
-    }
+        const text = [
+            p.name,
+            p.description,
+            p.sku,
+            p.seller_name,
+            p.seller_city
+        ]
+        .join(" ")
+        .toLowerCase();
 
-    if(category !== "all"){
+        const searchMatch =
+            !q || text.includes(q);
 
-        list = list.filter(p => {
+        const categoryMatch =
+            category === "all" ||
+            String(p.name || "")
+                .toLowerCase()
+                .includes(category) ||
+            String(p.description || "")
+                .toLowerCase()
+                .includes(category);
 
-            const text = [
-                p.name,
-                p.description,
-                p.sku
-            ]
-            .join(" ")
-            .toLowerCase();
-
-            return text.includes(category.toLowerCase());
-        });
-    }
-
-    if(q){
-
-        list = list.filter(p => {
-
-            const text = [
-                p.name,
-                p.description,
-                p.sku,
-                p.seller_name,
-                p.seller_city
-            ]
-            .join(" ")
-            .toLowerCase();
-
-            return text.includes(q);
-        });
-    }
+        return searchMatch && categoryMatch;
+    });
 
     renderProducts(list);
 }
@@ -886,66 +772,40 @@ async function openProduct(productId){
    CART
 ========================= */
 
-
 function addToCart(id){
-    const product = products.find(
-        p =>
-            String(p.product_id) ===
-            String(id)
-    );
 
-    if(!product){
-        alert("Product not found.");
-        return;
-    }
+    const p =
+        products.find(x => x.product_id === id);
 
-    const stock =
-        Number(product.stock || 0);
+    if(!p) return;
 
-    if(stock <= 0){
-        alert(
-            "This product is currently out of stock."
-        );
-        return;
-    }
-
-    const existing = cart.find(
-        x =>
-            String(x.product_id) ===
-            String(id)
-    );
+    const existing =
+        cart.find(x => x.product_id === id);
 
     if(existing){
-        if(
-            Number(existing.quantity || 0) >=
-            stock
-        ){
-            alert(
-                "Maximum available stock reached."
-            );
-            return;
+
+        if(existing.quantity < Number(p.stock)){
+            existing.quantity++;
+        }else{
+            alert("Stock limit reached");
         }
 
-        existing.quantity =
-            Number(existing.quantity || 0) + 1;
-
     }else{
+
         cart.push({
-            product_id: product.product_id,
-            product_name: product.name,
-            seller_id: product.seller_id,
-            seller_name: product.seller_name,
-            unit_price: Number(product.price || 0),
-            quantity: 1,
-            stock: stock
+            product_id:p.product_id,
+            name:p.name,
+            price:Number(p.price),
+            stock:Number(p.stock),
+            seller_id:p.seller_id,
+            seller_name:p.seller_name,
+            quantity:1
         });
     }
 
     saveCart();
     updateCartCount();
-    renderCart();
 }
-
 
 function saveCart(){
     localStorage.setItem(
@@ -966,56 +826,6 @@ function loadCart(){
 
     updateCartCount();
 }
-
-function removeUnavailableCartItems(){
-
-    const before = cart.length;
-
-    cart = cart.filter(item => {
-
-        const stock = Number(item.stock || 0);
-
-        return stock > 0 &&
-               Number(item.quantity || 0) > 0;
-    });
-
-    if(before !== cart.length){
-        saveCart();
-        updateCartCount();
-    }
-}
-
-
-function updateCartProductsStock(){
-    cart = cart.map(item => {
-        const p = products.find(
-            x =>
-                String(x.product_id) ===
-                String(item.product_id)
-        );
-
-        if(p){
-            item.product_name = p.name;
-            item.seller_id = p.seller_id;
-            item.seller_name = p.seller_name;
-            item.unit_price = Number(p.price || 0);
-            item.stock = Number(p.stock || 0);
-
-            if(item.quantity > item.stock){
-                item.quantity = item.stock;
-            }
-        }
-
-        return item;
-    }).filter(
-        item => Number(item.stock || 0) > 0 &&
-                Number(item.quantity || 0) > 0
-    );
-
-    saveCart();
-    updateCartCount();
-}
-
 
 function updateCartCount(){
 
@@ -1095,28 +905,25 @@ function renderCart(){
         `<h3>Subtotal: ${money(subtotal)}</h3>`;
 }
 
-
 function changeQty(i,d){
+
     if(!cart[i]) return;
 
-    const next =
-        Number(cart[i].quantity || 0) +
-        Number(d || 0);
+    cart[i].quantity += d;
 
-    if(next <= 0){
+    if(cart[i].quantity <= 0){
+
         cart.splice(i,1);
-    }else{
-        const stock =
-            Number(cart[i].stock || 0);
 
-        if(stock > 0 && next > stock){
-            alert(
-                "Maximum available stock reached."
-            );
-            return;
-        }
+    }else if(
+        cart[i].quantity >
+        cart[i].stock
+    ){
 
-        cart[i].quantity = next;
+        cart[i].quantity =
+            cart[i].stock;
+
+        alert("Stock limit reached");
     }
 
     saveCart();
@@ -1124,21 +931,9 @@ function changeQty(i,d){
     renderCart();
 }
 
-
 /* =========================
    CHECKOUT
 ========================= */
-
-function calculateCartTotal(){
-
-    return cart.reduce(
-        (sum,item) =>
-            sum +
-            Number(item.unit_price || 0) *
-            Number(item.quantity || 0),
-        0
-    );
-}
 
 function openCheckout(){
 
@@ -1176,48 +971,6 @@ function openCheckout(){
 }
 
 async function placeOrder(){
-
-    updateCartProductsStock();
-    removeUnavailableCartItems();
-
-    if(!cart.length){
-        alert("Cart is empty.");
-        return;
-    }
-
-    const customerName =
-        document.getElementById("customerName").value.trim();
-
-    const customerPhone =
-        document.getElementById("customerPhone").value.trim();
-
-    const address =
-        document.getElementById("address").value.trim();
-
-    const paymentType =
-        document.getElementById("paymentType").value;
-
-    if(!customerName){
-        alert("Please enter your name.");
-        return;
-    }
-
-    if(!/^[0-9]{10}$/.test(customerPhone)){
-        alert("Please enter a valid 10-digit phone number.");
-        return;
-    }
-
-    if(!address){
-        alert("Please enter delivery address.");
-        return;
-    }
-
-    if(!["COD","PREPAID"].includes(paymentType)){
-        alert("Please select a valid payment method.");
-        return;
-    }
-
-
 
     if(!cart.length){
 
@@ -1334,28 +1087,11 @@ async function placeOrder(){
 
         closeModal("checkoutModal");
 
-        createdOrders.forEach(
-            id => rememberOrder(id)
+        alert(
+            "Order placed successfully!\n\n" +
+            "Order IDs:\n" +
+            createdOrders.join("\n")
         );
-
-        
-createdOrders.forEach(id => {
-    rememberOrder(id);
-});
-
-alert(
-    "Order placed successfully!
-
-" +
-    "Order IDs:
-" +
-    createdOrders.join("
-")
-);
-
-
-        closeModal("checkoutModal");
-        closeModal("cartModal");
 
         loadProducts();
 
@@ -1372,497 +1108,26 @@ alert(
    ORDERS
 ========================= */
 
+function openOrders(){
 
+    document.getElementById("ordersModal")
+        .style.display = "flex";
 
-async function openOrders(){
-    document.getElementById(
-        "ordersModal"
-    ).style.display = "flex";
-
-    renderSavedOrders();
-
-    await syncCustomerOrders();
-
-    renderSavedOrders();
-
-    await refreshSavedOrderStatuses();
-}
-
-
-
-
-
-async function refreshSavedOrderStatuses(){
-    if(!customerOrders.length){
-        return;
-    }
-
-    try{
-        const data = await syncCustomerOrders();
-
-        const ids = [...customerOrders];
-
-        for(const id of ids){
-            try{
-                const summary = await loadOrderSummary(id);
-
-                if(!summary || !summary.order){
-                    continue;
-                }
-
-                const node = document.getElementById(
-                    "order-status-" + id
-                );
-
-                if(node){
-                    node.textContent =
-                        marketOrderStatusLabel(
-                            summary.order.order_status
-                        );
-                }
-            }catch(e){
-                // Ignore individual order failures.
-            }
-        }
-    }catch(e){
-        console.log("Saved order status refresh unavailable");
-    }
-}
-
-async function syncCustomerOrders(){
-
-    if(!customerOrders.length){
-        return;
-    }
-
-    try{
-
-        const r = await fetch("/api/market/customer/orders", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                order_ids: customerOrders
-            })
-        });
-
-        const data = await r.json();
-
-        if(!r.ok || data.success === false){
-            return;
-        }
-
-        const serverIds = (data.orders || [])
-            .map(x => x.order_id)
-            .filter(Boolean);
-
-        customerOrders = [
-            ...serverIds,
-            ...customerOrders.filter(x => !serverIds.includes(x))
-        ].slice(0, 20);
-
-        saveCustomerOrders();
-
-    }catch(e){
-        console.log("Customer order sync unavailable");
-    }
-}
-
-function clearCustomerOrders(){
-
-    if(!customerOrders.length){
-        return;
-    }
-
-    if(!confirm("Clear saved orders from this device?")){
-        return;
-    }
-
-    customerOrders = [];
-
-    saveCustomerOrders();
-
-    renderSavedOrders();
-}
-
-
-function renderSavedOrders(){
-    const box = document.getElementById("orders");
-
-    if(!box){
-        return;
-    }
-
-    if(!customerOrders.length){
-        box.innerHTML = `
-            <div class="empty">
-                No saved orders yet.<br>
-                Place an order and it will appear here.
-            </div>
-        `;
-        return;
-    }
-
-    box.innerHTML = `
-        <div
-            style="
-                display:flex;
-                justify-content:space-between;
-                align-items:center;
-                gap:10px;
-            "
-        >
-            <h3>Recent Orders</h3>
-
-            <button
-                class="detail"
-                onclick="clearCustomerOrders()"
-            >
-                Clear
-            </button>
-        </div>
-
-        ${
-            customerOrders.map(id => `
-                <div
-                    class="order-card"
-                    style="
-                        display:flex;
-                        justify-content:space-between;
-                        align-items:center;
-                        gap:10px;
-                    "
-                >
-                    <div>
-                        <b>
-                            ${escapeHtml(id)}
-                        </b>
-
-                        <small
-                            id="order-status-${escapeHtml(id)}"
-                            class="order-status-preview"
-                            style="
-                                display:block;
-                                margin-top:4px;
-                            "
-                        >
-                            Loading status...
-                        </small>
-                    </div>
-
-                    <button
-                        class="detail"
-                        onclick="loadOrderById(
-                            '${escapeHtml(id)}'
-                        )"
-                    >
-                        View / Track
-                    </button>
-                </div>
-            `).join("")
-        }
-    `;
-}
-
-
-async function loadOrderById(orderId){
-    document.getElementById("orderLookup").value = orderId;
-    await lookupOrder();
-}
-
-
-async function cancelMarketOrder(orderId){
-
-    if(!orderId){
-        return;
-    }
-
-    if(!confirm("Are you sure you want to cancel this order?")){
-        return;
-    }
-
-    try{
-
-        const r = await fetch(
-            "/api/market/orders/" +
-            encodeURIComponent(orderId) +
-            "/cancel",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                }
-            }
+    const last =
+        localStorage.getItem(
+            "delyvo_last_order"
         );
 
-        const data = await r.json();
-
-        if(!r.ok || data.success === false){
-            throw new Error(
-                data.message || "Order cancellation failed"
-            );
-        }
-
-        alert("Order cancelled successfully.");
-
-        await lookupOrder();
-
-    }catch(e){
-
-        alert(
-            e.message ||
-            "Unable to cancel order."
-        );
-    }
-}
-
-
-async function requestMarketReturn(orderId){
-
-    if(!orderId){
-        return;
+    if(last){
+        document.getElementById("orderLookup")
+            .value = last;
     }
 
-    if(!confirm("Are you sure you want to request a return for this delivered order?")){
-        return;
-    }
-
-    try{
-
-        const r = await fetch(
-            "/api/market/orders/" +
-            encodeURIComponent(orderId) +
-            "/return",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                }
-            }
-        );
-
-        const data = await r.json();
-
-        if(!r.ok || data.success === false){
-            throw new Error(
-                data.message || "Return request failed"
-            );
-        }
-
-        alert("Return request created successfully.");
-
-        await lookupOrder();
-
-    }catch(e){
-
-        alert(
-            e.message ||
-            "Unable to create return request."
-        );
-    }
-}
-
-
-async function loadOrderSummary(orderId){
-
-    if(!orderId){
-        return null;
-    }
-
-    try{
-
-        const r = await fetch(
-            "/api/market/orders/" +
-            encodeURIComponent(orderId) +
-            "/summary"
-        );
-
-        const data = await r.json();
-
-        if(!r.ok || data.success === false){
-            return null;
-        }
-
-        return data;
-
-    }catch(e){
-
-        console.log("Order summary unavailable");
-
-        return null;
-    }
-}
-
-
-
-function marketOrderActions(order){
-
-    const status =
-        String(order?.order_status || "").toUpperCase();
-
-    let html = "";
-
-    if(status === "PLACED" || status === "NEW"){
-
-        html += `
-            <button
-                class="detail"
-                onclick="cancelMarketOrder(
-                    '${escapeHtml(order.order_id)}'
-                )">
-                Cancel Order
-            </button>
-        `;
-    }
-
-    if(status === "DELIVERED"){
-
-        html += `
-            <button
-                class="detail"
-                onclick="requestMarketReturn(
-                    '${escapeHtml(order.order_id)}'
-                )">
-                Request Return
-            </button>
-        `;
-    }
-
-    return html;
-}
-
-
-function marketShipmentProgress(status){
-    const value = String(status || "").toUpperCase();
-
-    const steps = [
-        "CREATED",
-        "ASSIGNED",
-        "PICKED_UP",
-        "IN_TRANSIT",
-        "OUT_FOR_DELIVERY",
-        "DELIVERED"
-    ];
-
-    const cancelled = [
-        "CANCELLED",
-        "RETURN_REQUESTED",
-        "RETURNED"
-    ];
-
-    if(cancelled.includes(value)){
-        return {
-            current: value,
-            steps: []
-        };
-    }
-
-    const index = steps.indexOf(value);
-
-    return {
-        current: value,
-        steps: steps.map((step, i) => ({
-            status: step,
-            done: index >= 0 && i <= index,
-            current: i === index
-        }))
-    };
-}
-
-
-function renderShipmentProgress(status){
-    const progress = marketShipmentProgress(status);
-
-    if(!progress.steps.length){
-        return `
-            <div class="track">
-                <b>${escapeHtml(
-                    marketShipmentStatusLabel(progress.current)
-                )}</b>
-            </div>
-        `;
-    }
-
-    return `
-        <div style="margin:12px 0;">
-            ${progress.steps.map(step => `
-                <div
-                    class="track"
-                    style="margin:6px 0;${step.current ? "font-weight:700;" : ""}"
-                >
-                    ${step.done ? "✓" : "○"}
-                    ${escapeHtml(
-                        marketShipmentStatusLabel(step.status)
-                    )}
-                </div>
-            `).join("")}
-        </div>
-    `;
-}
-
-function renderTrackingTimeline(events){
-
-    if(!Array.isArray(events) || !events.length){
-
-        return `
-            <div class="track">
-                Tracking events are not available yet.
-            </div>
-        `;
-    }
-
-    return events.map((e, index) => `
-
-        <div class="track" style="margin:8px 0;">
-
-            <div>
-                <b>${escapeHtml(
-                    marketShipmentStatusLabel(e.status)
-                )}</b>
-            </div>
-
-            ${
-                e.hub_code
-                ? `<div>Hub: ${escapeHtml(e.hub_code)}</div>`
-                : ""
-            }
-
-            ${
-                e.note
-                ? `<div>${escapeHtml(e.note)}</div>`
-                : ""
-            }
-
-            ${
-                e.created_at
-                ? `<small>${escapeHtml(e.created_at)}</small>`
-                : ""
-            }
-
-        </div>
-
-    `).join("");
-}
-
-
-async function refreshOrderDetails(orderId){
-    if(!orderId){
-        return null;
-    }
-
-    try{
-        const data = await loadOrderSummary(orderId);
-
-        if(!data || !data.success){
-            return null;
-        }
-
-        return data;
-    }catch(e){
-        console.log("Order detail refresh unavailable");
-        return null;
-    }
+    document.getElementById("orders")
+        .innerHTML =
+        `<div class="empty">
+            Enter an Order ID to track your order.
+         </div>`;
 }
 
 async function lookupOrder(){
@@ -1905,11 +1170,7 @@ async function lookupOrder(){
         const o = data.order;
         const items = data.items || [];
         const shipment = data.shipment;
-        const events = Array.isArray(data.events)
-            ? data.events.slice().reverse()
-            : [];
-
-        rememberOrder(o.order_id);
+        const events = data.events || [];
 
         let eventsHtml = "";
 
@@ -1942,76 +1203,20 @@ async function lookupOrder(){
                 </h3>
 
                 <p>
-                    Order Status:
-                    <b>${escapeHtml(
-                        marketOrderStatusLabel(o.order_status)
-                    )}</b>
+                    Status:
+                    <b>${escapeHtml(o.order_status)}</b>
                 </p>
-
-                <div style="margin-top:10px;">
-
-                    ${
-                        ["PLACED","NEW"].includes(
-                            String(o.order_status || "").toUpperCase()
-                        )
-                        ?
-                        `
-                        <button
-                            class="detail"
-                            onclick="cancelMarketOrder('${escapeHtml(o.order_id)}')">
-                            Cancel Order
-                        </button>
-                        `
-                        :
-                        ""
-                    }
-
-                    ${
-                        String(o.order_status || "").toUpperCase() === "DELIVERED"
-                        ?
-                        `
-                        <button
-                            class="detail"
-                            onclick="requestMarketReturn('${escapeHtml(o.order_id)}')">
-                            Request Return
-                        </button>
-                        `
-                        :
-                        ""
-                    }
-
-                </div>
 
                 <p>
                     Payment:
-                    <b>${escapeHtml(o.payment_type || "—")}</b>
+                    ${escapeHtml(o.payment_type)}
                     -
-                    <b>${escapeHtml(o.payment_status || "—")}</b>
-                </p>
-
-                <p>
-                    Subtotal:
-                    <b>${money(o.subtotal || 0)}</b>
-                </p>
-
-                <p>
-                    Delivery Fee:
-                    <b>${money(o.delivery_fee || 0)}</b>
+                    ${escapeHtml(o.payment_status)}
                 </p>
 
                 <p>
                     Total:
-                    <b>${money(o.total_amount || 0)}</b>
-                </p>
-
-                <p>
-                    Customer:
-                    <b>${escapeHtml(o.customer_name || "—")}</b>
-                </p>
-
-                <p>
-                    Delivery:
-                    <b>${escapeHtml(o.delivery_address || "—")}</b>
+                    <b>${money(o.total_amount)}</b>
                 </p>
 
                 <hr>
@@ -2020,28 +1225,12 @@ async function lookupOrder(){
 
                 ${items.map(i => `
                     <div class="item">
-
                         <div>
-                            <b>
-                                ${escapeHtml(i.product_name)}
-                            </b>
-
-                            <small style="display:block;">
-                                Qty: ${Number(i.quantity || 0)}
-                            </small>
-
-                            <small style="display:block;">
-                                Unit Price:
-                                ${money(i.unit_price || 0)}
-                            </small>
+                            ${escapeHtml(i.product_name)}
                         </div>
-
                         <div>
-                            <b>
-                                ${money(i.total_price || 0)}
-                            </b>
+                            × ${i.quantity}
                         </div>
-
                     </div>
                 `).join("")}
 
@@ -2061,17 +1250,9 @@ async function lookupOrder(){
                     <p>
                         Shipment status:
                         <b>
-                            ${escapeHtml(
-                                marketShipmentStatusLabel(
-                                    shipment.status
-                                )
-                            )}
+                            ${escapeHtml(shipment.status || "")}
                         </b>
                     </p>
-
-                    <div style="margin-top:10px;">
-                        ${renderShipmentProgress(shipment.status)}
-                    </div>
 
                     ${eventsHtml}
                     `
@@ -2121,10 +1302,6 @@ function closeModal(id){
 loadCart();
 loadSellers();
 loadProducts();
-
-if(customerOrders.length){
-    syncCustomerOrders();
-}
 
 </script>
 

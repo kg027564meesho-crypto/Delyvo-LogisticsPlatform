@@ -1,0 +1,502 @@
+*{
+    box-sizing:border-box;
+}
+
+body{
+    margin:0;
+    font-family:Arial,Helvetica,sans-serif;
+    background:#f6f7fb;
+    color:#172033;
+}
+
+button{
+    font-family:inherit;
+}
+
+.app{
+    max-width:760px;
+    margin:auto;
+    padding-bottom:30px;
+}
+
+/* TOP BAR */
+.topbar{
+    background:#ffffff;
+    padding:16px 18px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    border-bottom:1px solid #e9eaf0;
+    position:sticky;
+    top:0;
+    z-index:20;
+}
+
+.brand{
+    font-size:22px;
+    font-weight:800;
+    color:#111827;
+}
+
+.subtitle{
+    margin-top:3px;
+    font-size:12px;
+    color:#7b8190;
+}
+
+/* Hide old online/offline badge completely */
+#status,
+.status{
+    display:none !important;
+}
+
+/* PARTNER PROFILE */
+.partner-card{
+    margin:14px;
+    padding:20px;
+    border-radius:18px;
+    background:#ffffff;
+    box-shadow:0 3px 14px rgba(0,0,0,.06);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.partner-card h1{
+    margin:0;
+    font-size:21px;
+}
+
+.partner-card p{
+    margin:7px 0 0;
+    color:#777f8f;
+    font-size:13px;
+}
+
+.partner-id{
+    font-size:11px;
+    color:#7c8492;
+    background:#f2f3f7;
+    padding:7px 9px;
+    border-radius:8px;
+}
+
+/* EARNINGS HERO */
+.hero{
+    margin:14px;
+    padding:22px;
+    border-radius:20px;
+    background:linear-gradient(135deg,#171b2d,#292f49);
+    color:white;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    box-shadow:0 6px 20px rgba(20,24,40,.15);
+}
+
+.eyebrow{
+    display:block;
+    font-size:11px;
+    letter-spacing:1px;
+    opacity:.7;
+    margin-bottom:7px;
+}
+
+.hero strong{
+    display:block;
+    font-size:34px;
+    line-height:1.1;
+}
+
+.hero small{
+    display:block;
+    margin-top:7px;
+    opacity:.7;
+    font-size:12px;
+}
+
+.hero-side{
+    text-align:right;
+    padding-left:15px;
+}
+
+.hero-side span{
+    display:block;
+    font-size:12px;
+    opacity:.7;
+}
+
+.hero-side b{
+    display:block;
+    font-size:18px;
+    margin-top:6px;
+}
+
+/* STATS */
+.cards{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:12px;
+    margin:14px;
+}
+
+.card{
+    background:#ffffff;
+    padding:17px;
+    border-radius:16px;
+    box-shadow:0 3px 12px rgba(0,0,0,.05);
+}
+
+.card span{
+    display:block;
+    color:#7b8190;
+    font-size:12px;
+}
+
+.card strong{
+    display:block;
+    font-size:25px;
+    margin-top:7px;
+}
+
+/* PANELS */
+.panel{
+    background:#ffffff;
+    margin:14px;
+    padding:17px;
+    border-radius:18px;
+    box-shadow:0 3px 14px rgba(0,0,0,.05);
+}
+
+.panel-title{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:13px;
+}
+
+.panel-title h2{
+    margin:0;
+    font-size:17px;
+}
+
+.panel-title button{
+    background:#f0f1f5;
+    color:#222938;
+    border:0;
+    padding:8px 12px;
+    border-radius:9px;
+    font-size:12px;
+    font-weight:700;
+}
+
+/* PENDING */
+.pending-panel{
+    border:1px solid #eeeaf8;
+}
+
+.pending-count{
+    background:#f0ecff;
+    color:#6542c4;
+    min-width:28px;
+    height:28px;
+    display:flex !important;
+    align-items:center;
+    justify-content:center;
+    border-radius:50%;
+    font-weight:800;
+}
+
+/* ASSIGNMENT */
+.assignment{
+    background:#fafaff;
+    border:1px solid #ececf3;
+    border-radius:14px;
+    padding:14px;
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    align-items:center;
+    margin-bottom:10px;
+}
+
+.awb{
+    font-weight:800;
+    font-size:14px;
+}
+
+.details{
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+    margin-top:8px;
+    color:#6e7584;
+    font-size:11px;
+}
+
+.confirm-btn{
+    background:#6c43d7;
+    color:#fff;
+    border:0;
+    border-radius:10px;
+    padding:11px 13px;
+    font-weight:800;
+    font-size:11px;
+    white-space:nowrap;
+}
+
+/* DELIVERY */
+.delivery-card{
+    border:1px solid #e9eaf0;
+    border-radius:15px;
+    padding:15px;
+    margin-bottom:12px;
+}
+
+.delivery-header{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    align-items:flex-start;
+}
+
+.delivery-header small{
+    display:block;
+    margin-top:4px;
+    color:#8a909d;
+    font-size:11px;
+}
+
+.delivery-status{
+    background:#f0f1f5;
+    color:#444b59;
+    padding:6px 8px;
+    border-radius:8px;
+    font-size:10px;
+    font-weight:800;
+}
+
+.customer{
+    margin-top:13px;
+    padding-top:12px;
+    border-top:1px solid #f0f1f4;
+}
+
+.customer strong{
+    font-size:14px;
+}
+
+.customer span{
+    color:#777f8d;
+    font-size:12px;
+    margin-left:6px;
+}
+
+.customer p{
+    margin:7px 0 0;
+    color:#606878;
+    font-size:12px;
+    line-height:1.45;
+}
+
+.delivery-info{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-top:13px;
+}
+
+.delivery-info div{
+    background:#f7f7fa;
+    border-radius:10px;
+    padding:10px;
+}
+
+.delivery-info span{
+    display:block;
+    font-size:10px;
+    color:#858b98;
+}
+
+.delivery-info b{
+    display:block;
+    margin-top:4px;
+    font-size:13px;
+}
+
+/* ACTION BUTTONS */
+.action-row{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:8px;
+    margin-top:13px;
+}
+
+.action-row button{
+    border:0;
+    border-radius:10px;
+    padding:11px 5px;
+    font-size:10px;
+    font-weight:800;
+}
+
+.cod-btn{
+    background:#f1ecff;
+    color:#6542c4;
+}
+
+.deliver-btn{
+    background:#171b2d;
+    color:white;
+}
+
+.rto-btn{
+    background:#f2f3f5;
+    color:#454b57;
+}
+
+/* COD */
+.cod-summary{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+}
+
+.cod-summary div{
+    background:#f7f7fa;
+    padding:13px;
+    border-radius:12px;
+}
+
+.cod-summary span{
+    display:block;
+    color:#808795;
+    font-size:11px;
+}
+
+.cod-summary b{
+    display:block;
+    margin-top:6px;
+    font-size:18px;
+}
+
+/* EARNINGS */
+.earning{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:13px 0;
+    border-bottom:1px solid #eeeeF2;
+}
+
+.earning:last-child{
+    border-bottom:0;
+}
+
+.earning small{
+    display:block;
+    color:#858b98;
+    margin-top:4px;
+    font-size:11px;
+}
+
+.earning-right{
+    text-align:right;
+}
+
+.earning-right strong{
+    display:block;
+}
+
+.badge{
+    display:inline-block;
+    margin-top:5px;
+    padding:4px 7px;
+    border-radius:7px;
+    background:#f0f1f4;
+    font-size:9px;
+    font-weight:800;
+}
+
+.empty{
+    padding:18px 8px;
+    text-align:center;
+    color:#8a909d;
+    font-size:12px;
+}
+
+.error{
+    background:#fff1f1;
+    color:#b42318;
+    padding:11px;
+    border-radius:10px;
+    font-size:12px;
+}
+
+/* MOBILE */
+@media(max-width:600px){
+
+    .app{
+        width:100%;
+    }
+
+    .partner-card{
+        margin:10px;
+        padding:16px;
+    }
+
+    .partner-card h1{
+        font-size:18px;
+    }
+
+    .hero{
+        margin:10px;
+        padding:19px;
+    }
+
+    .hero strong{
+        font-size:29px;
+    }
+
+    .cards{
+        margin:10px;
+        gap:9px;
+    }
+
+    .card{
+        padding:14px;
+    }
+
+    .panel{
+        margin:10px;
+        padding:14px;
+    }
+
+    .assignment{
+        align-items:flex-start;
+    }
+
+    .confirm-btn{
+        padding:10px;
+    }
+
+}
+
+@media(max-width:380px){
+
+    .hero{
+        display:block;
+    }
+
+    .hero-side{
+        text-align:left;
+        margin-top:14px;
+        padding-left:0;
+    }
+
+    .action-row{
+        grid-template-columns:1fr;
+    }
+
+}

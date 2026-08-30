@@ -7,37 +7,79 @@ from datetime import datetime
 import sqlite3
 import os
 import uuid
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "data", "platform.db")
-
 app = Flask(__name__)
 CORS(app)
-
-
 def get_db():
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-
     db = sqlite3.connect(DB_PATH)
     db.row_factory = sqlite3.Row
     return db
-
-
 def now():
     return datetime.now().isoformat(timespec="seconds")
-
-
 def generate_id(prefix):
     return f"{prefix}-{uuid.uuid4().hex[:8].upper()}"
+def create_platform_transaction(
+    db,
+    transaction_type,
+    direction,
+    amount,
+    shipment_id=None,
+    order_id=None,
+    seller_id=None,
+    company_id=None,
+    partner_id=None,
+    reference_id=None,
+    note=None
+):
+    amount = round(float(amount or 0), 2)
+
+    if amount < 0:
+        raise ValueError("Transaction amount cannot be negative")
+
+    transaction_id = generate_id("TXN")
+    created_at = now()
+
+    db.execute("""
+        INSERT INTO platform_transactions (
+            transaction_id,
+            shipment_id,
+            order_id,
+            seller_id,
+            company_id,
+            partner_id,
+            transaction_type,
+            direction,
+            amount,
+            status,
+            reference_id,
+            note,
+            created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'POSTED', ?, ?, ?)
+    """, (
+        transaction_id,
+        shipment_id,
+        order_id,
+        seller_id,
+        company_id,
+        partner_id,
+        transaction_type,
+        direction,
+        amount,
+        reference_id,
+        note,
+        created_at
+    ))
+
+    return transaction_id
 
 
 def row_to_dict(row):
     return dict(row) if row else None
-
-
 def init_db():
     db = get_db()
-
     db.execute("""
         CREATE TABLE IF NOT EXISTS admins (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -49,7 +91,6 @@ def init_db():
             created_at TEXT NOT NULL
         )
     """)
-
     db.execute("""
         CREATE TABLE IF NOT EXISTS sellers (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -63,7 +104,6 @@ def init_db():
             created_at TEXT NOT NULL
         )
     """)
-
     db.execute("""
         CREATE TABLE IF NOT EXISTS hubs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -76,7 +116,6 @@ def init_db():
             created_at TEXT NOT NULL
         )
     """)
-
     db.execute("""
         CREATE TABLE IF NOT EXISTS shipments (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -97,7 +136,6 @@ def init_db():
             updated_at TEXT NOT NULL
         )
     """)
-
     db.execute("""
         CREATE TABLE IF NOT EXISTS shipment_events (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -108,9 +146,6 @@ def init_db():
             created_at TEXT NOT NULL
         )
     """)
-
-
-
     db.execute("""
         CREATE TABLE IF NOT EXISTS delivery_assignments (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -137,7 +172,6 @@ def init_db():
             UNIQUE(hub_code, seat_number)
         )
     """)
-
     db.execute("""
         CREATE TABLE IF NOT EXISTS delivery_partners (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -166,7 +200,6 @@ def init_db():
             created_at TEXT NOT NULL
         )
     """)
-
     db.execute("""
         CREATE TABLE IF NOT EXISTS partner_earnings (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -198,7 +231,6 @@ def init_db():
             received_at TEXT
         )
     """)
-
     db.execute("""
         CREATE TABLE IF NOT EXISTS bag_shipments (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -208,7 +240,6 @@ def init_db():
             UNIQUE(bag_id, shipment_id)
         )
     """)
-
     db.execute("""
         CREATE TABLE IF NOT EXISTS hub_movements (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -221,8 +252,6 @@ def init_db():
             received_at TEXT
         )
     """)
-
-
     db.execute("""
         CREATE TABLE IF NOT EXISTS products (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -238,7 +267,6 @@ def init_db():
             updated_at TEXT NOT NULL
         )
     """)
-
     db.execute("""
         CREATE TABLE IF NOT EXISTS orders (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -258,7 +286,6 @@ def init_db():
             updated_at TEXT NOT NULL
         )
     """)
-
     db.execute("""
         CREATE TABLE IF NOT EXISTS order_items (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -273,35 +300,44 @@ def init_db():
             created_at TEXT NOT NULL
         )
     """)
-
     db.commit()
     db.close()
-
-
 # =========================================================
 # ADMIN MODULE
 # =========================================================
-
 @app.route("/api/admins", methods=["POST"])
 def create_admin():
     data = request.get_json(silent=True) or {}
-
     name = str(data.get("name", "")).strip()
     phone = str(data.get("phone", "")).strip()
-
     if not name or not phone:
         return jsonify({
             "success": False,
             "message": "name and phone are required"
         }), 400
-
     db = get_db()
-
+    if company_id:
+        company = db.execute("""
+            SELECT company_id, name, status
+            FROM companies
+            WHERE company_id=?
+        """, (company_id,)).fetchone()
+        if not company:
+            db.close()
+            return jsonify({
+                "success": False,
+                "message": "Company not found"
+            }), 404
+        if company["status"] != "ACTIVE":
+            db.close()
+            return jsonify({
+                "success": False,
+                "message": "Company is inactive"
+            }), 400
     existing = db.execute(
         "SELECT admin_id FROM admins WHERE phone=?",
         (phone,)
     ).fetchone()
-
     if existing:
         db.close()
         return jsonify({
@@ -309,9 +345,7 @@ def create_admin():
             "message": "Admin with this phone already exists",
             "admin_id": existing["admin_id"]
         }), 409
-
     admin_id = generate_id("ADM")
-
     db.execute("""
         INSERT INTO admins
         (admin_id, name, phone, password_hash, status, created_at)
@@ -323,100 +357,75 @@ def create_admin():
         None,
         now()
     ))
-
     db.commit()
-
     admin = db.execute("""
         SELECT id, admin_id, name, phone, status, created_at
         FROM admins
         WHERE admin_id=?
     """, (admin_id,)).fetchone()
-
     db.close()
-
     return jsonify({
         "success": True,
         "message": "Admin created successfully",
         "admin": row_to_dict(admin)
     }), 201
-
-
 @app.route("/api/admins", methods=["GET"])
 def get_admins():
     db = get_db()
-
     rows = db.execute("""
         SELECT id, admin_id, name, phone, status, created_at
         FROM admins
         ORDER BY id DESC
     """).fetchall()
-
     db.close()
-
     return jsonify({
         "success": True,
         "admins": [row_to_dict(x) for x in rows]
     })
-
-
 @app.route("/api/admins/<admin_id>", methods=["GET"])
 def get_admin(admin_id):
     db = get_db()
-
     admin = db.execute("""
         SELECT id, admin_id, name, phone, status, created_at
         FROM admins
         WHERE admin_id=?
     """, (admin_id,)).fetchone()
-
     db.close()
-
     if not admin:
         return jsonify({
             "success": False,
             "message": "Admin not found"
         }), 404
-
     return jsonify({
         "success": True,
         "admin": row_to_dict(admin)
     })
-
-
 # =========================================================
-
-
 # ============================================================
 # SELLER PRODUCT API
 # ============================================================
-
 @app.route("/api/sellers/<seller_id>/products", methods=["POST"])
 def create_seller_product(seller_id):
     db = get_db()
     data = request.get_json(silent=True) or {}
-
     seller = db.execute("""
         SELECT seller_id, status
         FROM sellers
         WHERE seller_id=?
     """, (seller_id,)).fetchone()
-
     if not seller:
         return jsonify({
             "success": False,
             "message": "Seller not found"
         }), 404
-
     if seller["status"] != "ACTIVE":
         return jsonify({
             "success": False,
             "message": "Seller is inactive"
         }), 400
-
     name = str(data.get("name", "")).strip()
     sku = str(data.get("sku", "")).strip()
     description = str(data.get("description", "")).strip()
-
     try:
         price = float(data.get("price", 0))
         stock = int(data.get("stock", 0))
@@ -425,22 +434,18 @@ def create_seller_product(seller_id):
             "success": False,
             "message": "Invalid price or stock"
         }), 400
-
     if not name:
         return jsonify({
             "success": False,
             "message": "Product name is required"
         }), 400
-
     if price < 0 or stock < 0:
         return jsonify({
             "success": False,
             "message": "Price and stock cannot be negative"
         }), 400
-
     product_id = generate_id("PROD")
     created_at = now()
-
     db.execute("""
         INSERT INTO products
         (
@@ -467,22 +472,17 @@ def create_seller_product(seller_id):
         created_at,
         created_at
     ))
-
     db.commit()
-
     product = db.execute("""
         SELECT *
         FROM products
         WHERE product_id=?
     """, (product_id,)).fetchone()
-
     return jsonify({
         "success": True,
         "message": "Product created successfully",
         "product": row_to_dict(product)
     }), 201
-
-
 @app.route("/api/sellers/<seller_id>/products", methods=["GET"])
 def get_seller_products(seller_id):
     db = get_db()
@@ -491,28 +491,23 @@ def get_seller_products(seller_id):
         FROM sellers
         WHERE seller_id=?
     """, (seller_id,)).fetchone()
-
     if not seller:
         return jsonify({
             "success": False,
             "message": "Seller not found"
         }), 404
-
     rows = db.execute("""
         SELECT *
         FROM products
         WHERE seller_id=?
         ORDER BY id DESC
     """, (seller_id,)).fetchall()
-
     return jsonify({
         "success": True,
         "seller_id": seller_id,
         "products": [row_to_dict(x) for x in rows],
         "total": len(rows)
     })
-
-
 @app.route("/api/sellers/<seller_id>/products/<product_id>", methods=["GET"])
 def get_seller_product(seller_id, product_id):
     db = get_db()
@@ -521,24 +516,19 @@ def get_seller_product(seller_id, product_id):
         FROM products
         WHERE seller_id=? AND product_id=?
     """, (seller_id, product_id)).fetchone()
-
     if not product:
         return jsonify({
             "success": False,
             "message": "Product not found"
         }), 404
-
     return jsonify({
         "success": True,
         "product": row_to_dict(product)
     })
-
-
 @app.route("/api/sellers/<seller_id>/products/<product_id>/stock", methods=["POST"])
 def update_seller_product_stock(seller_id, product_id):
     db = get_db()
     data = request.get_json(silent=True) or {}
-
     try:
         stock = int(data.get("stock"))
     except (TypeError, ValueError):
@@ -546,25 +536,21 @@ def update_seller_product_stock(seller_id, product_id):
             "success": False,
             "message": "Valid stock is required"
         }), 400
-
     if stock < 0:
         return jsonify({
             "success": False,
             "message": "Stock cannot be negative"
         }), 400
-
     product = db.execute("""
         SELECT product_id
         FROM products
         WHERE seller_id=? AND product_id=?
     """, (seller_id, product_id)).fetchone()
-
     if not product:
         return jsonify({
             "success": False,
             "message": "Product not found"
         }), 404
-
     db.execute("""
         UPDATE products
         SET stock=?, updated_at=?
@@ -575,47 +561,37 @@ def update_seller_product_stock(seller_id, product_id):
         seller_id,
         product_id
     ))
-
     db.commit()
-
     product = db.execute("""
         SELECT *
         FROM products
         WHERE seller_id=? AND product_id=?
     """, (seller_id, product_id)).fetchone()
-
     return jsonify({
         "success": True,
         "message": "Product stock updated",
         "product": row_to_dict(product)
     })
-
-
 @app.route("/api/sellers/<seller_id>/products/<product_id>/status", methods=["POST"])
 def update_seller_product_status(seller_id, product_id):
     db = get_db()
     data = request.get_json(silent=True) or {}
-
     status = str(data.get("status", "")).strip().upper()
-
     if status not in {"ACTIVE", "INACTIVE"}:
         return jsonify({
             "success": False,
             "message": "Status must be ACTIVE or INACTIVE"
         }), 400
-
     product = db.execute("""
         SELECT product_id
         FROM products
         WHERE seller_id=? AND product_id=?
     """, (seller_id, product_id)).fetchone()
-
     if not product:
         return jsonify({
             "success": False,
             "message": "Product not found"
         }), 404
-
     db.execute("""
         UPDATE products
         SET status=?, updated_at=?
@@ -626,9 +602,7 @@ def update_seller_product_status(seller_id, product_id):
         seller_id,
         product_id
     ))
-
     db.commit()
-
     return jsonify({
         "success": True,
         "message": "Product status updated",
@@ -636,73 +610,57 @@ def update_seller_product_status(seller_id, product_id):
         "product_id": product_id,
         "status": status
     })
-
-
-
 # ============================================================
 # SELLER ORDER API
 # ============================================================
-
 @app.route("/api/sellers/<seller_id>/orders", methods=["POST"])
 def create_seller_order(seller_id):
     db = get_db()
     data = request.get_json(silent=True) or {}
-
     seller = db.execute("""
         SELECT seller_id, status
         FROM sellers
         WHERE seller_id=?
     """, (seller_id,)).fetchone()
-
     if not seller:
         return jsonify({
             "success": False,
             "message": "Seller not found"
         }), 404
-
     if seller["status"] != "ACTIVE":
         return jsonify({
             "success": False,
             "message": "Seller is inactive"
         }), 400
-
     customer_name = str(data.get("customer_name", "")).strip()
     customer_phone = str(data.get("customer_phone", "")).strip()
     delivery_address = str(data.get("delivery_address", "")).strip()
     payment_type = str(data.get("payment_type", "COD")).strip().upper()
-
     if not customer_name:
         return jsonify({
             "success": False,
             "message": "Customer name is required"
         }), 400
-
     if not delivery_address:
         return jsonify({
             "success": False,
             "message": "Delivery address is required"
         }), 400
-
     if payment_type not in {"COD", "PREPAID"}:
         return jsonify({
             "success": False,
             "message": "Payment type must be COD or PREPAID"
         }), 400
-
     items = data.get("items", [])
-
     if not isinstance(items, list) or not items:
         return jsonify({
             "success": False,
             "message": "At least one order item is required"
         }), 400
-
     prepared_items = []
     subtotal = 0.0
-
     for item in items:
         product_id = str(item.get("product_id", "")).strip()
-
         try:
             quantity = int(item.get("quantity", 0))
         except (TypeError, ValueError):
@@ -710,34 +668,29 @@ def create_seller_order(seller_id):
                 "success": False,
                 "message": "Invalid quantity"
             }), 400
-
         if not product_id or quantity <= 0:
             return jsonify({
                 "success": False,
                 "message": "Valid product_id and quantity are required"
             }), 400
-
         product = db.execute("""
             SELECT *
             FROM products
             WHERE product_id=?
               AND seller_id=?
         """, (product_id, seller_id)).fetchone()
-
         if not product:
             return jsonify({
                 "success": False,
                 "message": "Product not found for this seller",
                 "product_id": product_id
             }), 404
-
         if product["status"] != "ACTIVE":
             return jsonify({
                 "success": False,
                 "message": "Product is inactive",
                 "product_id": product_id
             }), 400
-
         if int(product["stock"]) < quantity:
             return jsonify({
                 "success": False,
@@ -745,11 +698,9 @@ def create_seller_order(seller_id):
                 "product_id": product_id,
                 "available_stock": int(product["stock"])
             }), 400
-
         unit_price = float(product["price"])
         total_price = unit_price * quantity
         subtotal += total_price
-
         prepared_items.append({
             "product_id": product_id,
             "product_name": product["name"],
@@ -757,7 +708,6 @@ def create_seller_order(seller_id):
             "unit_price": unit_price,
             "total_price": total_price
         })
-
     try:
         delivery_fee = float(data.get("delivery_fee", 0))
     except (TypeError, ValueError):
@@ -765,17 +715,14 @@ def create_seller_order(seller_id):
             "success": False,
             "message": "Invalid delivery fee"
         }), 400
-
     if delivery_fee < 0:
         return jsonify({
             "success": False,
             "message": "Delivery fee cannot be negative"
         }), 400
-
     total_amount = subtotal + delivery_fee
     order_id = generate_id("ORD")
     created_at = now()
-
     db.execute("""
         INSERT INTO orders
         (
@@ -811,10 +758,8 @@ def create_seller_order(seller_id):
         created_at,
         created_at
     ))
-
     for item in prepared_items:
         order_item_id = generate_id("ITEM")
-
         db.execute("""
             INSERT INTO order_items
             (
@@ -840,7 +785,6 @@ def create_seller_order(seller_id):
             item["total_price"],
             created_at
         ))
-
         db.execute("""
             UPDATE products
             SET stock = stock - ?,
@@ -853,78 +797,266 @@ def create_seller_order(seller_id):
             item["product_id"],
             seller_id
         ))
+    # =========================================================
+    # AUTOMATIC ORDER -> SHIPMENT INTEGRATION
+    # =========================================================
+    shipment_id = generate_id("SHP")
+    awb = generate_id("AWB")
+    shipment_created_at = now()
+    origin_hub = str(data.get("origin_hub", "")).strip().upper()
+    destination_hub = str(data.get("destination_hub", "")).strip().upper()
 
+    # Default marketplace order routing.
+    # If the order does not provide hub codes, use the active default hub.
+    if not origin_hub or not destination_hub:
+        default_hub = db.execute("""
+            SELECT hub_code
+            FROM hubs
+            WHERE status='ACTIVE'
+            ORDER BY id ASC
+            LIMIT 1
+        """).fetchone()
+
+        if default_hub:
+            default_hub_code = str(default_hub["hub_code"]).strip().upper()
+
+            if not origin_hub:
+                origin_hub = default_hub_code
+
+            if not destination_hub:
+                destination_hub = default_hub_code
+    # If hubs are supplied, verify that they exist and are active.
+    if origin_hub:
+        origin = db.execute("""
+            SELECT hub_code, status
+            FROM hubs
+            WHERE hub_code=?
+        """, (origin_hub,)).fetchone()
+        if not origin:
+            db.close()
+            return jsonify({
+                "success": False,
+                "message": "Origin hub not found",
+                "hub_code": origin_hub
+            }), 404
+        if origin["status"] != "ACTIVE":
+            db.close()
+            return jsonify({
+                "success": False,
+                "message": "Origin hub is inactive",
+                "hub_code": origin_hub
+            }), 400
+    if destination_hub:
+        destination = db.execute("""
+            SELECT hub_code, status
+            FROM hubs
+            WHERE hub_code=?
+        """, (destination_hub,)).fetchone()
+        if not destination:
+            db.close()
+            return jsonify({
+                "success": False,
+                "message": "Destination hub not found",
+                "hub_code": destination_hub
+            }), 404
+        if destination["status"] != "ACTIVE":
+            db.close()
+            return jsonify({
+                "success": False,
+                "message": "Destination hub is inactive",
+                "hub_code": destination_hub
+            }), 400
+    # Create shipment automatically for this order.
+    db.execute("""
+        INSERT INTO shipments (
+            shipment_id,
+            awb,
+            order_id,
+            seller_id,
+            customer_name,
+            customer_phone,
+            pickup_address,
+            delivery_address,
+            origin_hub,
+            current_hub,
+            destination_hub,
+            shipment_type,
+            status,
+            amount,
+            created_at,
+            updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        shipment_id,
+        awb,
+        order_id,
+        seller_id,
+        customer_name,
+        customer_phone,
+        str(data.get("pickup_address", "")).strip(),
+        delivery_address,
+        origin_hub,
+        origin_hub,
+        destination_hub,
+        "FORWARD",
+        (
+            "AT_DESTINATION_HUB"
+            if origin_hub and destination_hub and origin_hub == destination_hub
+            else "CREATED"
+        ),
+        total_amount,
+        shipment_created_at,
+        shipment_created_at
+    ))
+    # Link order to shipment.
+    db.execute("""
+        UPDATE orders
+        SET shipment_id=?,
+            updated_at=?
+        WHERE order_id=?
+    """, (
+        shipment_id,
+        shipment_created_at,
+        order_id
+    ))
+    # Initial shipment tracking event.
+    initial_shipment_status = (
+        "AT_DESTINATION_HUB"
+        if origin_hub and destination_hub and origin_hub == destination_hub
+        else "CREATED"
+    )
+
+    initial_shipment_note = (
+        "Shipment automatically created from seller order and is already at destination hub"
+        if initial_shipment_status == "AT_DESTINATION_HUB"
+        else "Shipment automatically created from seller order"
+    )
+
+    db.execute("""
+        INSERT INTO shipment_events (
+            shipment_id,
+            status,
+            hub_code,
+            note,
+            created_at
+        )
+        VALUES (?, ?, ?, ?, ?)
+    """, (
+        shipment_id,
+        initial_shipment_status,
+        destination_hub if initial_shipment_status == "AT_DESTINATION_HUB" else origin_hub,
+        initial_shipment_note,
+        shipment_created_at
+    ))
+    # =========================================================
+    # AUTOMATIC PAYMENT RECORD
+    # =========================================================
+    payment_id = generate_id("PAY")
+    if payment_type == "COD":
+        payment_status = "PENDING"
+        collected_amount = 0
+        note = "COD payment pending collection"
+    else:
+        payment_status = "PAID"
+        collected_amount = total_amount
+        note = "Prepaid order payment"
+    db.execute("""
+        INSERT INTO payments (
+            payment_id,
+            shipment_id,
+            payment_type,
+            amount,
+            collected_amount,
+            status,
+            collected_by,
+            collected_at,
+            note,
+            created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        payment_id,
+        shipment_id,
+        payment_type,
+        total_amount,
+        collected_amount,
+        payment_status,
+        "SYSTEM" if payment_type == "PREPAID" else None,
+        shipment_created_at if payment_type == "PREPAID" else None,
+        note,
+        shipment_created_at
+    ))
     db.commit()
-
     order = db.execute("""
         SELECT *
         FROM orders
         WHERE order_id=?
     """, (order_id,)).fetchone()
-
     order_items = db.execute("""
         SELECT *
         FROM order_items
         WHERE order_id=?
         ORDER BY id ASC
     """, (order_id,)).fetchall()
-
+    shipment = db.execute("""
+        SELECT *
+        FROM shipments
+        WHERE shipment_id=?
+    """, (shipment_id,)).fetchone()
+    payment = db.execute("""
+        SELECT *
+        FROM payments
+        WHERE payment_id=?
+    """, (payment_id,)).fetchone()
+    db.close()
     return jsonify({
         "success": True,
-        "message": "Order created successfully",
+        "message": "Order, shipment and payment created successfully",
         "order": row_to_dict(order),
-        "items": [row_to_dict(x) for x in order_items]
+        "items": [row_to_dict(x) for x in order_items],
+        "shipment": row_to_dict(shipment),
+        "payment": row_to_dict(payment)
     }), 201
-
-
 @app.route("/api/sellers/<seller_id>/orders", methods=["GET"])
 def get_seller_orders(seller_id):
     db = get_db()
-
     seller = db.execute("""
         SELECT seller_id
         FROM sellers
         WHERE seller_id=?
     """, (seller_id,)).fetchone()
-
     if not seller:
         return jsonify({
             "success": False,
             "message": "Seller not found"
         }), 404
-
     rows = db.execute("""
         SELECT *
         FROM orders
         WHERE seller_id=?
         ORDER BY id DESC
     """, (seller_id,)).fetchall()
-
     return jsonify({
         "success": True,
         "seller_id": seller_id,
         "orders": [row_to_dict(x) for x in rows],
         "total": len(rows)
     })
-
-
 @app.route("/api/sellers/<seller_id>/orders/<order_id>", methods=["GET"])
 def get_seller_order(seller_id, order_id):
     db = get_db()
-
     order = db.execute("""
         SELECT *
         FROM orders
         WHERE seller_id=?
           AND order_id=?
     """, (seller_id, order_id)).fetchone()
-
     if not order:
         return jsonify({
             "success": False,
             "message": "Order not found"
         }), 404
-
     items = db.execute("""
         SELECT *
         FROM order_items
@@ -932,21 +1064,16 @@ def get_seller_order(seller_id, order_id):
           AND order_id=?
         ORDER BY id ASC
     """, (seller_id, order_id)).fetchall()
-
     return jsonify({
         "success": True,
         "order": row_to_dict(order),
         "items": [row_to_dict(x) for x in items]
     })
-
-
 @app.route("/api/sellers/<seller_id>/orders/<order_id>/status", methods=["POST"])
 def update_seller_order_status(seller_id, order_id):
     db = get_db()
     data = request.get_json(silent=True) or {}
-
     status = str(data.get("status", "")).strip().upper()
-
     allowed = {
         "PLACED",
         "CONFIRMED",
@@ -955,26 +1082,22 @@ def update_seller_order_status(seller_id, order_id):
         "DELIVERED",
         "CANCELLED"
     }
-
     if status not in allowed:
         return jsonify({
             "success": False,
             "message": "Invalid order status"
         }), 400
-
     order = db.execute("""
         SELECT order_id
         FROM orders
         WHERE seller_id=?
           AND order_id=?
     """, (seller_id, order_id)).fetchone()
-
     if not order:
         return jsonify({
             "success": False,
             "message": "Order not found"
         }), 404
-
     db.execute("""
         UPDATE orders
         SET order_status=?,
@@ -987,43 +1110,34 @@ def update_seller_order_status(seller_id, order_id):
         seller_id,
         order_id
     ))
-
     db.commit()
-
     updated = db.execute("""
         SELECT *
         FROM orders
         WHERE seller_id=?
           AND order_id=?
     """, (seller_id, order_id)).fetchone()
-
     return jsonify({
         "success": True,
         "message": "Order status updated",
         "order": row_to_dict(updated)
     })
-
-
 # ============================================================
 # SELLER DASHBOARD API
 # ============================================================
-
 @app.route("/api/sellers/<seller_id>/dashboard", methods=["GET"])
 def get_seller_dashboard(seller_id):
     db = get_db()
-
     seller = db.execute("""
         SELECT seller_id, name, phone, status, created_at
         FROM sellers
         WHERE seller_id=?
     """, (seller_id,)).fetchone()
-
     if not seller:
         return jsonify({
             "success": False,
             "message": "Seller not found"
         }), 404
-
     product_stats = db.execute("""
         SELECT
             COUNT(*) AS total_products,
@@ -1035,7 +1149,6 @@ def get_seller_dashboard(seller_id):
         FROM products
         WHERE seller_id=?
     """, (seller_id,)).fetchone()
-
     order_stats = db.execute("""
         SELECT
             COUNT(*) AS total_orders,
@@ -1055,7 +1168,6 @@ def get_seller_dashboard(seller_id):
         FROM orders
         WHERE seller_id=?
     """, (seller_id,)).fetchone()
-
     recent_orders = db.execute("""
         SELECT
             order_id,
@@ -1074,7 +1186,6 @@ def get_seller_dashboard(seller_id):
         ORDER BY id DESC
         LIMIT 10
     """, (seller_id,)).fetchall()
-
     low_stock_products = db.execute("""
         SELECT
             product_id,
@@ -1091,7 +1202,6 @@ def get_seller_dashboard(seller_id):
         ORDER BY stock ASC, id DESC
         LIMIT 10
     """, (seller_id,)).fetchall()
-
     return jsonify({
         "success": True,
         "seller": row_to_dict(seller),
@@ -1120,24 +1230,19 @@ def get_seller_dashboard(seller_id):
             row_to_dict(x) for x in low_stock_products
         ]
     })
-
-
 @app.route("/api/sellers/<seller_id>/products/summary", methods=["GET"])
 def get_seller_product_summary(seller_id):
     db = get_db()
-
     seller = db.execute("""
         SELECT seller_id
         FROM sellers
         WHERE seller_id=?
     """, (seller_id,)).fetchone()
-
     if not seller:
         return jsonify({
             "success": False,
             "message": "Seller not found"
         }), 404
-
     stats = db.execute("""
         SELECT
             COUNT(*) AS total_products,
@@ -1152,30 +1257,24 @@ def get_seller_product_summary(seller_id):
         FROM products
         WHERE seller_id=?
     """, (seller_id,)).fetchone()
-
     return jsonify({
         "success": True,
         "seller_id": seller_id,
         "summary": row_to_dict(stats)
     })
-
-
 @app.route("/api/sellers/<seller_id>/orders/summary", methods=["GET"])
 def get_seller_order_summary(seller_id):
     db = get_db()
-
     seller = db.execute("""
         SELECT seller_id
         FROM sellers
         WHERE seller_id=?
     """, (seller_id,)).fetchone()
-
     if not seller:
         return jsonify({
             "success": False,
             "message": "Seller not found"
         }), 404
-
     stats = db.execute("""
         SELECT
             COUNT(*) AS total_orders,
@@ -1195,79 +1294,87 @@ def get_seller_order_summary(seller_id):
         FROM orders
         WHERE seller_id=?
     """, (seller_id,)).fetchone()
-
     return jsonify({
         "success": True,
         "seller_id": seller_id,
         "summary": row_to_dict(stats)
     })
-
-
 # ============================================================
 # SELLER DASHBOARD PAGE
 # ============================================================
 
+@app.route("/seller-dashboard", methods=["GET"])
+def seller_dashboard_default():
+    """
+    Compatibility route for the UI readiness check.
+    Opens the first available seller dashboard when no seller_id
+    is supplied. The existing seller-specific route remains intact.
+    """
+    try:
+        row = db.execute("""
+            SELECT seller_id
+            FROM sellers
+            ORDER BY rowid
+            LIMIT 1
+        """).fetchone()
+
+        if row:
+            seller_id = row["seller_id"] if hasattr(row, "keys") else row[0]
+            return redirect(f"/seller-dashboard/{seller_id}")
+
+        return render_template("seller_dashboard.html")
+    except Exception:
+        return render_template("seller_dashboard.html")
+
 @app.route("/seller-dashboard/<seller_id>", methods=["GET"])
 def seller_dashboard_page(seller_id):
     db = get_db()
-
     seller = db.execute("""
         SELECT seller_id
         FROM sellers
         WHERE seller_id=?
     """, (seller_id,)).fetchone()
-
     if not seller:
         return jsonify({
             "success": False,
             "message": "Seller not found"
         }), 404
-
     return render_template(
         "seller_dashboard.html",
         seller_id=seller_id
     )
-
-
 # ============================================================
 # SELLER PRODUCT MANAGEMENT — EDIT / DELETE
 # ============================================================
-
 @app.route("/api/sellers/<seller_id>/products/<product_id>", methods=["PUT"])
 def update_seller_product(seller_id, product_id):
     db = get_db()
     data = request.get_json(silent=True) or {}
-
     product = db.execute("""
         SELECT *
         FROM products
         WHERE seller_id=? AND product_id=?
     """, (seller_id, product_id)).fetchone()
-
     if not product:
         return jsonify({
             "success": False,
             "message": "Product not found"
         }), 404
-
     name = str(data.get("name", product["name"])).strip()
     sku = str(data.get("sku", product["sku"] or "")).strip()
     description = str(
         data.get("description", product["description"] or "")
     ).strip()
-
     if not name:
         return jsonify({
             "success": False,
             "message": "Product name is required"
         }), 400
-
     if not sku:
         return jsonify({
             "success": False,
             "message": "SKU is required"
         }), 400
-
     try:
         price = float(data.get("price", product["price"]))
     except (TypeError, ValueError):
@@ -1275,13 +1382,11 @@ def update_seller_product(seller_id, product_id):
             "success": False,
             "message": "Invalid price"
         }), 400
-
     if price < 0:
         return jsonify({
             "success": False,
             "message": "Price cannot be negative"
         }), 400
-
     try:
         stock = int(data.get("stock", product["stock"]))
     except (TypeError, ValueError):
@@ -1289,13 +1394,11 @@ def update_seller_product(seller_id, product_id):
             "success": False,
             "message": "Invalid stock"
         }), 400
-
     if stock < 0:
         return jsonify({
             "success": False,
             "message": "Stock cannot be negative"
         }), 400
-
     duplicate = db.execute("""
         SELECT product_id
         FROM products
@@ -1303,15 +1406,12 @@ def update_seller_product(seller_id, product_id):
           AND sku=?
           AND product_id!=?
     """, (seller_id, sku, product_id)).fetchone()
-
     if duplicate:
         return jsonify({
             "success": False,
             "message": "SKU already exists for this seller"
         }), 409
-
     updated_at = now()
-
     db.execute("""
         UPDATE products
         SET name=?,
@@ -1332,98 +1432,72 @@ def update_seller_product(seller_id, product_id):
         seller_id,
         product_id
     ))
-
     db.commit()
-
     updated = db.execute("""
         SELECT *
         FROM products
         WHERE seller_id=? AND product_id=?
     """, (seller_id, product_id)).fetchone()
-
     return jsonify({
         "success": True,
         "message": "Product updated successfully",
         "product": row_to_dict(updated)
     })
-
-
 @app.route(
     "/api/sellers/<seller_id>/products/<product_id>",
     methods=["DELETE"]
 )
 def delete_seller_product(seller_id, product_id):
     db = get_db()
-
     product = db.execute("""
         SELECT *
         FROM products
         WHERE seller_id=? AND product_id=?
     """, (seller_id, product_id)).fetchone()
-
     if not product:
         return jsonify({
             "success": False,
             "message": "Product not found"
         }), 404
-
     used = db.execute("""
         SELECT COUNT(*) AS total
         FROM order_items
         WHERE seller_id=? AND product_id=?
     """, (seller_id, product_id)).fetchone()
-
     if int(used["total"] or 0) > 0:
         return jsonify({
             "success": False,
             "message": "Product cannot be deleted because it is already used in an order"
         }), 409
-
     db.execute("""
         DELETE FROM products
         WHERE seller_id=? AND product_id=?
     """, (seller_id, product_id))
-
     db.commit()
-
     return jsonify({
         "success": True,
         "message": "Product deleted successfully",
         "product_id": product_id
     })
-
-
-@app.route(
-    "/api/sellers/<seller_id>/products/<product_id>/stock",
-    methods=["POST"]
-)
-@app.route(
-    "/api/sellers/<seller_id>/products/<product_id>/status",
-    methods=["POST"]
-)
 @app.route("/api/sellers", methods=["POST"])
 def create_seller():
     data = request.get_json(silent=True) or {}
-
     name = str(data.get("name", "")).strip()
     phone = str(data.get("phone", "")).strip()
     email = str(data.get("email", "")).strip()
     company_name = str(data.get("company_name", "")).strip()
+    company_id = str(data.get("company_id", "")).strip()
     city = str(data.get("city", "")).strip()
-
     if not name or not phone:
         return jsonify({
             "success": False,
             "message": "name and phone are required"
         }), 400
-
     db = get_db()
-
     existing = db.execute(
         "SELECT seller_id FROM sellers WHERE phone=?",
         (phone,)
     ).fetchone()
-
     if existing:
         db.close()
         return jsonify({
@@ -1431,13 +1505,11 @@ def create_seller():
             "message": "Seller with this phone already exists",
             "seller_id": existing["seller_id"]
         }), 409
-
     seller_id = generate_id("SEL")
-
     db.execute("""
         INSERT INTO sellers
-        (seller_id, name, phone, email, company_name, city, status, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, 'ACTIVE', ?)
+        (seller_id, name, phone, email, company_name, city, status, created_at, company_id)
+        VALUES (?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?)
     """, (
         seller_id,
         name,
@@ -1445,95 +1517,73 @@ def create_seller():
         email,
         company_name,
         city,
-        now()
+        now(),
+        company_id or None
     ))
-
     db.commit()
-
     seller = db.execute("""
         SELECT *
         FROM sellers
         WHERE seller_id=?
     """, (seller_id,)).fetchone()
-
     db.close()
-
     return jsonify({
         "success": True,
         "message": "Seller created successfully",
         "seller": row_to_dict(seller)
     }), 201
-
-
 @app.route("/api/sellers", methods=["GET"])
 def get_sellers():
     db = get_db()
-
     rows = db.execute("""
         SELECT *
         FROM sellers
         ORDER BY id DESC
     """).fetchall()
-
     db.close()
-
     return jsonify({
         "success": True,
         "sellers": [row_to_dict(x) for x in rows]
     })
-
-
 @app.route("/api/sellers/<seller_id>", methods=["GET"])
 def get_seller(seller_id):
     db = get_db()
-
     seller = db.execute("""
         SELECT *
         FROM sellers
         WHERE seller_id=?
     """, (seller_id,)).fetchone()
-
     db.close()
-
     if not seller:
         return jsonify({
             "success": False,
             "message": "Seller not found"
         }), 404
-
     return jsonify({
         "success": True,
         "seller": row_to_dict(seller)
     })
-
-
 @app.route("/api/sellers/<seller_id>/status", methods=["POST"])
 def update_seller_status(seller_id):
     data = request.get_json(silent=True) or {}
-
     status = str(data.get("status", "")).strip().upper()
-
     if status not in {"ACTIVE", "INACTIVE"}:
         return jsonify({
             "success": False,
             "message": "status must be ACTIVE or INACTIVE"
         }), 400
-
     db = get_db()
-
     seller = db.execute("""
         SELECT seller_id
         FROM sellers
         WHERE seller_id=?
     """, (seller_id,)).fetchone()
-
     if not seller:
         db.close()
         return jsonify({
             "success": False,
             "message": "Seller not found"
         }), 404
-
     db.execute("""
         UPDATE sellers
         SET status=?
@@ -1542,70 +1592,55 @@ def update_seller_status(seller_id):
         status,
         seller_id
     ))
-
     db.commit()
     db.close()
-
     return jsonify({
         "success": True,
         "message": "Seller status updated",
         "seller_id": seller_id,
         "status": status
     })
-
-
 # =========================================================
 # SHIPMENT MODULE
 # =========================================================
-
 @app.route("/api/shipments", methods=["POST"])
 def create_shipment():
     data = request.get_json(silent=True) or {}
-
     customer_name = str(data.get("customer_name", "")).strip()
     delivery_address = str(data.get("delivery_address", "")).strip()
-
     if not customer_name or not delivery_address:
         return jsonify({
             "success": False,
             "message": "customer_name and delivery_address are required"
         }), 400
-
     seller_id = str(data.get("seller_id", "")).strip()
-
     db = get_db()
-
     if seller_id:
         seller = db.execute("""
             SELECT seller_id, status
             FROM sellers
             WHERE seller_id=?
         """, (seller_id,)).fetchone()
-
         if not seller:
             db.close()
             return jsonify({
                 "success": False,
                 "message": "Seller not found"
             }), 404
-
         if seller["status"] != "ACTIVE":
             db.close()
             return jsonify({
                 "success": False,
                 "message": "Seller is inactive"
             }), 400
-
     shipment_id = generate_id("SHP")
     awb = generate_id("AWB")
     created = now()
-
     origin_hub = str(data.get("origin_hub", "")).strip().upper()
     destination_hub = str(data.get("destination_hub", "")).strip().upper()
     shipment_type = str(
         data.get("shipment_type", "FORWARD")
     ).strip().upper()
-
     try:
         amount = float(data.get("amount", 0) or 0)
     except (TypeError, ValueError):
@@ -1614,7 +1649,6 @@ def create_shipment():
             "success": False,
             "message": "amount must be a valid number"
         }), 400
-
     db.execute("""
         INSERT INTO shipments (
             shipment_id,
@@ -1646,11 +1680,26 @@ def create_shipment():
         origin_hub,
         destination_hub,
         shipment_type,
-        "CREATED",
+        (
+            "AT_DESTINATION_HUB"
+            if origin_hub and destination_hub and origin_hub == destination_hub
+            else "CREATED"
+        ),
         amount,
         created,
         created
     ))
+    direct_initial_status = (
+        "AT_DESTINATION_HUB"
+        if origin_hub and destination_hub and origin_hub == destination_hub
+        else "CREATED"
+    )
+
+    direct_initial_note = (
+        "Shipment created and is already at destination hub"
+        if direct_initial_status == "AT_DESTINATION_HUB"
+        else "Shipment created"
+    )
 
     db.execute("""
         INSERT INTO shipment_events (
@@ -1663,51 +1712,39 @@ def create_shipment():
         VALUES (?, ?, ?, ?, ?)
     """, (
         shipment_id,
-        "CREATED",
-        origin_hub,
-        "Shipment created",
+        direct_initial_status,
+        destination_hub if direct_initial_status == "AT_DESTINATION_HUB" else origin_hub,
+        direct_initial_note,
         created
     ))
-
     db.commit()
-
     shipment = db.execute("""
         SELECT *
         FROM shipments
         WHERE shipment_id=?
     """, (shipment_id,)).fetchone()
-
     db.close()
-
     return jsonify({
         "success": True,
         "message": "Shipment created successfully",
         "shipment": row_to_dict(shipment)
     }), 201
-
-
 @app.route("/api/shipments", methods=["GET"])
 def get_shipments():
     db = get_db()
-
     rows = db.execute("""
         SELECT *
         FROM shipments
         ORDER BY id DESC
     """).fetchall()
-
     db.close()
-
     return jsonify({
         "success": True,
         "shipments": [row_to_dict(x) for x in rows]
     })
-
-
 @app.route("/api/shipments/<shipment_id>", methods=["GET"])
 def get_shipment(shipment_id):
     db = get_db()
-
     shipment = db.execute("""
         SELECT *
         FROM shipments
@@ -1716,14 +1753,12 @@ def get_shipment(shipment_id):
         shipment_id,
         shipment_id
     )).fetchone()
-
     if not shipment:
         db.close()
         return jsonify({
             "success": False,
             "message": "Shipment not found"
         }), 404
-
     events = db.execute("""
         SELECT *
         FROM shipment_events
@@ -1732,43 +1767,33 @@ def get_shipment(shipment_id):
     """, (
         shipment["shipment_id"],
     )).fetchall()
-
     db.close()
-
     result = row_to_dict(shipment)
     result["events"] = [row_to_dict(x) for x in events]
-
     return jsonify({
         "success": True,
         "shipment": result
     })
-
 # =========================================================
 # HUB MODULE
 # =========================================================
-
 @app.route("/api/hubs", methods=["POST"])
 def create_hub():
     data = request.get_json(silent=True) or {}
-
     name = str(data.get("name", "")).strip()
     city = str(data.get("city", "")).strip()
     state = str(data.get("state", "")).strip()
     hub_code = str(data.get("hub_code", "")).strip().upper()
-
     if not name or not city or not state or not hub_code:
         return jsonify({
             "success": False,
             "message": "name, city, state and hub_code are required"
         }), 400
-
     db = get_db()
-
     existing = db.execute(
         "SELECT hub_id FROM hubs WHERE hub_code=?",
         (hub_code,)
     ).fetchone()
-
     if existing:
         db.close()
         return jsonify({
@@ -1776,9 +1801,7 @@ def create_hub():
             "message": "Hub code already exists",
             "hub_id": existing["hub_id"]
         }), 409
-
     hub_id = generate_id("HUB")
-
     db.execute("""
         INSERT INTO hubs
         (hub_id, hub_code, name, city, state, status, created_at)
@@ -1791,46 +1814,34 @@ def create_hub():
         state,
         now()
     ))
-
     db.commit()
-
     hub = db.execute("""
         SELECT *
         FROM hubs
         WHERE hub_id=?
     """, (hub_id,)).fetchone()
-
     db.close()
-
     return jsonify({
         "success": True,
         "message": "Hub created successfully",
         "hub": row_to_dict(hub)
     }), 201
-
-
 @app.route("/api/hubs", methods=["GET"])
 def get_hubs():
     db = get_db()
-
     rows = db.execute("""
         SELECT *
         FROM hubs
         ORDER BY id DESC
     """).fetchall()
-
     db.close()
-
     return jsonify({
         "success": True,
         "hubs": [row_to_dict(x) for x in rows]
     })
-
-
 @app.route("/api/hubs/<hub_id>", methods=["GET"])
 def get_hub(hub_id):
     db = get_db()
-
     hub = db.execute("""
         SELECT *
         FROM hubs
@@ -1839,35 +1850,26 @@ def get_hub(hub_id):
         hub_id,
         hub_id
     )).fetchone()
-
     db.close()
-
     if not hub:
         return jsonify({
             "success": False,
             "message": "Hub not found"
         }), 404
-
     return jsonify({
         "success": True,
         "hub": row_to_dict(hub)
     })
-
-
 @app.route("/api/hubs/<hub_id>/status", methods=["POST"])
 def update_hub_status(hub_id):
     data = request.get_json(silent=True) or {}
-
     status = str(data.get("status", "")).strip().upper()
-
     if status not in {"ACTIVE", "INACTIVE"}:
         return jsonify({
             "success": False,
             "message": "status must be ACTIVE or INACTIVE"
         }), 400
-
     db = get_db()
-
     hub = db.execute("""
         SELECT hub_id
         FROM hubs
@@ -1876,14 +1878,12 @@ def update_hub_status(hub_id):
         hub_id,
         hub_id
     )).fetchone()
-
     if not hub:
         db.close()
         return jsonify({
             "success": False,
             "message": "Hub not found"
         }), 404
-
     db.execute("""
         UPDATE hubs
         SET status=?
@@ -1892,72 +1892,58 @@ def update_hub_status(hub_id):
         status,
         hub["hub_id"]
     ))
-
     db.commit()
     db.close()
-
     return jsonify({
         "success": True,
         "message": "Hub status updated",
         "hub_id": hub["hub_id"],
         "status": status
     })
-
 # =========================================================
 # BAG & SORTING MODULE
 # =========================================================
-
 @app.route("/api/bags", methods=["POST"])
 def create_bag():
     data = request.get_json(silent=True) or {}
-
     origin_hub = str(data.get("origin_hub", "")).strip().upper()
     destination_hub = str(data.get("destination_hub", "")).strip().upper()
-
     if not origin_hub or not destination_hub:
         return jsonify({
             "success": False,
             "message": "origin_hub and destination_hub are required"
         }), 400
-
     if origin_hub == destination_hub:
         return jsonify({
             "success": False,
             "message": "Origin and destination hub cannot be same"
         }), 400
-
     bag_id = generate_id("BAG")
     bag_code = generate_id("BAGCODE")
     created = now()
-
     db = get_db()
-
     origin = db.execute("""
         SELECT hub_id
         FROM hubs
         WHERE hub_code=? AND status='ACTIVE'
     """, (origin_hub,)).fetchone()
-
     destination = db.execute("""
         SELECT hub_id
         FROM hubs
         WHERE hub_code=? AND status='ACTIVE'
     """, (destination_hub,)).fetchone()
-
     if not origin:
         db.close()
         return jsonify({
             "success": False,
             "message": "Origin hub not found or inactive"
         }), 404
-
     if not destination:
         db.close()
         return jsonify({
             "success": False,
             "message": "Destination hub not found or inactive"
         }), 404
-
     db.execute("""
         INSERT INTO bags (
             bag_id,
@@ -1975,28 +1961,21 @@ def create_bag():
         destination_hub,
         created
     ))
-
     db.commit()
-
     bag = db.execute("""
         SELECT *
         FROM bags
         WHERE bag_id=?
     """, (bag_id,)).fetchone()
-
     db.close()
-
     return jsonify({
         "success": True,
         "message": "Bag created successfully",
         "bag": row_to_dict(bag)
     }), 201
-
-
 @app.route("/api/bags", methods=["GET"])
 def get_bags():
     db = get_db()
-
     rows = db.execute("""
         SELECT
             b.*,
@@ -2007,19 +1986,14 @@ def get_bags():
         GROUP BY b.id
         ORDER BY b.id DESC
     """).fetchall()
-
     db.close()
-
     return jsonify({
         "success": True,
         "bags": [row_to_dict(x) for x in rows]
     })
-
-
 @app.route("/api/bags/<bag_id>", methods=["GET"])
 def get_bag(bag_id):
     db = get_db()
-
     bag = db.execute("""
         SELECT *
         FROM bags
@@ -2028,14 +2002,12 @@ def get_bag(bag_id):
         bag_id,
         bag_id
     )).fetchone()
-
     if not bag:
         db.close()
         return jsonify({
             "success": False,
             "message": "Bag not found"
         }), 404
-
     shipments = db.execute("""
         SELECT s.*
         FROM shipments s
@@ -2046,33 +2018,24 @@ def get_bag(bag_id):
     """, (
         bag["bag_id"],
     )).fetchall()
-
     db.close()
-
     result = row_to_dict(bag)
     result["shipment_count"] = len(shipments)
     result["shipments"] = [row_to_dict(x) for x in shipments]
-
     return jsonify({
         "success": True,
         "bag": result
     })
-
-
 @app.route("/api/bags/<bag_id>/shipments", methods=["POST"])
 def add_shipment_to_bag(bag_id):
     data = request.get_json(silent=True) or {}
-
     shipment_id = str(data.get("shipment_id", "")).strip()
-
     if not shipment_id:
         return jsonify({
             "success": False,
             "message": "shipment_id is required"
         }), 400
-
     db = get_db()
-
     bag = db.execute("""
         SELECT *
         FROM bags
@@ -2081,21 +2044,18 @@ def add_shipment_to_bag(bag_id):
         bag_id,
         bag_id
     )).fetchone()
-
     if not bag:
         db.close()
         return jsonify({
             "success": False,
             "message": "Bag not found"
         }), 404
-
     if bag["status"] != "OPEN":
         db.close()
         return jsonify({
             "success": False,
             "message": "Only OPEN bags can receive shipments"
         }), 400
-
     shipment = db.execute("""
         SELECT *
         FROM shipments
@@ -2104,21 +2064,18 @@ def add_shipment_to_bag(bag_id):
         shipment_id,
         shipment_id
     )).fetchone()
-
     if not shipment:
         db.close()
         return jsonify({
             "success": False,
             "message": "Shipment not found"
         }), 404
-
     if shipment["status"] in {"DELIVERED", "CANCELLED", "RETURNED"}:
         db.close()
         return jsonify({
             "success": False,
             "message": "Shipment cannot be added to bag in current status"
         }), 400
-
     if (
         shipment["current_hub"]
         and shipment["current_hub"] != bag["origin_hub"]
@@ -2128,7 +2085,6 @@ def add_shipment_to_bag(bag_id):
             "success": False,
             "message": "Shipment is not at bag origin hub"
         }), 400
-
     existing = db.execute("""
         SELECT id
         FROM bag_shipments
@@ -2136,14 +2092,12 @@ def add_shipment_to_bag(bag_id):
     """, (
         shipment["shipment_id"],
     )).fetchone()
-
     if existing:
         db.close()
         return jsonify({
             "success": False,
             "message": "Shipment is already assigned to a bag"
         }), 409
-
     db.execute("""
         INSERT INTO bag_shipments
         (bag_id, shipment_id, added_at)
@@ -2153,9 +2107,7 @@ def add_shipment_to_bag(bag_id):
         shipment["shipment_id"],
         now()
     ))
-
     timestamp = now()
-
     db.execute("""
         UPDATE shipments
         SET status='AT_ORIGIN_HUB',
@@ -2167,7 +2119,6 @@ def add_shipment_to_bag(bag_id):
         timestamp,
         shipment["shipment_id"]
     ))
-
     db.execute("""
         INSERT INTO shipment_events
         (shipment_id, status, hub_code, note, created_at)
@@ -2178,22 +2129,17 @@ def add_shipment_to_bag(bag_id):
         "Shipment sorted into bag",
         timestamp
     ))
-
     db.commit()
     db.close()
-
     return jsonify({
         "success": True,
         "message": "Shipment added to bag successfully",
         "bag_id": bag["bag_id"],
         "shipment_id": shipment["shipment_id"]
     })
-
-
 @app.route("/api/bags/<bag_id>/seal", methods=["POST"])
 def seal_bag(bag_id):
     db = get_db()
-
     bag = db.execute("""
         SELECT *
         FROM bags
@@ -2202,21 +2148,18 @@ def seal_bag(bag_id):
         bag_id,
         bag_id
     )).fetchone()
-
     if not bag:
         db.close()
         return jsonify({
             "success": False,
             "message": "Bag not found"
         }), 404
-
     if bag["status"] != "OPEN":
         db.close()
         return jsonify({
             "success": False,
             "message": "Bag is not OPEN"
         }), 400
-
     count = db.execute("""
         SELECT COUNT(*)
         FROM bag_shipments
@@ -2224,17 +2167,14 @@ def seal_bag(bag_id):
     """, (
         bag["bag_id"],
     )).fetchone()[0]
-
     if count == 0:
         db.close()
         return jsonify({
             "success": False,
             "message": "Cannot seal an empty bag"
         }), 400
-
     seal_code = generate_id("SEAL")
     sealed_at = now()
-
     db.execute("""
         UPDATE bags
         SET status='SEALED',
@@ -2246,7 +2186,6 @@ def seal_bag(bag_id):
         sealed_at,
         bag["bag_id"]
     ))
-
     db.execute("""
         UPDATE shipments
         SET status='IN_TRANSIT',
@@ -2260,7 +2199,6 @@ def seal_bag(bag_id):
         sealed_at,
         bag["bag_id"]
     ))
-
     shipment_rows = db.execute("""
         SELECT shipment_id
         FROM bag_shipments
@@ -2268,7 +2206,6 @@ def seal_bag(bag_id):
     """, (
         bag["bag_id"],
     )).fetchall()
-
     for row in shipment_rows:
         db.execute("""
             INSERT INTO shipment_events
@@ -2280,10 +2217,8 @@ def seal_bag(bag_id):
             f"Bag sealed: {seal_code}",
             sealed_at
         ))
-
     db.commit()
     db.close()
-
     return jsonify({
         "success": True,
         "message": "Bag sealed successfully",
@@ -2291,37 +2226,30 @@ def seal_bag(bag_id):
         "seal_code": seal_code,
         "shipment_count": count
     })
-
 # =========================================================
 # BAG DISPATCH & HUB MOVEMENT MODULE
 # =========================================================
-
 @app.route("/api/bags/<bag_id>/dispatch", methods=["POST"])
 def dispatch_bag(bag_id):
     db = get_db()
-
     bag = db.execute("""
         SELECT *
         FROM bags
         WHERE bag_id=? OR bag_code=?
     """, (bag_id, bag_id)).fetchone()
-
     if not bag:
         db.close()
         return jsonify({
             "success": False,
             "message": "Bag not found"
         }), 404
-
     if bag["status"] != "SEALED":
         db.close()
         return jsonify({
             "success": False,
             "message": "Only SEALED bags can be dispatched"
         }), 400
-
     dispatched_at = now()
-
     db.execute("""
         UPDATE bags
         SET status='DISPATCHED',
@@ -2331,9 +2259,7 @@ def dispatch_bag(bag_id):
         dispatched_at,
         bag["bag_id"]
     ))
-
     movement_id = generate_id("MOV")
-
     db.execute("""
         INSERT INTO hub_movements (
             movement_id,
@@ -2351,10 +2277,8 @@ def dispatch_bag(bag_id):
         bag["destination_hub"],
         dispatched_at
     ))
-
     db.commit()
     db.close()
-
     return jsonify({
         "success": True,
         "message": "Bag dispatched successfully",
@@ -2364,86 +2288,66 @@ def dispatch_bag(bag_id):
         "destination_hub": bag["destination_hub"],
         "status": "DISPATCHED"
     })
-
-
 @app.route("/api/movements", methods=["GET"])
 def get_movements():
     db = get_db()
-
     rows = db.execute("""
         SELECT *
         FROM hub_movements
         ORDER BY id DESC
     """).fetchall()
-
     db.close()
-
     return jsonify({
         "success": True,
         "movements": [row_to_dict(x) for x in rows]
     })
-
-
 @app.route("/api/movements/<movement_id>", methods=["GET"])
 def get_movement(movement_id):
     db = get_db()
-
     movement = db.execute("""
         SELECT *
         FROM hub_movements
         WHERE movement_id=?
     """, (movement_id,)).fetchone()
-
     if not movement:
         db.close()
         return jsonify({
             "success": False,
             "message": "Movement not found"
         }), 404
-
     bag = db.execute("""
         SELECT *
         FROM bags
         WHERE bag_id=?
     """, (movement["bag_id"],)).fetchone()
-
     db.close()
-
     result = row_to_dict(movement)
     result["bag"] = row_to_dict(bag)
-
     return jsonify({
         "success": True,
         "movement": result
     })
-
-
 @app.route("/api/movements/<movement_id>/receive", methods=["POST"])
 def receive_movement(movement_id):
     db = get_db()
-
     movement = db.execute("""
         SELECT *
         FROM hub_movements
         WHERE movement_id=?
     """, (movement_id,)).fetchone()
-
     if not movement:
         db.close()
         return jsonify({
             "success": False,
             "message": "Movement not found"
         }), 404
-
     if movement["status"] == "RECEIVED":
         db.close()
         return jsonify({
             "success": False,
             "message": "Movement already received"
         }), 400
-
     received_at = now()
-
     db.execute("""
         UPDATE hub_movements
         SET status='RECEIVED',
@@ -2453,7 +2357,6 @@ def receive_movement(movement_id):
         received_at,
         movement_id
     ))
-
     db.execute("""
         UPDATE bags
         SET status='RECEIVED',
@@ -2463,7 +2366,6 @@ def receive_movement(movement_id):
         received_at,
         movement["bag_id"]
     ))
-
     shipment_rows = db.execute("""
         SELECT shipment_id
         FROM bag_shipments
@@ -2471,9 +2373,7 @@ def receive_movement(movement_id):
     """, (
         movement["bag_id"],
     )).fetchall()
-
     for row in shipment_rows:
-
         db.execute("""
             UPDATE shipments
             SET status='AT_DESTINATION_HUB',
@@ -2485,7 +2385,6 @@ def receive_movement(movement_id):
             received_at,
             row["shipment_id"]
         ))
-
         db.execute("""
             INSERT INTO shipment_events (
                 shipment_id,
@@ -2501,10 +2400,8 @@ def receive_movement(movement_id):
             "Bag received at destination hub",
             received_at
         ))
-
     db.commit()
     db.close()
-
     return jsonify({
         "success": True,
         "message": "Bag received successfully",
@@ -2514,44 +2411,36 @@ def receive_movement(movement_id):
         "shipment_count": len(shipment_rows),
         "status": "RECEIVED"
     })
-
 # =========================================================
 # DELIVERY & RETURN / RTO MODULE
 # =========================================================
-
 @app.route("/api/shipments/<shipment_id>/deliver", methods=["POST"])
 def deliver_shipment(shipment_id):
     data = request.get_json(silent=True) or {}
-
     db = get_db()
-
     shipment = db.execute("""
         SELECT *
         FROM shipments
         WHERE shipment_id=? OR awb=?
     """, (shipment_id, shipment_id)).fetchone()
-
     if not shipment:
         db.close()
         return jsonify({
             "success": False,
             "message": "Shipment not found"
         }), 404
-
     if shipment["status"] == "DELIVERED":
         db.close()
         return jsonify({
             "success": False,
             "message": "Shipment already delivered"
         }), 400
-
     if shipment["status"] in {"CANCELLED", "RETURNED", "RTO"}:
         db.close()
         return jsonify({
             "success": False,
             "message": "Shipment cannot be delivered in current status"
         }), 400
-
     delivered_at = now()
     hub_code = str(
         data.get("hub_code", shipment["current_hub"] or "")
@@ -2559,7 +2448,6 @@ def deliver_shipment(shipment_id):
     note = str(
         data.get("note", "Shipment delivered successfully")
     ).strip()
-
     db.execute("""
         UPDATE shipments
         SET status='DELIVERED',
@@ -2571,7 +2459,6 @@ def deliver_shipment(shipment_id):
         delivered_at,
         shipment["shipment_id"]
     ))
-
     db.execute("""
         INSERT INTO shipment_events
         (shipment_id, status, hub_code, note, created_at)
@@ -2582,52 +2469,424 @@ def deliver_shipment(shipment_id):
         note,
         delivered_at
     ))
+    # ============================================================
+    # AUTOMATIC DELIVERY -> FINANCIAL INTEGRATION
+    # ============================================================
+    # Reload shipment so seller/company/order information is current.
+    financial_shipment = db.execute("""
+        SELECT *
+        FROM shipments
+        WHERE shipment_id=?
+    """, (shipment["shipment_id"],)).fetchone()
+    seller_id = financial_shipment["seller_id"]
+    seller = db.execute("""
+        SELECT seller_id, company_id, name
+        FROM sellers
+        WHERE seller_id=?
+    """, (seller_id,)).fetchone()
+    company_id = seller["company_id"] if seller else None
+    # Find the active/completed delivery assignment.
+    assignment = db.execute("""
+        SELECT *
+        FROM delivery_assignments
+        WHERE shipment_id=?
+        ORDER BY id DESC
+        LIMIT 1
+    """, (shipment["shipment_id"],)).fetchone()
+    partner_id = assignment["partner_id"] if assignment else None
+    assignment_id = assignment["assignment_id"] if assignment else None
+    # Find the related order.
+    order = db.execute("""
+        SELECT order_id
+        FROM orders
+        WHERE shipment_id=?
+        LIMIT 1
+    """, (shipment["shipment_id"],)).fetchone()
+    order_id = order["order_id"] if order else None
+    # Read configurable financial settings.
+    settings_rows = db.execute("""
+        SELECT setting_key, setting_value
+        FROM financial_settings
+    """).fetchall()
+    settings = {
+        row["setting_key"]: float(row["setting_value"] or 0)
+        for row in settings_rows
+    }
+    gross_amount = float(financial_shipment["amount"] or 0)
+    platform_delivery_charge = settings.get(
+        "platform_delivery_charge", 0
+    )
+    company_charge_percent = settings.get(
+        "company_charge_percent", 0
+    )
+    partner_earning_percent = settings.get(
+        "partner_earning_percent", 0
+    )
+    platform_commission_percent = settings.get(
+        "platform_commission_percent", 0
+    )
+    company_charge = round(
+        gross_amount * company_charge_percent / 100, 2
+    )
+    partner_earning = round(
+        gross_amount * partner_earning_percent / 100, 2
+    )
+    platform_commission = round(
+        gross_amount * platform_commission_percent / 100, 2
+    )
+    # ------------------------------------------------------------
+    # COD PAYMENT COLLECTION
+    # ------------------------------------------------------------
+    payment = db.execute("""
+        SELECT *
+        FROM payments
+        WHERE shipment_id=?
+        ORDER BY id DESC
+        LIMIT 1
+    """, (shipment["shipment_id"],)).fetchone()
+    if payment:
+        if payment["payment_type"] == "COD":
+            db.execute("""
+                UPDATE payments
+                SET collected_amount=?,
+                    status='COLLECTED',
+                    collected_by=?,
+                    collected_at=?,
+                    note=?
+                WHERE payment_id=?
+            """, (
+                gross_amount,
+                partner_id or "DELIVERY_PARTNER",
+                delivered_at,
+                "COD collected on successful delivery",
+                payment["payment_id"]
+            ))
+            db.execute("""
+                UPDATE orders
+                SET payment_status='PAID',
+                    updated_at=?
+                WHERE shipment_id=?
+            """, (
+                delivered_at,
+                shipment["shipment_id"]
+            ))
+    # ------------------------------------------------------------
+    # PARTNER EARNING
+    # ------------------------------------------------------------
+    if partner_id and assignment_id:
+        existing_earning = db.execute("""
+            SELECT earning_id
+            FROM partner_earnings
+            WHERE shipment_id=?
+              AND assignment_id=?
+              AND earning_type='DELIVERY'
+        """, (
+            shipment["shipment_id"],
+            assignment_id
+        )).fetchone()
+        if not existing_earning:
+            earning_id = generate_id("EARN")
+            db.execute("""
+                INSERT INTO partner_earnings (
+                    earning_id,
+                    partner_id,
+                    assignment_id,
+                    shipment_id,
+                    earning_type,
+                    amount,
+                    status,
+                    payout_id,
+                    paid_at,
+                    note,
+                    created_at
+                )
+                VALUES (?, ?, ?, ?, 'DELIVERY', ?, 'PENDING',
+                        NULL, NULL, ?, ?)
+            """, (
+                earning_id,
+                partner_id,
+                assignment_id,
+                shipment["shipment_id"],
+                partner_earning,
+                "Automatic delivery earning",
+                delivered_at
+            ))
+    # ------------------------------------------------------------
+    # SELLER SETTLEMENT
+    # ------------------------------------------------------------
+    existing_seller_settlement = db.execute("""
+        SELECT settlement_id
+        FROM seller_settlements
+        WHERE shipment_id=?
+        LIMIT 1
+    """, (shipment["shipment_id"],)).fetchone()
+    if not existing_seller_settlement:
+        seller_settlement_id = generate_id("SSET")
+        net_payable = round(
+            gross_amount
+            - platform_delivery_charge
+            - company_charge
+            - platform_commission,
+            2
+        )
+        db.execute("""
+            INSERT INTO seller_settlements (
+                settlement_id,
+                seller_id,
+                company_id,
+                shipment_id,
+                order_id,
+                gross_amount,
+                delivery_charge,
+                company_charge,
+                platform_charge,
+                other_charge,
+                net_payable,
+                status,
+                payout_id,
+                paid_at,
+                note,
+                created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING',
+                    NULL, NULL, ?, ?)
+        """, (
+            seller_settlement_id,
+            seller_id,
+            company_id,
+            shipment["shipment_id"],
+            order_id,
+            gross_amount,
+            platform_delivery_charge,
+            company_charge,
+            platform_commission,
+            0,
+            net_payable,
+            "Automatic settlement created after delivery",
+            delivered_at
+        ))
+    # ------------------------------------------------------------
+    # COMPANY SETTLEMENT
+    # ------------------------------------------------------------
+    if company_id:
+        existing_company_settlement = db.execute("""
+            SELECT settlement_id
+            FROM company_settlements
+            WHERE shipment_id=?
+            LIMIT 1
+        """, (shipment["shipment_id"],)).fetchone()
+        if not existing_company_settlement:
+            company_settlement_id = generate_id("CSET")
+            net_company_amount = round(
+                company_charge,
+                2
+            )
+            db.execute("""
+                INSERT INTO company_settlements (
+                    settlement_id,
+                    company_id,
+                    shipment_id,
+                    order_id,
+                    gross_amount,
+                    company_charge,
+                    partner_charge,
+                    platform_charge,
+                    other_charge,
+                    net_amount,
+                    status,
+                    payout_id,
+                    paid_at,
+                    note,
+                    created_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING',
+                        NULL, NULL, ?, ?)
+            """, (
+                company_settlement_id,
+                company_id,
+                shipment["shipment_id"],
+                order_id,
+                gross_amount,
+                company_charge,
+                partner_earning,
+                platform_commission,
+                platform_delivery_charge,
+                net_company_amount,
+                "Automatic company settlement created after delivery",
+                delivered_at
+            ))
+    # ------------------------------------------------------------
+    # PLATFORM TRANSACTIONS
+    # ------------------------------------------------------------
+    transaction_rows = [
+        (
+            "DELIVERY_REVENUE",
+            "CREDIT",
+            platform_delivery_charge,
+            "Platform delivery charge"
+        ),
+        (
+            "PLATFORM_COMMISSION",
+            "CREDIT",
+            platform_commission,
+            "Platform commission"
+        ),
+        (
+            "PARTNER_EARNING",
+            "DEBIT",
+            partner_earning,
+            "Delivery partner earning"
+        )
+    ]
+    for transaction_type, direction, amount, note in transaction_rows:
+        if amount <= 0:
+            continue
+        transaction_id = generate_id("TXN")
+        db.execute("""
+            INSERT INTO platform_transactions (
+                transaction_id,
+                shipment_id,
+                order_id,
+                seller_id,
+                company_id,
+                partner_id,
+                transaction_type,
+                direction,
+                amount,
+                status,
+                reference_id,
+                note,
+                created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'POSTED',
+                    ?, ?, ?)
+        """, (
+            transaction_id,
+            shipment["shipment_id"],
+            order_id,
+            seller_id,
+            company_id,
+            partner_id,
+            transaction_type,
+            direction,
+            amount,
+            shipment["shipment_id"],
+            note,
+            delivered_at
+        ))
+    # ------------------------------------------------------------
+    # OWNER LEDGER
+    # ------------------------------------------------------------
+    # Only platform-owned revenue is credited to the Owner.
+    # Seller, company and partner amounts remain payable to them.
+    owner_revenue = round(
+        platform_delivery_charge + platform_commission,
+        2
+    )
+
+    if owner_revenue > 0:
+        owner_ledger_id = generate_id("OLEDGER")
+        db.execute("""
+            INSERT INTO owner_ledger (
+                ledger_id,
+                transaction_id,
+                shipment_id,
+                order_id,
+                transaction_type,
+                direction,
+                amount,
+                status,
+                reference_id,
+                note,
+                created_at
+            )
+            VALUES (?, ?, ?, ?, ?, 'CREDIT', ?, 'POSTED', ?, ?, ?)
+        """, (
+            owner_ledger_id,
+            None,
+            shipment["shipment_id"],
+            order_id,
+            "PLATFORM_REVENUE",
+            owner_revenue,
+            shipment["shipment_id"],
+            "Owner platform revenue from successful delivery",
+            delivered_at
+        ))
 
     db.commit()
+    # Reload final records for response.
+    final_shipment = db.execute("""
+        SELECT *
+        FROM shipments
+        WHERE shipment_id=?
+    """, (shipment["shipment_id"],)).fetchone()
+    final_payment = db.execute("""
+        SELECT *
+        FROM payments
+        WHERE shipment_id=?
+        ORDER BY id DESC
+        LIMIT 1
+    """, (shipment["shipment_id"],)).fetchone()
+    final_earning = db.execute("""
+        SELECT *
+        FROM partner_earnings
+        WHERE shipment_id=?
+        ORDER BY id DESC
+        LIMIT 1
+    """, (shipment["shipment_id"],)).fetchone()
+    final_seller_settlement = db.execute("""
+        SELECT *
+        FROM seller_settlements
+        WHERE shipment_id=?
+        LIMIT 1
+    """, (shipment["shipment_id"],)).fetchone()
+    final_company_settlement = db.execute("""
+        SELECT *
+        FROM company_settlements
+        WHERE shipment_id=?
+        LIMIT 1
+    """, (shipment["shipment_id"],)).fetchone()
     db.close()
-
     return jsonify({
         "success": True,
-        "message": "Shipment delivered successfully",
+        "message": "Shipment delivered and financial records created successfully",
         "shipment_id": shipment["shipment_id"],
         "status": "DELIVERED",
-        "delivered_at": delivered_at
+        "delivered_at": delivered_at,
+        "financial": {
+            "payment": row_to_dict(final_payment) if final_payment else None,
+            "partner_earning": row_to_dict(final_earning) if final_earning else None,
+            "seller_settlement": row_to_dict(final_seller_settlement) if final_seller_settlement else None,
+            "company_settlement": row_to_dict(final_company_settlement) if final_company_settlement else None
+        }
     })
-
-
 @app.route("/api/shipments/<shipment_id>/rto", methods=["POST"])
 def rto_shipment(shipment_id):
     data = request.get_json(silent=True) or {}
-
     db = get_db()
-
     shipment = db.execute("""
         SELECT *
         FROM shipments
         WHERE shipment_id=? OR awb=?
     """, (shipment_id, shipment_id)).fetchone()
-
     if not shipment:
         db.close()
         return jsonify({
             "success": False,
             "message": "Shipment not found"
         }), 404
-
     if shipment["status"] == "DELIVERED":
         db.close()
         return jsonify({
             "success": False,
             "message": "Delivered shipment cannot be marked RTO"
         }), 400
-
     if shipment["status"] in {"RTO", "RETURNED"}:
         db.close()
         return jsonify({
             "success": False,
             "message": "Shipment is already in return process"
         }), 400
-
     rto_at = now()
     hub_code = str(
         data.get("hub_code", shipment["current_hub"] or "")
@@ -2635,7 +2894,6 @@ def rto_shipment(shipment_id):
     reason = str(
         data.get("reason", "Delivery failed")
     ).strip()
-
     db.execute("""
         UPDATE shipments
         SET status='RTO',
@@ -2647,7 +2905,6 @@ def rto_shipment(shipment_id):
         rto_at,
         shipment["shipment_id"]
     ))
-
     db.execute("""
         INSERT INTO shipment_events
         (shipment_id, status, hub_code, note, created_at)
@@ -2658,10 +2915,8 @@ def rto_shipment(shipment_id):
         f"RTO initiated: {reason}",
         rto_at
     ))
-
     db.commit()
     db.close()
-
     return jsonify({
         "success": True,
         "message": "RTO initiated successfully",
@@ -2669,39 +2924,31 @@ def rto_shipment(shipment_id):
         "status": "RTO",
         "reason": reason
     })
-
-
 @app.route("/api/shipments/<shipment_id>/return", methods=["POST"])
 def return_shipment(shipment_id):
     data = request.get_json(silent=True) or {}
-
     db = get_db()
-
     shipment = db.execute("""
         SELECT *
         FROM shipments
         WHERE shipment_id=? OR awb=?
     """, (shipment_id, shipment_id)).fetchone()
-
     if not shipment:
         db.close()
         return jsonify({
             "success": False,
             "message": "Shipment not found"
         }), 404
-
     if shipment["status"] != "RTO":
         db.close()
         return jsonify({
             "success": False,
             "message": "Shipment must be in RTO status before return completion"
         }), 400
-
     returned_at = now()
     hub_code = str(
         data.get("hub_code", shipment["current_hub"] or "")
     ).strip().upper()
-
     db.execute("""
         UPDATE shipments
         SET status='RETURNED',
@@ -2713,7 +2960,6 @@ def return_shipment(shipment_id):
         returned_at,
         shipment["shipment_id"]
     ))
-
     db.execute("""
         INSERT INTO shipment_events
         (shipment_id, status, hub_code, note, created_at)
@@ -2724,10 +2970,8 @@ def return_shipment(shipment_id):
         "Shipment return completed",
         returned_at
     ))
-
     db.commit()
     db.close()
-
     return jsonify({
         "success": True,
         "message": "Shipment return completed successfully",
@@ -2735,90 +2979,71 @@ def return_shipment(shipment_id):
         "status": "RETURNED",
         "returned_at": returned_at
     })
-
 # =========================================================
 # ADMIN DASHBOARD / PLATFORM SUMMARY MODULE
 # =========================================================
-
 @app.route("/api/dashboard", methods=["GET"])
 def dashboard():
     db = get_db()
-
     def count(table):
         return db.execute(
             f"SELECT COUNT(*) FROM {table}"
         ).fetchone()[0]
-
     total_admins = count("admins")
     active_admins = db.execute(
         "SELECT COUNT(*) FROM admins WHERE status='ACTIVE'"
     ).fetchone()[0]
-
     total_sellers = count("sellers")
     active_sellers = db.execute(
         "SELECT COUNT(*) FROM sellers WHERE status='ACTIVE'"
     ).fetchone()[0]
-
     total_hubs = count("hubs")
     active_hubs = db.execute(
         "SELECT COUNT(*) FROM hubs WHERE status='ACTIVE'"
     ).fetchone()[0]
-
     total_shipments = count("shipments")
-
     shipment_status_rows = db.execute("""
         SELECT status, COUNT(*) AS total
         FROM shipments
         GROUP BY status
         ORDER BY status
     """).fetchall()
-
     shipment_status = {
         row["status"]: row["total"]
         for row in shipment_status_rows
     }
-
     total_bags = count("bags")
-
     bag_status_rows = db.execute("""
         SELECT status, COUNT(*) AS total
         FROM bags
         GROUP BY status
         ORDER BY status
     """).fetchall()
-
     bag_status = {
         row["status"]: row["total"]
         for row in bag_status_rows
     }
-
     total_movements = count("hub_movements")
-
     movement_status_rows = db.execute("""
         SELECT status, COUNT(*) AS total
         FROM hub_movements
         GROUP BY status
         ORDER BY status
     """).fetchall()
-
     movement_status = {
         row["status"]: row["total"]
         for row in movement_status_rows
     }
-
     total_value = db.execute("""
         SELECT COALESCE(SUM(amount), 0)
         FROM shipments
     """).fetchone()[0]
-
     delivered_value = db.execute("""
         SELECT COALESCE(SUM(amount), 0)
         FROM shipments
         WHERE status='DELIVERED'
     """).fetchone()[0]
-
     db.close()
-
     return jsonify({
         "success": True,
         "dashboard": {
@@ -2852,12 +3077,9 @@ def dashboard():
             }
         }
     })
-
-
 @app.route("/api/dashboard/recent-shipments", methods=["GET"])
 def recent_shipments():
     db = get_db()
-
     rows = db.execute("""
         SELECT
             shipment_id,
@@ -2875,19 +3097,14 @@ def recent_shipments():
         ORDER BY id DESC
         LIMIT 20
     """).fetchall()
-
     db.close()
-
     return jsonify({
         "success": True,
         "shipments": [row_to_dict(x) for x in rows]
     })
-
-
 @app.route("/api/dashboard/recent-movements", methods=["GET"])
 def recent_movements():
     db = get_db()
-
     rows = db.execute("""
         SELECT
             movement_id,
@@ -2901,48 +3118,39 @@ def recent_movements():
         ORDER BY id DESC
         LIMIT 20
     """).fetchall()
-
     db.close()
-
     return jsonify({
         "success": True,
         "movements": [row_to_dict(x) for x in rows]
     })
-
-
 # =========================================================
 # SHIPMENT TRACKING & STATUS MODULE
 # =========================================================
-
 @app.route("/api/shipments/<shipment_id>/status", methods=["POST"])
 def update_shipment_status(shipment_id):
     data = request.get_json(silent=True) or {}
-
     new_status = str(data.get("status", "")).strip().upper()
     hub_code = str(data.get("hub_code", "")).strip().upper()
     note = str(data.get("note", "")).strip()
-
     allowed_statuses = {
         "CREATED",
         "AT_ORIGIN_HUB",
         "IN_TRANSIT",
         "AT_DESTINATION_HUB",
         "OUT_FOR_DELIVERY",
+        "PICKED_UP",
         "DELIVERED",
         "RTO",
         "RETURNED",
         "CANCELLED"
     }
-
     if new_status not in allowed_statuses:
         return jsonify({
             "success": False,
             "message": "Invalid shipment status",
             "allowed_statuses": sorted(allowed_statuses)
         }), 400
-
     db = get_db()
-
     shipment = db.execute("""
         SELECT *
         FROM shipments
@@ -2951,38 +3159,30 @@ def update_shipment_status(shipment_id):
         shipment_id,
         shipment_id
     )).fetchone()
-
     if not shipment:
         db.close()
         return jsonify({
             "success": False,
             "message": "Shipment not found"
         }), 404
-
     current_status = shipment["status"]
-
     if current_status == "DELIVERED" and new_status != "DELIVERED":
         db.close()
         return jsonify({
             "success": False,
             "message": "Delivered shipment cannot change status"
         }), 400
-
     if current_status == "RETURNED" and new_status != "RETURNED":
         db.close()
         return jsonify({
             "success": False,
             "message": "Returned shipment cannot change status"
         }), 400
-
     updated_at = now()
-
     if not hub_code:
         hub_code = shipment["current_hub"] or ""
-
     if not note:
         note = f"Shipment status changed to {new_status}"
-
     db.execute("""
         UPDATE shipments
         SET status=?,
@@ -2995,7 +3195,6 @@ def update_shipment_status(shipment_id):
         updated_at,
         shipment["shipment_id"]
     ))
-
     db.execute("""
         INSERT INTO shipment_events
         (shipment_id, status, hub_code, note, created_at)
@@ -3007,9 +3206,7 @@ def update_shipment_status(shipment_id):
         note,
         updated_at
     ))
-
     db.commit()
-
     updated = db.execute("""
         SELECT *
         FROM shipments
@@ -3017,20 +3214,15 @@ def update_shipment_status(shipment_id):
     """, (
         shipment["shipment_id"],
     )).fetchone()
-
     db.close()
-
     return jsonify({
         "success": True,
         "message": "Shipment status updated successfully",
         "shipment": row_to_dict(updated)
     })
-
-
 @app.route("/api/shipments/<shipment_id>/tracking", methods=["GET"])
 def shipment_tracking(shipment_id):
     db = get_db()
-
     shipment = db.execute("""
         SELECT *
         FROM shipments
@@ -3039,14 +3231,12 @@ def shipment_tracking(shipment_id):
         shipment_id,
         shipment_id
     )).fetchone()
-
     if not shipment:
         db.close()
         return jsonify({
             "success": False,
             "message": "Shipment not found"
         }), 404
-
     events = db.execute("""
         SELECT
             id,
@@ -3060,9 +3250,7 @@ def shipment_tracking(shipment_id):
     """, (
         shipment["shipment_id"],
     )).fetchall()
-
     db.close()
-
     return jsonify({
         "success": True,
         "tracking": {
@@ -3081,12 +3269,9 @@ def shipment_tracking(shipment_id):
             "events": [row_to_dict(x) for x in events]
         }
     })
-
-
 @app.route("/api/shipments/<shipment_id>/events", methods=["GET"])
 def shipment_events(shipment_id):
     db = get_db()
-
     shipment = db.execute("""
         SELECT shipment_id
         FROM shipments
@@ -3095,14 +3280,12 @@ def shipment_events(shipment_id):
         shipment_id,
         shipment_id
     )).fetchone()
-
     if not shipment:
         db.close()
         return jsonify({
             "success": False,
             "message": "Shipment not found"
         }), 404
-
     rows = db.execute("""
         SELECT
             id,
@@ -3117,45 +3300,35 @@ def shipment_events(shipment_id):
     """, (
         shipment["shipment_id"],
     )).fetchall()
-
     db.close()
-
     return jsonify({
         "success": True,
         "shipment_id": shipment["shipment_id"],
         "events": [row_to_dict(x) for x in rows]
     })
-
-
 # =========================================================
 # COD / PAYMENT MODULE
 # =========================================================
-
 @app.route("/api/shipments/<shipment_id>/payment", methods=["POST"])
 def create_payment(shipment_id):
     data = request.get_json(silent=True) or {}
-
     db = get_db()
-
     shipment = db.execute("""
         SELECT *
         FROM shipments
         WHERE shipment_id=? OR awb=?
     """, (shipment_id, shipment_id)).fetchone()
-
     if not shipment:
         db.close()
         return jsonify({
             "success": False,
             "message": "Shipment not found"
         }), 404
-
     existing = db.execute("""
         SELECT *
         FROM payments
         WHERE shipment_id=?
     """, (shipment["shipment_id"],)).fetchone()
-
     if existing:
         db.close()
         return jsonify({
@@ -3163,18 +3336,15 @@ def create_payment(shipment_id):
             "message": "Payment already exists for this shipment",
             "payment": row_to_dict(existing)
         }), 409
-
     payment_type = str(
         data.get("payment_type", "COD")
     ).strip().upper()
-
     if payment_type not in {"COD", "PREPAID"}:
         db.close()
         return jsonify({
             "success": False,
             "message": "payment_type must be COD or PREPAID"
         }), 400
-
     try:
         amount = float(
             data.get("amount", shipment["amount"]) or 0
@@ -3185,21 +3355,17 @@ def create_payment(shipment_id):
             "success": False,
             "message": "amount must be a valid number"
         }), 400
-
     if amount < 0:
         db.close()
         return jsonify({
             "success": False,
             "message": "amount cannot be negative"
         }), 400
-
     payment_id = generate_id("PAY")
     created_at = now()
-
     status = "PAID" if payment_type == "PREPAID" else "PENDING"
     collected_amount = amount if payment_type == "PREPAID" else 0
     collected_at = created_at if payment_type == "PREPAID" else None
-
     db.execute("""
         INSERT INTO payments (
             payment_id,
@@ -3226,88 +3392,81 @@ def create_payment(shipment_id):
         "Payment created",
         created_at
     ))
+    # PLATFORM LEDGER — customer payment revenue
+    if payment_type == "PREPAID":
+        create_platform_transaction(
+            db,
+            transaction_type="CUSTOMER_PAYMENT",
+            direction="CREDIT",
+            amount=amount,
+            shipment_id=shipment_id,
+            reference_id=payment_id,
+            note="Prepaid customer payment received"
+        )
 
     db.commit()
-
     payment = db.execute("""
         SELECT *
         FROM payments
         WHERE payment_id=?
     """, (payment_id,)).fetchone()
-
     db.close()
-
     return jsonify({
         "success": True,
         "message": "Payment created successfully",
         "payment": row_to_dict(payment)
     }), 201
-
-
 @app.route("/api/shipments/<shipment_id>/payment", methods=["GET"])
 def get_payment(shipment_id):
     db = get_db()
-
     shipment = db.execute("""
         SELECT shipment_id, awb, customer_name, amount
         FROM shipments
         WHERE shipment_id=? OR awb=?
     """, (shipment_id, shipment_id)).fetchone()
-
     if not shipment:
         db.close()
         return jsonify({
             "success": False,
             "message": "Shipment not found"
         }), 404
-
     payment = db.execute("""
         SELECT *
         FROM payments
         WHERE shipment_id=?
     """, (shipment["shipment_id"],)).fetchone()
-
     db.close()
-
     return jsonify({
         "success": True,
         "shipment": row_to_dict(shipment),
         "payment": row_to_dict(payment)
     })
-
-
 @app.route("/api/shipments/<shipment_id>/payment/collect", methods=["POST"])
 def collect_payment(shipment_id):
     data = request.get_json(silent=True) or {}
-
     db = get_db()
-
     shipment = db.execute("""
         SELECT *
         FROM shipments
         WHERE shipment_id=? OR awb=?
     """, (shipment_id, shipment_id)).fetchone()
-
     if not shipment:
         db.close()
         return jsonify({
             "success": False,
             "message": "Shipment not found"
         }), 404
-
     payment = db.execute("""
         SELECT *
         FROM payments
         WHERE shipment_id=?
     """, (shipment["shipment_id"],)).fetchone()
-
     if not payment:
         db.close()
         return jsonify({
             "success": False,
             "message": "Payment record not found"
         }), 404
-
     if payment["status"] == "PAID":
         db.close()
         return jsonify({
@@ -3315,14 +3474,12 @@ def collect_payment(shipment_id):
             "message": "Payment already collected",
             "payment": row_to_dict(payment)
         }), 400
-
     if payment["payment_type"] != "COD":
         db.close()
         return jsonify({
             "success": False,
             "message": "Only COD payments can be collected"
         }), 400
-
     try:
         collected_amount = float(
             data.get("collected_amount", payment["amount"]) or 0
@@ -3333,7 +3490,6 @@ def collect_payment(shipment_id):
             "success": False,
             "message": "collected_amount must be a valid number"
         }), 400
-
     if collected_amount != payment["amount"]:
         db.close()
         return jsonify({
@@ -3342,17 +3498,13 @@ def collect_payment(shipment_id):
             "required_amount": payment["amount"],
             "received_amount": collected_amount
         }), 400
-
     collected_by = str(
         data.get("collected_by", "DELIVERY_PARTNER")
     ).strip()
-
     note = str(
         data.get("note", "COD collected successfully")
     ).strip()
-
     collected_at = now()
-
     db.execute("""
         UPDATE payments
         SET collected_amount=?,
@@ -3368,7 +3520,6 @@ def collect_payment(shipment_id):
         note,
         payment["payment_id"]
     ))
-
     db.execute("""
         INSERT INTO shipment_events (
             shipment_id,
@@ -3384,28 +3535,21 @@ def collect_payment(shipment_id):
         note,
         collected_at
     ))
-
     db.commit()
-
     updated = db.execute("""
         SELECT *
         FROM payments
         WHERE payment_id=?
     """, (payment["payment_id"],)).fetchone()
-
     db.close()
-
     return jsonify({
         "success": True,
         "message": "COD collected successfully",
         "payment": row_to_dict(updated)
     })
-
-
 @app.route("/api/payments", methods=["GET"])
 def get_payments():
     db = get_db()
-
     rows = db.execute("""
         SELECT
             p.*,
@@ -3417,58 +3561,54 @@ def get_payments():
             ON s.shipment_id=p.shipment_id
         ORDER BY p.id DESC
     """).fetchall()
-
     db.close()
-
     return jsonify({
         "success": True,
         "payments": [row_to_dict(x) for x in rows]
     })
-
-
 @app.route("/api/payments/summary", methods=["GET"])
 def payment_summary():
     db = get_db()
-
     total_payments = db.execute("""
         SELECT COUNT(*)
         FROM payments
     """).fetchone()[0]
-
     pending_count = db.execute("""
         SELECT COUNT(*)
         FROM payments
         WHERE status='PENDING'
     """).fetchone()[0]
-
     paid_count = db.execute("""
         SELECT COUNT(*)
         FROM payments
         WHERE status='PAID'
     """).fetchone()[0]
-
     total_cod = db.execute("""
         SELECT COALESCE(SUM(amount), 0)
         FROM payments
         WHERE payment_type='COD'
     """).fetchone()[0]
-
     collected_cod = db.execute("""
-        SELECT COALESCE(SUM(collected_amount), 0)
+        SELECT COALESCE(SUM(
+            CASE
+                WHEN payment_type='COD' THEN
+                    CASE
+                        WHEN collected_amount > 0 THEN collected_amount
+                        ELSE 0
+                    END
+                ELSE 0
+            END
+        ), 0)
         FROM payments
         WHERE payment_type='COD'
-          AND status='PAID'
     """).fetchone()[0]
-
     pending_cod = db.execute("""
         SELECT COALESCE(SUM(amount - collected_amount), 0)
         FROM payments
         WHERE payment_type='COD'
           AND status='PENDING'
     """).fetchone()[0]
-
     db.close()
-
     return jsonify({
         "success": True,
         "summary": {
@@ -3480,36 +3620,28 @@ def payment_summary():
             "pending_cod_amount": pending_cod
         }
     })
-
-
 # =========================================================
 # DELIVERY PARTNER MODULE
 # =========================================================
-
 @app.route("/api/partners", methods=["POST"])
 def create_partner():
     data = request.get_json(silent=True) or {}
-
     name = str(data.get("name", "")).strip()
     phone = str(data.get("phone", "")).strip()
     email = str(data.get("email", "")).strip()
     city = str(data.get("city", "")).strip()
     vehicle_type = str(data.get("vehicle_type", "")).strip().upper()
-
     if not name or not phone:
         return jsonify({
             "success": False,
             "message": "name and phone are required"
         }), 400
-
     db = get_db()
-
     existing = db.execute("""
         SELECT partner_id
         FROM delivery_partners
         WHERE phone=?
     """, (phone,)).fetchone()
-
     if existing:
         db.close()
         return jsonify({
@@ -3517,10 +3649,8 @@ def create_partner():
             "message": "Partner with this phone already exists",
             "partner_id": existing["partner_id"]
         }), 409
-
     partner_id = generate_id("PTR")
     created_at = now()
-
     db.execute("""
         INSERT INTO delivery_partners (
             partner_id,
@@ -3542,46 +3672,34 @@ def create_partner():
         vehicle_type,
         created_at
     ))
-
     db.commit()
-
     partner = db.execute("""
         SELECT *
         FROM delivery_partners
         WHERE partner_id=?
     """, (partner_id,)).fetchone()
-
     db.close()
-
     return jsonify({
         "success": True,
         "message": "Delivery partner created successfully",
         "partner": row_to_dict(partner)
     }), 201
-
-
 @app.route("/api/partners", methods=["GET"])
 def get_partners():
     db = get_db()
-
     rows = db.execute("""
         SELECT *
         FROM delivery_partners
         ORDER BY id DESC
     """).fetchall()
-
     db.close()
-
     return jsonify({
         "success": True,
         "partners": [row_to_dict(x) for x in rows]
     })
-
-
 @app.route("/api/partners/<partner_id>", methods=["GET"])
 def get_partner(partner_id):
     db = get_db()
-
     partner = db.execute("""
         SELECT *
         FROM delivery_partners
@@ -3590,80 +3708,63 @@ def get_partner(partner_id):
         partner_id,
         partner_id
     )).fetchone()
-
     db.close()
-
     if not partner:
         return jsonify({
             "success": False,
             "message": "Delivery partner not found"
         }), 404
-
     return jsonify({
         "success": True,
         "partner": row_to_dict(partner)
     })
-
-
-
 # =========================================================
 # PARTNER SEAT RESERVATION
 # HUB -> PARTNER -> RESERVE -> CONFIRM
 # =========================================================
-
 @app.route("/api/hubs/<hub_code>/seats/reserve", methods=["POST"])
 def reserve_partner_seat(hub_code):
     data = request.get_json(silent=True) or {}
-
     partner_id = str(data.get("partner_id", "")).strip()
     seat_number = str(data.get("seat_number", "")).strip()
-
     if not partner_id or not seat_number:
         return jsonify({
             "success": False,
             "message": "partner_id and seat_number are required"
         }), 400
-
     db = get_db()
-
     hub = db.execute("""
         SELECT hub_code
         FROM hubs
         WHERE hub_code=? AND status='ACTIVE'
     """, (hub_code,)).fetchone()
-
     if not hub:
         return jsonify({
             "success": False,
             "message": "Active hub not found"
         }), 404
-
     partner = db.execute("""
         SELECT partner_id
         FROM delivery_partners
         WHERE partner_id=? AND status='ACTIVE'
     """, (partner_id,)).fetchone()
-
     if not partner:
         return jsonify({
             "success": False,
             "message": "Active partner not found"
         }), 404
-
     existing_partner = db.execute("""
         SELECT *
         FROM partner_seats
         WHERE partner_id=?
           AND status IN ('RESERVED','CONFIRMED')
     """, (partner_id,)).fetchone()
-
     if existing_partner:
         return jsonify({
             "success": False,
             "message": "Partner already has an active seat reservation",
             "seat": row_to_dict(existing_partner)
         }), 409
-
     existing_seat = db.execute("""
         SELECT *
         FROM partner_seats
@@ -3671,17 +3772,14 @@ def reserve_partner_seat(hub_code):
           AND seat_number=?
           AND status IN ('RESERVED','CONFIRMED')
     """, (hub_code, seat_number)).fetchone()
-
     if existing_seat:
         return jsonify({
             "success": False,
             "message": "This seat is already reserved",
             "seat": row_to_dict(existing_seat)
         }), 409
-
     seat_id = generate_id("SEAT")
     reserved_at = now()
-
     db.execute("""
         INSERT INTO partner_seats (
             seat_id,
@@ -3699,27 +3797,20 @@ def reserve_partner_seat(hub_code):
         seat_number,
         reserved_at
     ))
-
     db.commit()
-
     seat = db.execute("""
         SELECT *
         FROM partner_seats
         WHERE seat_id=?
     """, (seat_id,)).fetchone()
-
     return jsonify({
         "success": True,
         "message": "Seat reserved for partner",
         "seat": row_to_dict(seat)
     }), 201
-
-
 @app.route("/api/partners/<partner_id>/seat", methods=["GET"])
 def partner_reserved_seat(partner_id):
-
     db = get_db()
-
     seat = db.execute("""
         SELECT *
         FROM partner_seats
@@ -3728,61 +3819,48 @@ def partner_reserved_seat(partner_id):
         ORDER BY id DESC
         LIMIT 1
     """, (partner_id,)).fetchone()
-
     return jsonify({
         "success": True,
         "partner_id": partner_id,
         "seat": row_to_dict(seat) if seat else None
     })
-
-
 @app.route("/api/partner-seats/<seat_id>/confirm", methods=["POST"])
 def confirm_partner_seat(seat_id):
-
     data = request.get_json(silent=True) or {}
     partner_id = str(data.get("partner_id", "")).strip()
-
     if not partner_id:
         return jsonify({
             "success": False,
             "message": "partner_id is required"
         }), 400
-
     db = get_db()
-
     seat = db.execute("""
         SELECT *
         FROM partner_seats
         WHERE seat_id=?
     """, (seat_id,)).fetchone()
-
     if not seat:
         return jsonify({
             "success": False,
             "message": "Seat reservation not found"
         }), 404
-
     if seat["partner_id"] != partner_id:
         return jsonify({
             "success": False,
             "message": "This seat belongs to another partner"
         }), 403
-
     if seat["status"] == "CONFIRMED":
         return jsonify({
             "success": True,
             "message": "Seat already confirmed",
             "seat": row_to_dict(seat)
         })
-
     if seat["status"] != "RESERVED":
         return jsonify({
             "success": False,
             "message": "Seat is not available for confirmation"
         }), 409
-
     confirmed_at = now()
-
     db.execute("""
         UPDATE partner_seats
         SET status='CONFIRMED',
@@ -3792,49 +3870,38 @@ def confirm_partner_seat(seat_id):
         confirmed_at,
         seat_id
     ))
-
     db.commit()
-
     updated = db.execute("""
         SELECT *
         FROM partner_seats
         WHERE seat_id=?
     """, (seat_id,)).fetchone()
-
     return jsonify({
         "success": True,
         "message": "Seat confirmed successfully",
         "seat": row_to_dict(updated)
     })
-
-
 @app.route("/api/partners/<partner_id>/status", methods=["POST"])
 def update_partner_status(partner_id):
     data = request.get_json(silent=True) or {}
-
     status = str(data.get("status", "")).strip().upper()
-
     if status not in {"ACTIVE", "INACTIVE"}:
         return jsonify({
             "success": False,
             "message": "status must be ACTIVE or INACTIVE"
         }), 400
-
     db = get_db()
-
     partner = db.execute("""
         SELECT partner_id
         FROM delivery_partners
         WHERE partner_id=?
     """, (partner_id,)).fetchone()
-
     if not partner:
         db.close()
         return jsonify({
             "success": False,
             "message": "Delivery partner not found"
         }), 404
-
     db.execute("""
         UPDATE delivery_partners
         SET status=?
@@ -3843,41 +3910,32 @@ def update_partner_status(partner_id):
         status,
         partner_id
     ))
-
     db.commit()
     db.close()
-
     return jsonify({
         "success": True,
         "message": "Partner status updated",
         "partner_id": partner_id,
         "status": status
     })
-
-
 @app.route("/api/partners/summary", methods=["GET"])
 def partner_summary():
     db = get_db()
-
     total = db.execute("""
         SELECT COUNT(*)
         FROM delivery_partners
     """).fetchone()[0]
-
     active = db.execute("""
         SELECT COUNT(*)
         FROM delivery_partners
         WHERE status='ACTIVE'
     """).fetchone()[0]
-
     inactive = db.execute("""
         SELECT COUNT(*)
         FROM delivery_partners
         WHERE status='INACTIVE'
     """).fetchone()[0]
-
     db.close()
-
     return jsonify({
         "success": True,
         "summary": {
@@ -3886,38 +3944,30 @@ def partner_summary():
             "inactive_partners": inactive
         }
     })
-
-
 # =========================================================
 # HUB → DELIVERY PARTNER ASSIGNMENT MODULE
 # =========================================================
-
 @app.route("/api/hubs/<hub_code>/shipments/available", methods=["GET"])
 def hub_available_shipments(hub_code):
     hub_code = str(hub_code).strip().upper()
-
     db = get_db()
-
     hub = db.execute("""
         SELECT hub_id, hub_code, name, status
         FROM hubs
         WHERE hub_code=?
     """, (hub_code,)).fetchone()
-
     if not hub:
         db.close()
         return jsonify({
             "success": False,
             "message": "Hub not found"
         }), 404
-
     if hub["status"] != "ACTIVE":
         db.close()
         return jsonify({
             "success": False,
             "message": "Hub is inactive"
         }), 400
-
     rows = db.execute("""
         SELECT s.*
         FROM shipments s
@@ -3931,106 +3981,87 @@ def hub_available_shipments(hub_code):
           )
         ORDER BY s.id DESC
     """, (hub_code,)).fetchall()
-
     db.close()
-
     return jsonify({
         "success": True,
         "hub_code": hub_code,
         "shipments": [row_to_dict(x) for x in rows]
     })
-
-
 @app.route("/api/hubs/<hub_code>/assign", methods=["POST"])
 def assign_shipment_from_hub(hub_code):
     data = request.get_json(silent=True) or {}
-
     hub_code = str(hub_code).strip().upper()
     shipment_id = str(data.get("shipment_id", "")).strip()
     partner_id = str(data.get("partner_id", "")).strip()
-
     if not shipment_id or not partner_id:
         return jsonify({
             "success": False,
             "message": "shipment_id and partner_id are required"
         }), 400
-
     db = get_db()
-
     hub = db.execute("""
         SELECT *
         FROM hubs
         WHERE hub_code=?
     """, (hub_code,)).fetchone()
-
     if not hub:
         db.close()
         return jsonify({
             "success": False,
             "message": "Hub not found"
         }), 404
-
     if hub["status"] != "ACTIVE":
         db.close()
         return jsonify({
             "success": False,
             "message": "Hub is inactive"
         }), 400
-
     partner = db.execute("""
         SELECT *
         FROM delivery_partners
         WHERE partner_id=?
     """, (partner_id,)).fetchone()
-
     if not partner:
         db.close()
         return jsonify({
             "success": False,
             "message": "Delivery partner not found"
         }), 404
-
     if partner["status"] != "ACTIVE":
         db.close()
         return jsonify({
             "success": False,
             "message": "Delivery partner is inactive"
         }), 400
-
     shipment = db.execute("""
         SELECT *
         FROM shipments
         WHERE shipment_id=? OR awb=?
     """, (shipment_id, shipment_id)).fetchone()
-
     if not shipment:
         db.close()
         return jsonify({
             "success": False,
             "message": "Shipment not found"
         }), 404
-
     if shipment["current_hub"] != hub_code:
         db.close()
         return jsonify({
             "success": False,
             "message": "Shipment is not at this destination hub"
         }), 400
-
     if shipment["status"] != "AT_DESTINATION_HUB":
         db.close()
         return jsonify({
             "success": False,
             "message": "Shipment is not available for partner assignment"
         }), 400
-
     existing = db.execute("""
         SELECT *
         FROM delivery_assignments
         WHERE shipment_id=?
           AND status IN ('ASSIGNED', 'PICKED_UP', 'OUT_FOR_DELIVERY')
     """, (shipment["shipment_id"],)).fetchone()
-
     if existing:
         db.close()
         return jsonify({
@@ -4038,10 +4069,8 @@ def assign_shipment_from_hub(hub_code):
             "message": "Shipment is already assigned",
             "assignment": row_to_dict(existing)
         }), 409
-
     assignment_id = generate_id("ASN")
     assigned_at = now()
-
     db.execute("""
         INSERT INTO delivery_assignments (
             assignment_id,
@@ -4059,7 +4088,6 @@ def assign_shipment_from_hub(hub_code):
         hub_code,
         assigned_at
     ))
-
     # Partner confirmation is required before shipment becomes OUT_FOR_DELIVERY.
     db.execute("""
         INSERT INTO shipment_events (
@@ -4076,37 +4104,28 @@ def assign_shipment_from_hub(hub_code):
         f"Shipment assigned to delivery partner {partner_id}; waiting for partner confirmation",
         assigned_at
     ))
-
     db.commit()
-
     assignment = db.execute("""
         SELECT *
         FROM delivery_assignments
         WHERE assignment_id=?
     """, (assignment_id,)).fetchone()
-
     db.close()
-
     return jsonify({
         "success": True,
         "message": "Shipment assigned from hub successfully",
         "assignment": row_to_dict(assignment)
     }), 201
-
-
 @app.route("/api/assignments/<assignment_id>/confirm", methods=["POST"])
 def confirm_partner_assignment(assignment_id):
     data = request.get_json(silent=True) or {}
     partner_id = str(data.get("partner_id", "")).strip()
-
     if not partner_id:
         return jsonify({
             "success": False,
             "message": "partner_id is required"
         }), 400
-
     db = get_db()
-
     assignment = db.execute("""
         SELECT da.*, s.status AS shipment_status,
                s.current_hub, s.awb
@@ -4115,37 +4134,31 @@ def confirm_partner_assignment(assignment_id):
             ON s.shipment_id=da.shipment_id
         WHERE da.assignment_id=?
     """, (assignment_id,)).fetchone()
-
     if not assignment:
         db.close()
         return jsonify({
             "success": False,
             "message": "Assignment not found"
         }), 404
-
     if assignment["partner_id"] != partner_id:
         db.close()
         return jsonify({
             "success": False,
             "message": "This shipment is assigned to another partner"
         }), 403
-
     if assignment["status"] != "ASSIGNED":
         db.close()
         return jsonify({
             "success": False,
             "message": "Only ASSIGNED shipments can be confirmed"
         }), 400
-
     if assignment["shipment_status"] != "AT_DESTINATION_HUB":
         db.close()
         return jsonify({
             "success": False,
             "message": "Shipment is not waiting for partner confirmation"
         }), 400
-
     confirmed_at = now()
-
     # Partner has confirmed the shipment.
     # Assignment becomes PICKED_UP and shipment becomes OUT_FOR_DELIVERY.
     db.execute("""
@@ -4157,7 +4170,6 @@ def confirm_partner_assignment(assignment_id):
         confirmed_at,
         assignment_id
     ))
-
     db.execute("""
         UPDATE shipments
         SET status='OUT_FOR_DELIVERY',
@@ -4167,7 +4179,6 @@ def confirm_partner_assignment(assignment_id):
         confirmed_at,
         assignment["shipment_id"]
     ))
-
     db.execute("""
         INSERT INTO shipment_events (
             shipment_id,
@@ -4183,17 +4194,13 @@ def confirm_partner_assignment(assignment_id):
         f"Partner {partner_id} confirmed shipment at hub",
         confirmed_at
     ))
-
     db.commit()
-
     updated = db.execute("""
         SELECT *
         FROM delivery_assignments
         WHERE assignment_id=?
     """, (assignment_id,)).fetchone()
-
     db.close()
-
     return jsonify({
         "success": True,
         "message": "Shipment confirmed by partner and moved OUT_FOR_DELIVERY",
@@ -4202,25 +4209,89 @@ def confirm_partner_assignment(assignment_id):
         "status": "OUT_FOR_DELIVERY",
         "confirmed_at": confirmed_at
     })
+# =========================================================
+# ASSIGNMENT / SHIPMENT LIFECYCLE RECONCILIATION
+# =========================================================
+def reconcile_partner_assignments(db, partner_id=None):
+    """
+    Keep historical assignment status consistent with the
+    current shipment terminal status.
+
+    DELIVERED -> COMPLETED
+    RTO       -> RTO
+    RETURNED  -> RTO
+    """
+    if partner_id:
+        db.execute("""
+            UPDATE delivery_assignments
+            SET status='COMPLETED',
+                completed_at=COALESCE(completed_at, ?)
+            WHERE partner_id=?
+              AND status='PICKED_UP'
+              AND shipment_id IN (
+                  SELECT shipment_id
+                  FROM shipments
+                  WHERE status='DELIVERED'
+              )
+        """, (now(), partner_id))
+
+        db.execute("""
+            UPDATE delivery_assignments
+            SET status='RTO',
+                completed_at=COALESCE(completed_at, ?)
+            WHERE partner_id=?
+              AND status='PICKED_UP'
+              AND shipment_id IN (
+                  SELECT shipment_id
+                  FROM shipments
+                  WHERE status IN ('RTO', 'RETURNED')
+              )
+        """, (now(), partner_id))
+    else:
+        db.execute("""
+            UPDATE delivery_assignments
+            SET status='COMPLETED',
+                completed_at=COALESCE(completed_at, ?)
+            WHERE status='PICKED_UP'
+              AND shipment_id IN (
+                  SELECT shipment_id
+                  FROM shipments
+                  WHERE status='DELIVERED'
+              )
+        """, (now(),))
+
+        db.execute("""
+            UPDATE delivery_assignments
+            SET status='RTO',
+                completed_at=COALESCE(completed_at, ?)
+            WHERE status='PICKED_UP'
+              AND shipment_id IN (
+                  SELECT shipment_id
+                  FROM shipments
+                  WHERE status IN ('RTO', 'RETURNED')
+              )
+        """, (now(),))
 
 
 @app.route("/api/partners/<partner_id>/assignments", methods=["GET"])
 def partner_assignments(partner_id):
     db = get_db()
 
+    # Repair any old PICKED_UP assignments whose shipment has
+    # already reached a terminal state.
+    reconcile_partner_assignments(db, partner_id)
+
     partner = db.execute("""
         SELECT *
         FROM delivery_partners
         WHERE partner_id=?
     """, (partner_id,)).fetchone()
-
     if not partner:
         db.close()
         return jsonify({
             "success": False,
             "message": "Delivery partner not found"
         }), 404
-
     rows = db.execute("""
         SELECT
             da.*,
@@ -4237,42 +4308,33 @@ def partner_assignments(partner_id):
         WHERE da.partner_id=?
         ORDER BY da.id DESC
     """, (partner_id,)).fetchall()
-
     db.close()
-
     return jsonify({
         "success": True,
         "partner_id": partner_id,
         "assignments": [row_to_dict(x) for x in rows]
     })
-
-
 @app.route("/api/assignments/<assignment_id>/pickup", methods=["POST"])
 def pickup_assignment(assignment_id):
     db = get_db()
-
     assignment = db.execute("""
         SELECT *
         FROM delivery_assignments
         WHERE assignment_id=?
     """, (assignment_id,)).fetchone()
-
     if not assignment:
         db.close()
         return jsonify({
             "success": False,
             "message": "Assignment not found"
         }), 404
-
     if assignment["status"] != "ASSIGNED":
         db.close()
         return jsonify({
             "success": False,
             "message": "Only ASSIGNED shipments can be picked up"
         }), 400
-
     picked_up_at = now()
-
     db.execute("""
         UPDATE delivery_assignments
         SET status='PICKED_UP',
@@ -4282,7 +4344,6 @@ def pickup_assignment(assignment_id):
         picked_up_at,
         assignment_id
     ))
-
     db.execute("""
         INSERT INTO shipment_events (
             shipment_id,
@@ -4298,37 +4359,29 @@ def pickup_assignment(assignment_id):
         "Shipment picked up by delivery partner",
         picked_up_at
     ))
-
     db.commit()
     db.close()
-
     return jsonify({
         "success": True,
         "message": "Shipment picked up successfully",
         "assignment_id": assignment_id,
         "status": "PICKED_UP"
     })
-
 # =========================================================
 # STEP 14 — PARTNER DELIVERY / RTO CONTROL
 # =========================================================
-
 @app.route("/api/assignments/<assignment_id>/deliver", methods=["POST"])
 def complete_partner_delivery(assignment_id):
     data = request.get_json(silent=True) or {}
-
     partner_id = str(data.get("partner_id", "")).strip()
     note = str(data.get("note", "Shipment delivered successfully")).strip()
     hub_code = str(data.get("hub_code", "")).strip().upper()
-
     if not partner_id:
         return jsonify({
             "success": False,
             "message": "partner_id is required"
         }), 400
-
     db = get_db()
-
     assignment = db.execute("""
         SELECT da.*, s.status AS shipment_status,
                s.current_hub, s.awb
@@ -4337,14 +4390,12 @@ def complete_partner_delivery(assignment_id):
             ON s.shipment_id=da.shipment_id
         WHERE da.assignment_id=?
     """, (assignment_id,)).fetchone()
-
     if not assignment:
         db.close()
         return jsonify({
             "success": False,
             "message": "Assignment not found"
         }), 404
-
     # HUB-ONLY CONTROL:
     # Delivery partner can act only on an assignment created by a hub.
     if not assignment["hub_code"]:
@@ -4353,41 +4404,35 @@ def complete_partner_delivery(assignment_id):
             "success": False,
             "message": "Shipment has no valid hub assignment"
         }), 403
-
     if assignment["partner_id"] != partner_id:
         db.close()
         return jsonify({
             "success": False,
             "message": "This shipment is assigned to another partner"
         }), 403
-
     if assignment["status"] not in {"ASSIGNED", "PICKED_UP", "OUT_FOR_DELIVERY"}:
         db.close()
         return jsonify({
             "success": False,
             "message": "Assignment cannot be completed in current status"
         }), 400
-
     if assignment["shipment_status"] == "DELIVERED":
         db.close()
         return jsonify({
             "success": False,
             "message": "Shipment already delivered"
         }), 400
-
     if assignment["shipment_status"] in {"RTO", "RETURNED", "CANCELLED"}:
         db.close()
         return jsonify({
             "success": False,
             "message": "Shipment cannot be delivered in current status"
         }), 400
-
     payment = db.execute("""
         SELECT *
         FROM payments
         WHERE shipment_id=?
     """, (assignment["shipment_id"],)).fetchone()
-
     if payment and payment["payment_type"] == "COD":
         if payment["status"] != "PAID":
             db.close()
@@ -4398,11 +4443,16 @@ def complete_partner_delivery(assignment_id):
                 "required_amount": payment["amount"]
             }), 400
 
-    delivered_at = now()
+    # PARTNER RATE:
+    # COD / Delivery = ₹15
+    # PAD / PREPAID = ₹13
+    partner_delivery_rate = 13.0
 
+    if payment and payment["payment_type"] == "COD":
+        partner_delivery_rate = 15.0
+    delivered_at = now()
     if not hub_code:
         hub_code = assignment["hub_code"] or assignment["current_hub"] or ""
-
     db.execute("""
         UPDATE shipments
         SET status='DELIVERED',
@@ -4414,7 +4464,6 @@ def complete_partner_delivery(assignment_id):
         delivered_at,
         assignment["shipment_id"]
     ))
-
     db.execute("""
         UPDATE delivery_assignments
         SET status='COMPLETED',
@@ -4425,6 +4474,20 @@ def complete_partner_delivery(assignment_id):
         assignment_id
     ))
 
+    # Keep marketplace order lifecycle synchronized with shipment delivery.
+    db.execute("""
+        UPDATE orders
+        SET order_status='DELIVERED',
+            payment_status=CASE
+                WHEN payment_type='COD' THEN 'PAID'
+                ELSE payment_status
+            END,
+            updated_at=?
+        WHERE shipment_id=?
+    """, (
+        delivered_at,
+        assignment["shipment_id"]
+    ))
     db.execute("""
         INSERT INTO shipment_events
         (shipment_id, status, hub_code, note, created_at)
@@ -4435,7 +4498,6 @@ def complete_partner_delivery(assignment_id):
         note,
         delivered_at
     ))
-
     # PARTNER EARNING
     # One earning record per completed assignment.
     existing_earning = db.execute("""
@@ -4443,10 +4505,8 @@ def complete_partner_delivery(assignment_id):
         FROM partner_earnings
         WHERE assignment_id=?
     """, (assignment_id,)).fetchone()
-
     if not existing_earning:
         earning_id = generate_id("ERN")
-
         db.execute("""
             INSERT INTO partner_earnings (
                 earning_id,
@@ -4467,21 +4527,29 @@ def complete_partner_delivery(assignment_id):
             partner_id,
             assignment_id,
             assignment["shipment_id"],
-            50.0,
+            partner_delivery_rate,
             "Delivery earning created automatically",
             delivered_at
         ))
 
+        # PLATFORM LEDGER — partner delivery payable
+        create_platform_transaction(
+            db,
+            transaction_type="PARTNER_DELIVERY_EARNING",
+            direction="DEBIT",
+            amount=partner_delivery_rate,
+            shipment_id=assignment["shipment_id"],
+            partner_id=partner_id,
+            reference_id=earning_id,
+            note="Partner delivery earning payable"
+        )
     db.commit()
-
     updated = db.execute("""
         SELECT *
         FROM delivery_assignments
         WHERE assignment_id=?
     """, (assignment_id,)).fetchone()
-
     db.close()
-
     return jsonify({
         "success": True,
         "message": "Shipment delivered successfully",
@@ -4490,24 +4558,18 @@ def complete_partner_delivery(assignment_id):
         "status": "DELIVERED",
         "delivered_at": delivered_at
     })
-
-
 @app.route("/api/assignments/<assignment_id>/rto", methods=["POST"])
 def partner_rto(assignment_id):
     data = request.get_json(silent=True) or {}
-
     partner_id = str(data.get("partner_id", "")).strip()
     reason = str(data.get("reason", "Delivery failed")).strip()
     hub_code = str(data.get("hub_code", "")).strip().upper()
-
     if not partner_id:
         return jsonify({
             "success": False,
             "message": "partner_id is required"
         }), 400
-
     db = get_db()
-
     assignment = db.execute("""
         SELECT da.*, s.status AS shipment_status,
                s.current_hub, s.awb
@@ -4516,14 +4578,12 @@ def partner_rto(assignment_id):
             ON s.shipment_id=da.shipment_id
         WHERE da.assignment_id=?
     """, (assignment_id,)).fetchone()
-
     if not assignment:
         db.close()
         return jsonify({
             "success": False,
             "message": "Assignment not found"
         }), 404
-
     # HUB-ONLY CONTROL:
     # Delivery partner can act only on an assignment created by a hub.
     if not assignment["hub_code"]:
@@ -4532,40 +4592,33 @@ def partner_rto(assignment_id):
             "success": False,
             "message": "Shipment has no valid hub assignment"
         }), 403
-
     if assignment["partner_id"] != partner_id:
         db.close()
         return jsonify({
             "success": False,
             "message": "This shipment is assigned to another partner"
         }), 403
-
     if assignment["status"] not in {"ASSIGNED", "PICKED_UP", "OUT_FOR_DELIVERY"}:
         db.close()
         return jsonify({
             "success": False,
             "message": "Assignment cannot be marked RTO in current status"
         }), 400
-
     if assignment["shipment_status"] == "DELIVERED":
         db.close()
         return jsonify({
             "success": False,
             "message": "Delivered shipment cannot be marked RTO"
         }), 400
-
     if assignment["shipment_status"] in {"RTO", "RETURNED", "CANCELLED"}:
         db.close()
         return jsonify({
             "success": False,
             "message": "Shipment is already in return/cancelled state"
         }), 400
-
     rto_at = now()
-
     if not hub_code:
         hub_code = assignment["hub_code"] or assignment["current_hub"] or ""
-
     db.execute("""
         UPDATE shipments
         SET status='RTO',
@@ -4577,7 +4630,6 @@ def partner_rto(assignment_id):
         rto_at,
         assignment["shipment_id"]
     ))
-
     db.execute("""
         UPDATE delivery_assignments
         SET status='RTO',
@@ -4587,7 +4639,6 @@ def partner_rto(assignment_id):
         rto_at,
         assignment_id
     ))
-
     db.execute("""
         INSERT INTO shipment_events
         (shipment_id, status, hub_code, note, created_at)
@@ -4599,16 +4650,61 @@ def partner_rto(assignment_id):
         rto_at
     ))
 
-    db.commit()
+    # PARTNER RTO / REJECT RATE:
+    # ₹1 per rejected / RTO packet.
+    existing_rto_earning = db.execute("""
+        SELECT earning_id
+        FROM partner_earnings
+        WHERE assignment_id=?
+          AND earning_type='RTO'
+    """, (assignment_id,)).fetchone()
 
+    if not existing_rto_earning:
+        earning_id = generate_id("ERN")
+        db.execute("""
+            INSERT INTO partner_earnings (
+                earning_id,
+                partner_id,
+                assignment_id,
+                shipment_id,
+                earning_type,
+                amount,
+                status,
+                payout_id,
+                paid_at,
+                note,
+                created_at
+            )
+            VALUES (?, ?, ?, ?, 'RTO', ?, 'PENDING',
+                    NULL, NULL, ?, ?)
+        """, (
+            earning_id,
+            partner_id,
+            assignment_id,
+            assignment["shipment_id"],
+            1.0,
+            "RTO / Reject earning created automatically",
+            rto_at
+        ))
+
+        # PLATFORM LEDGER — partner RTO / reject payable
+        create_platform_transaction(
+            db,
+            transaction_type="PARTNER_RTO_EARNING",
+            direction="DEBIT",
+            amount=1.0,
+            shipment_id=assignment["shipment_id"],
+            partner_id=partner_id,
+            reference_id=earning_id,
+            note="Partner RTO / Reject earning payable"
+        )
+    db.commit()
     updated = db.execute("""
         SELECT *
         FROM delivery_assignments
         WHERE assignment_id=?
     """, (assignment_id,)).fetchone()
-
     db.close()
-
     return jsonify({
         "success": True,
         "message": "Shipment marked RTO successfully",
@@ -4618,32 +4714,26 @@ def partner_rto(assignment_id):
         "reason": reason,
         "rto_at": rto_at
     })
-
-
 @app.route("/api/partners/<partner_id>/active-assignments", methods=["GET"])
 def partner_active_assignments(partner_id):
     db = get_db()
-
     partner = db.execute("""
         SELECT partner_id, name, phone, status
         FROM delivery_partners
         WHERE partner_id=?
     """, (partner_id,)).fetchone()
-
     if not partner:
         db.close()
         return jsonify({
             "success": False,
             "message": "Delivery partner not found"
         }), 404
-
     if partner["status"] != "ACTIVE":
         db.close()
         return jsonify({
             "success": False,
             "message": "Delivery partner is inactive"
         }), 400
-
     rows = db.execute("""
         SELECT
             da.*,
@@ -4662,37 +4752,30 @@ def partner_active_assignments(partner_id):
           AND da.status IN ('ASSIGNED', 'PICKED_UP', 'OUT_FOR_DELIVERY')
         ORDER BY da.id DESC
     """, (partner_id,)).fetchall()
-
     db.close()
-
     return jsonify({
         "success": True,
         "partner_id": partner_id,
         "assignments": [row_to_dict(x) for x in rows]
     })
-
 # =========================================================
 # STEP 16 — HUB ASSIGNMENT MANAGEMENT
 # =========================================================
-
 @app.route("/api/hubs/<hub_code>/assignments", methods=["GET"])
 def hub_assignments(hub_code):
     hub_code = str(hub_code).strip().upper()
     db = get_db()
-
     hub = db.execute("""
         SELECT hub_id, hub_code, name, status
         FROM hubs
         WHERE hub_code=?
     """, (hub_code,)).fetchone()
-
     if not hub:
         db.close()
         return jsonify({
             "success": False,
             "message": "Hub not found"
         }), 404
-
     rows = db.execute("""
         SELECT
             da.*,
@@ -4713,73 +4796,59 @@ def hub_assignments(hub_code):
         WHERE da.hub_code=?
         ORDER BY da.id DESC
     """, (hub_code,)).fetchall()
-
     db.close()
-
     return jsonify({
         "success": True,
         "hub_code": hub_code,
         "assignments": [row_to_dict(x) for x in rows]
     })
-
-
 @app.route("/api/hubs/<hub_code>/assignments/summary", methods=["GET"])
 def hub_assignment_summary(hub_code):
     hub_code = str(hub_code).strip().upper()
     db = get_db()
-
     hub = db.execute("""
         SELECT hub_id, hub_code, name, status
         FROM hubs
         WHERE hub_code=?
     """, (hub_code,)).fetchone()
-
     if not hub:
         db.close()
         return jsonify({
             "success": False,
             "message": "Hub not found"
         }), 404
-
     total = db.execute("""
         SELECT COUNT(*)
         FROM delivery_assignments
         WHERE hub_code=?
     """, (hub_code,)).fetchone()[0]
-
     assigned = db.execute("""
         SELECT COUNT(*)
         FROM delivery_assignments
         WHERE hub_code=? AND status='ASSIGNED'
     """, (hub_code,)).fetchone()[0]
-
     picked_up = db.execute("""
         SELECT COUNT(*)
         FROM delivery_assignments
         WHERE hub_code=? AND status='PICKED_UP'
     """, (hub_code,)).fetchone()[0]
-
     completed = db.execute("""
         SELECT COUNT(*)
         FROM delivery_assignments
         WHERE hub_code=? AND status='COMPLETED'
     """, (hub_code,)).fetchone()[0]
-
     rto = db.execute("""
         SELECT COUNT(*)
         FROM delivery_assignments
         WHERE hub_code=? AND status='RTO'
     """, (hub_code,)).fetchone()[0]
-
     active = db.execute("""
         SELECT COUNT(*)
         FROM delivery_assignments
         WHERE hub_code=?
           AND status IN ('ASSIGNED', 'PICKED_UP', 'OUT_FOR_DELIVERY')
     """, (hub_code,)).fetchone()[0]
-
     db.close()
-
     return jsonify({
         "success": True,
         "hub_code": hub_code,
@@ -4792,26 +4861,20 @@ def hub_assignment_summary(hub_code):
             "rto": rto
         }
     })
-
 # =========================================================
 # STEP 17 — PARTNER COD COLLECTION CONTROL
 # =========================================================
-
 @app.route("/api/assignments/<assignment_id>/collect-cod", methods=["POST"])
 def partner_collect_cod(assignment_id):
     data = request.get_json(silent=True) or {}
-
     partner_id = str(data.get("partner_id", "")).strip()
     note = str(data.get("note", "COD collected by delivery partner")).strip()
-
     if not partner_id:
         return jsonify({
             "success": False,
             "message": "partner_id is required"
         }), 400
-
     db = get_db()
-
     assignment = db.execute("""
         SELECT da.*, s.status AS shipment_status
         FROM delivery_assignments da
@@ -4819,28 +4882,24 @@ def partner_collect_cod(assignment_id):
             ON s.shipment_id=da.shipment_id
         WHERE da.assignment_id=?
     """, (assignment_id,)).fetchone()
-
     if not assignment:
         db.close()
         return jsonify({
             "success": False,
             "message": "Assignment not found"
         }), 404
-
     if not assignment["hub_code"]:
         db.close()
         return jsonify({
             "success": False,
             "message": "Shipment has no valid hub assignment"
         }), 403
-
     if assignment["partner_id"] != partner_id:
         db.close()
         return jsonify({
             "success": False,
             "message": "This shipment is assigned to another partner"
         }), 403
-
     if assignment["status"] not in {
         "ASSIGNED",
         "PICKED_UP",
@@ -4851,7 +4910,6 @@ def partner_collect_cod(assignment_id):
             "success": False,
             "message": "COD cannot be collected in current assignment status"
         }), 400
-
     if assignment["shipment_status"] in {
         "DELIVERED",
         "RTO",
@@ -4863,27 +4921,23 @@ def partner_collect_cod(assignment_id):
             "success": False,
             "message": "COD cannot be collected for this shipment"
         }), 400
-
     payment = db.execute("""
         SELECT *
         FROM payments
         WHERE shipment_id=?
     """, (assignment["shipment_id"],)).fetchone()
-
     if not payment:
         db.close()
         return jsonify({
             "success": False,
             "message": "Payment record not found"
         }), 404
-
     if payment["payment_type"] != "COD":
         db.close()
         return jsonify({
             "success": False,
             "message": "Shipment is not COD"
         }), 400
-
     if payment["status"] == "PAID":
         db.close()
         return jsonify({
@@ -4891,10 +4945,8 @@ def partner_collect_cod(assignment_id):
             "message": "COD payment already collected",
             "payment": row_to_dict(payment)
         }), 409
-
     amount = float(payment["amount"] or 0)
     collected_at = now()
-
     db.execute("""
         UPDATE payments
         SET collected_amount=?,
@@ -4910,7 +4962,6 @@ def partner_collect_cod(assignment_id):
         note,
         assignment["shipment_id"]
     ))
-
     db.execute("""
         INSERT INTO shipment_events
         (shipment_id, status, hub_code, note, created_at)
@@ -4922,16 +4973,25 @@ def partner_collect_cod(assignment_id):
         collected_at
     ))
 
-    db.commit()
+    # PLATFORM LEDGER — COD collection revenue
+    create_platform_transaction(
+        db,
+        transaction_type="COD_COLLECTION",
+        direction="CREDIT",
+        amount=amount,
+        shipment_id=assignment["shipment_id"],
+        partner_id=partner_id,
+        reference_id=payment["payment_id"],
+        note="COD collected by delivery partner"
+    )
 
+    db.commit()
     updated = db.execute("""
         SELECT *
         FROM payments
         WHERE shipment_id=?
     """, (assignment["shipment_id"],)).fetchone()
-
     db.close()
-
     return jsonify({
         "success": True,
         "message": "COD collected successfully",
@@ -4940,35 +5000,29 @@ def partner_collect_cod(assignment_id):
         "shipment_id": assignment["shipment_id"],
         "payment": row_to_dict(updated)
     })
-
 # =========================================================
 # STEP 21 — HUB DASHBOARD
 # =========================================================
-
 @app.route("/api/hubs/<hub_code>/dashboard", methods=["GET"])
 def hub_dashboard(hub_code):
     hub_code = str(hub_code).strip().upper()
     db = get_db()
-
     hub = db.execute("""
         SELECT hub_id, hub_code, name, city, state, status
         FROM hubs
         WHERE hub_code=?
     """, (hub_code,)).fetchone()
-
     if not hub:
         db.close()
         return jsonify({
             "success": False,
             "message": "Hub not found"
         }), 404
-
     total_shipments = db.execute("""
         SELECT COUNT(*)
         FROM shipments
         WHERE current_hub=?
     """, (hub_code,)).fetchone()[0]
-
     available_shipments = db.execute("""
         SELECT COUNT(*)
         FROM shipments s
@@ -4985,13 +5039,11 @@ def hub_dashboard(hub_code):
                 )
           )
     """, (hub_code,)).fetchone()[0]
-
     total_assignments = db.execute("""
         SELECT COUNT(*)
         FROM delivery_assignments
         WHERE hub_code=?
     """, (hub_code,)).fetchone()[0]
-
     active_assignments = db.execute("""
         SELECT COUNT(*)
         FROM delivery_assignments
@@ -5002,27 +5054,23 @@ def hub_dashboard(hub_code):
               'OUT_FOR_DELIVERY'
           )
     """, (hub_code,)).fetchone()[0]
-
     completed_assignments = db.execute("""
         SELECT COUNT(*)
         FROM delivery_assignments
         WHERE hub_code=?
           AND status='COMPLETED'
     """, (hub_code,)).fetchone()[0]
-
     rto_assignments = db.execute("""
         SELECT COUNT(*)
         FROM delivery_assignments
         WHERE hub_code=?
           AND status='RTO'
     """, (hub_code,)).fetchone()[0]
-
     partners_total = db.execute("""
         SELECT COUNT(*)
         FROM delivery_partners
         WHERE status='ACTIVE'
     """).fetchone()[0]
-
     payments_pending = db.execute("""
         SELECT COUNT(*)
         FROM payments p
@@ -5032,7 +5080,6 @@ def hub_dashboard(hub_code):
           AND p.status='PENDING'
           AND p.payment_type='COD'
     """, (hub_code,)).fetchone()[0]
-
     cod_pending_amount = db.execute("""
         SELECT COALESCE(SUM(p.amount - p.collected_amount), 0)
         FROM payments p
@@ -5042,9 +5089,7 @@ def hub_dashboard(hub_code):
           AND p.status='PENDING'
           AND p.payment_type='COD'
     """, (hub_code,)).fetchone()[0]
-
     db.close()
-
     return jsonify({
         "success": True,
         "hub": row_to_dict(hub),
@@ -5068,36 +5113,30 @@ def hub_dashboard(hub_code):
             }
         }
     })
-
 # =========================================================
 # STEP 23 — HUB ACTIVE PARTNERS
 # =========================================================
-
 @app.route("/api/hubs/<hub_code>/partners", methods=["GET"])
 def hub_active_partners(hub_code):
     hub_code = str(hub_code).strip().upper()
     db = get_db()
-
     hub = db.execute("""
         SELECT hub_id, hub_code, name, city, state, status
         FROM hubs
         WHERE hub_code=?
     """, (hub_code,)).fetchone()
-
     if not hub:
         db.close()
         return jsonify({
             "success": False,
             "message": "Hub not found"
         }), 404
-
     if hub["status"] != "ACTIVE":
         db.close()
         return jsonify({
             "success": False,
             "message": "Hub is inactive"
         }), 400
-
     rows = db.execute("""
         SELECT
             partner_id,
@@ -5112,44 +5151,35 @@ def hub_active_partners(hub_code):
         WHERE status='ACTIVE'
         ORDER BY name ASC
     """).fetchall()
-
     db.close()
-
     return jsonify({
         "success": True,
         "hub_code": hub_code,
         "partners": [row_to_dict(x) for x in rows]
     })
-
 # =========================================================
 # STEP 38 — PARTNER DASHBOARD
 # =========================================================
-
-
 @app.route("/api/partners/<partner_id>/earnings", methods=["GET"])
 def partner_earnings(partner_id):
     db = get_db()
-
     partner = db.execute("""
         SELECT *
         FROM delivery_partners
         WHERE partner_id=?
     """, (partner_id,)).fetchone()
-
     if not partner:
         db.close()
         return jsonify({
             "success": False,
             "message": "Partner not found"
         }), 404
-
     rows = db.execute("""
         SELECT *
         FROM partner_earnings
         WHERE partner_id=?
         ORDER BY id DESC
     """, (partner_id,)).fetchall()
-
     summary = db.execute("""
         SELECT
             COUNT(*) AS total_earnings,
@@ -5159,38 +5189,29 @@ def partner_earnings(partner_id):
         FROM partner_earnings
         WHERE partner_id=?
     """, (partner_id,)).fetchone()
-
     db.close()
-
     return jsonify({
         "success": True,
         "partner_id": partner_id,
         "summary": dict(summary),
         "earnings": [dict(row) for row in rows]
     })
-
-
-
 @app.route("/api/partners/<partner_id>/earnings/<earning_id>/payout", methods=["POST"])
 def partner_earning_payout(partner_id, earning_id):
     partner_id = str(partner_id).strip()
     earning_id = str(earning_id).strip()
-
     db = get_db()
-
     earning = db.execute("""
         SELECT *
         FROM partner_earnings
         WHERE partner_id=? AND earning_id=?
     """, (partner_id, earning_id)).fetchone()
-
     if not earning:
         db.close()
         return jsonify({
             "success": False,
             "message": "Earning not found"
         }), 404
-
     if earning["status"] == "PAID":
         db.close()
         return jsonify({
@@ -5198,11 +5219,8 @@ def partner_earning_payout(partner_id, earning_id):
             "message": "Earning already paid",
             "earning": dict(earning)
         }), 409
-
     payout_id = generate_id("PAY")
-
     paid_at = now()
-
     db.execute("""
         UPDATE partner_earnings
         SET status='PAID',
@@ -5217,17 +5235,13 @@ def partner_earning_payout(partner_id, earning_id):
         earning_id,
         partner_id
     ))
-
     db.commit()
-
     updated = db.execute("""
         SELECT *
         FROM partner_earnings
         WHERE partner_id=? AND earning_id=?
     """, (partner_id, earning_id)).fetchone()
-
     db.close()
-
     return jsonify({
         "success": True,
         "message": "Partner earning paid successfully",
@@ -5235,41 +5249,38 @@ def partner_earning_payout(partner_id, earning_id):
         "earning": dict(updated)
     })
 
+@app.route("/admin/partners", methods=["GET"])
+def admin_partners_alias():
+    return render_template("admin_partners.html")
 
 @app.route("/admin-partners", methods=["GET"])
 def admin_partners_dashboard():
     return render_template("admin_partners.html")
-
 @app.route("/partner-dashboard", methods=["GET"])
 def partner_dashboard_page():
     return render_template("partner_dashboard.html")
-
 @app.route("/api/partners/<partner_id>/dashboard", methods=["GET"])
 def partner_dashboard(partner_id):
     partner_id = str(partner_id).strip()
     db = get_db()
-
     partner = db.execute("""
         SELECT partner_id, name, phone, email, city,
                vehicle_type, status, created_at
         FROM delivery_partners
         WHERE partner_id=?
     """, (partner_id,)).fetchone()
-
     if not partner:
         db.close()
         return jsonify({
             "success": False,
             "message": "Delivery partner not found"
         }), 404
-
     if partner["status"] != "ACTIVE":
         db.close()
         return jsonify({
             "success": False,
             "message": "Delivery partner is inactive"
         }), 400
-
     active = db.execute("""
         SELECT COUNT(*)
         FROM delivery_assignments
@@ -5280,27 +5291,23 @@ def partner_dashboard(partner_id):
               'OUT_FOR_DELIVERY'
           )
     """, (partner_id,)).fetchone()[0]
-
     completed = db.execute("""
         SELECT COUNT(*)
         FROM delivery_assignments
         WHERE partner_id=?
           AND status='COMPLETED'
     """, (partner_id,)).fetchone()[0]
-
     rto = db.execute("""
         SELECT COUNT(*)
         FROM delivery_assignments
         WHERE partner_id=?
           AND status='RTO'
     """, (partner_id,)).fetchone()[0]
-
     total_assignments = db.execute("""
         SELECT COUNT(*)
         FROM delivery_assignments
         WHERE partner_id=?
     """, (partner_id,)).fetchone()[0]
-
     cod_collected = db.execute("""
         SELECT
             COUNT(*) AS payments,
@@ -5313,7 +5320,6 @@ def partner_dashboard(partner_id):
           AND p.status='PAID'
           AND p.collected_by=?
     """, (partner_id, partner_id)).fetchone()
-
     cod_pending = db.execute("""
         SELECT
             COUNT(*) AS payments,
@@ -5331,8 +5337,6 @@ def partner_dashboard(partner_id):
           AND p.payment_type='COD'
           AND p.status='PENDING'
     """, (partner_id,)).fetchone()
-
-
     earning_summary = db.execute("""
         SELECT
             COUNT(*) AS total_earnings,
@@ -5348,7 +5352,6 @@ def partner_dashboard(partner_id):
         FROM partner_earnings
         WHERE partner_id=?
     """, (partner_id,)).fetchone()
-
     recent_earnings = db.execute("""
         SELECT
             earning_id,
@@ -5366,9 +5369,7 @@ def partner_dashboard(partner_id):
         ORDER BY id DESC
         LIMIT 10
     """, (partner_id,)).fetchall()
-
     db.close()
-
     return jsonify({
         "success": True,
         "partner": row_to_dict(partner),
@@ -5394,64 +5395,2457 @@ def partner_dashboard(partner_id):
             }
         }
     })
-
-
 @app.route("/")
 def home():
+    return render_template("delyvo_home.html")
     return jsonify({
         "success": True,
         "platform": "Core Logistics Platform",
         "version": "1.0",
         "status": "ONLINE"
     })
-
-
 @app.route("/api/health")
 def health():
     db = get_db()
-
     db.execute("SELECT 1").fetchone()
-
     db.close()
-
     return jsonify({
         "success": True,
         "status": "ONLINE",
         "database": "CONNECTED"
     })
-
-
-
 # Register Delyvo Company module
 register_company_routes(app)
-
 # Register Delyvo Admin module
 register_admin_module(app)
-
 # Register Delyvo Hub module
 register_hub_module(app)
+# ============================================================
+# DELYVO MARKET CUSTOMER APP
+# ============================================================
+@app.route("/market")
+@app.route("/delyvo-market")
+def delyvo_market():
+    return app.send_static_file("market-placeholder.html") if False else render_template("delyvo_market.html")
+# ============================================================
+# FINANCIAL MANAGEMENT APIs
+# ============================================================
+@app.route("/api/financial/settings", methods=["GET"])
+def get_financial_settings():
+    db = get_db()
+    rows = db.execute("""
+        SELECT setting_key, setting_value, description, updated_at
+        FROM financial_settings
+        ORDER BY id ASC
+    """).fetchall()
+    db.close()
+    settings = {}
+    for row in rows:
+        settings[row["setting_key"]] = {
+            "value": float(row["setting_value"] or 0),
+            "description": row["description"],
+            "updated_at": row["updated_at"]
+        }
+    return jsonify({
+        "success": True,
+        "settings": settings
+    })
+@app.route("/api/financial/settings", methods=["POST"])
+def update_financial_settings():
+    data = request.get_json(silent=True) or {}
+    allowed = {
+        "platform_delivery_charge",
+        "company_charge_percent",
+        "partner_earning_percent",
+        "platform_commission_percent"
+    }
+    db = get_db()
+    updated = []
+    for key in allowed:
+        if key not in data:
+            continue
+        try:
+            value = float(data[key])
+        except (TypeError, ValueError):
+            db.close()
+            return jsonify({
+                "success": False,
+                "message": f"Invalid value for {key}"
+            }), 400
+        if value < 0:
+            db.close()
+            return jsonify({
+                "success": False,
+                "message": f"{key} cannot be negative"
+            }), 400
+        if "percent" in key and value > 100:
+            db.close()
+            return jsonify({
+                "success": False,
+                "message": f"{key} cannot exceed 100"
+            }), 400
+        updated_at = now()
+        db.execute("""
+            INSERT INTO financial_settings
+            (setting_key, setting_value, description, updated_at)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(setting_key)
+            DO UPDATE SET
+                setting_value=excluded.setting_value,
+                updated_at=excluded.updated_at
+        """, (
+            key,
+            value,
+            key.replace("_", " ").title(),
+            updated_at
+        ))
+        updated.append({
+            "setting_key": key,
+            "setting_value": value
+        })
+    db.commit()
+    db.close()
+    return jsonify({
+        "success": True,
+        "message": "Financial settings updated successfully",
+        "updated": updated
+    })
+# ============================================================
+# PARTNER EARNINGS
+# ============================================================
+@app.route("/api/partner-earnings", methods=["GET"])
+def all_partner_earnings():
+    db = get_db()
+    rows = db.execute("""
+        SELECT
+            pe.*,
+            dp.name AS partner_name,
+            dp.phone AS partner_phone
+        FROM partner_earnings pe
+        LEFT JOIN delivery_partners dp
+            ON dp.partner_id=pe.partner_id
+        ORDER BY pe.id DESC
+    """).fetchall()
+    db.close()
+    return jsonify({
+        "success": True,
+        "earnings": [row_to_dict(x) for x in rows],
+        "total": len(rows)
+    })
+# ============================================================
+# SELLER SETTLEMENTS
+# ============================================================
+@app.route("/api/sellers/<seller_id>/settlements", methods=["GET"])
+def seller_settlements(seller_id):
+    db = get_db()
+    seller = db.execute("""
+        SELECT seller_id
+        FROM sellers
+        WHERE seller_id=?
+    """, (seller_id,)).fetchone()
+    if not seller:
+        db.close()
+        return jsonify({
+            "success": False,
+            "message": "Seller not found"
+        }), 404
+    rows = db.execute("""
+        SELECT *
+        FROM seller_settlements
+        WHERE seller_id=?
+        ORDER BY id DESC
+    """, (seller_id,)).fetchall()
+    summary = db.execute("""
+        SELECT
+            COALESCE(SUM(net_payable), 0) AS total_payable,
+            COALESCE(SUM(
+                CASE WHEN status='PENDING'
+                THEN net_payable ELSE 0 END
+            ), 0) AS pending_amount,
+            COALESCE(SUM(
+                CASE WHEN status='PAID'
+                THEN net_payable ELSE 0 END
+            ), 0) AS paid_amount
+        FROM seller_settlements
+        WHERE seller_id=?
+    """, (seller_id,)).fetchone()
+    db.close()
+    return jsonify({
+        "success": True,
+        "seller_id": seller_id,
+        "summary": {
+            "total_payable": float(summary["total_payable"] or 0),
+            "pending_amount": float(summary["pending_amount"] or 0),
+            "paid_amount": float(summary["paid_amount"] or 0)
+        },
+        "settlements": [row_to_dict(x) for x in rows]
+    })
+@app.route("/api/seller-settlements", methods=["GET"])
+def all_seller_settlements():
+    db = get_db()
+    rows = db.execute("""
+        SELECT
+            ss.*,
+            s.name AS seller_name,
+            s.phone AS seller_phone,
+            s.company_name
+        FROM seller_settlements ss
+        LEFT JOIN sellers s
+            ON s.seller_id=ss.seller_id
+        ORDER BY ss.id DESC
+    """).fetchall()
+    db.close()
+    return jsonify({
+        "success": True,
+        "settlements": [row_to_dict(x) for x in rows],
+        "total": len(rows)
+    })
+# ============================================================
+# COMPANY SETTLEMENTS
+# ============================================================
+@app.route("/api/companies/<company_id>/settlements", methods=["GET"])
+def company_settlements(company_id):
+    db = get_db()
+    company = db.execute("""
+        SELECT company_id
+        FROM companies
+        WHERE company_id=?
+    """, (company_id,)).fetchone()
+    if not company:
+        db.close()
+        return jsonify({
+            "success": False,
+            "message": "Company not found"
+        }), 404
+    rows = db.execute("""
+        SELECT *
+        FROM company_settlements
+        WHERE company_id=?
+        ORDER BY id DESC
+    """, (company_id,)).fetchall()
+    summary = db.execute("""
+        SELECT
+            COALESCE(SUM(net_amount), 0) AS total_amount,
+            COALESCE(SUM(
+                CASE WHEN status='PENDING'
+                THEN net_amount ELSE 0 END
+            ), 0) AS pending_amount,
+            COALESCE(SUM(
+                CASE WHEN status='PAID'
+                THEN net_amount ELSE 0 END
+            ), 0) AS paid_amount
+        FROM company_settlements
+        WHERE company_id=?
+    """, (company_id,)).fetchone()
+    db.close()
+    return jsonify({
+        "success": True,
+        "company_id": company_id,
+        "summary": {
+            "total_amount": float(summary["total_amount"] or 0),
+            "pending_amount": float(summary["pending_amount"] or 0),
+            "paid_amount": float(summary["paid_amount"] or 0)
+        },
+        "settlements": [row_to_dict(x) for x in rows]
+    })
+@app.route("/api/company-settlements", methods=["GET"])
+def all_company_settlements():
+    db = get_db()
+    rows = db.execute("""
+        SELECT
+            cs.*,
+            c.name AS company_name,
+            c.email AS company_email
+        FROM company_settlements cs
+        LEFT JOIN companies c
+            ON c.company_id=cs.company_id
+        ORDER BY cs.id DESC
+    """).fetchall()
+    db.close()
+    return jsonify({
+        "success": True,
+        "settlements": [row_to_dict(x) for x in rows],
+        "total": len(rows)
+    })
+# ============================================================
+# PLATFORM TRANSACTION LEDGER
+# ============================================================
+@app.route("/api/financial/transactions", methods=["GET"])
+def financial_transactions():
+    db = get_db()
+    rows = db.execute("""
+        SELECT *
+        FROM platform_transactions
+        ORDER BY id DESC
+    """).fetchall()
+    credit = db.execute("""
+        SELECT COALESCE(SUM(amount), 0)
+        FROM platform_transactions
+        WHERE direction='CREDIT'
+          AND status='POSTED'
+    """).fetchone()[0]
+    debit = db.execute("""
+        SELECT COALESCE(SUM(amount), 0)
+        FROM platform_transactions
+        WHERE direction='DEBIT'
+          AND status='POSTED'
+    """).fetchone()[0]
+    db.close()
+    return jsonify({
+        "success": True,
+        "summary": {
+            "total_credit": float(credit or 0),
+            "total_debit": float(debit or 0),
+            "net_balance": round(
+                float(credit or 0) - float(debit or 0), 2
+            )
+        },
+        "transactions": [row_to_dict(x) for x in rows],
+        "total": len(rows)
+    })
+# ============================================================
+# FINANCIAL DASHBOARD
+# ============================================================
+@app.route("/api/financial/dashboard", methods=["GET"])
+def financial_dashboard():
+    db = get_db()
+    total_cod = db.execute("""
+        SELECT COALESCE(SUM(amount), 0)
+        FROM payments
+        WHERE payment_type='COD'
+    """).fetchone()[0]
+    collected_cod = db.execute("""
+        SELECT COALESCE(SUM(collected_amount), 0)
+        FROM payments
+        WHERE payment_type='COD'
+          AND collected_amount > 0
+    """).fetchone()[0]
+    pending_partner = db.execute("""
+        SELECT COALESCE(SUM(amount), 0)
+        FROM partner_earnings
+        WHERE status='PENDING'
+    """).fetchone()[0]
+    paid_partner = db.execute("""
+        SELECT COALESCE(SUM(amount), 0)
+        FROM partner_earnings
+        WHERE status='PAID'
+    """).fetchone()[0]
+    pending_seller = db.execute("""
+        SELECT COALESCE(SUM(net_payable), 0)
+        FROM seller_settlements
+        WHERE status='PENDING'
+    """).fetchone()[0]
+    paid_seller = db.execute("""
+        SELECT COALESCE(SUM(net_payable), 0)
+        FROM seller_settlements
+        WHERE status='PAID'
+    """).fetchone()[0]
+    pending_company = db.execute("""
+        SELECT COALESCE(SUM(net_amount), 0)
+        FROM company_settlements
+        WHERE status='PENDING'
+    """).fetchone()[0]
+    paid_company = db.execute("""
+        SELECT COALESCE(SUM(net_amount), 0)
+        FROM company_settlements
+        WHERE status='PAID'
+    """).fetchone()[0]
+    revenue = db.execute("""
+        SELECT COALESCE(SUM(amount), 0)
+        FROM platform_transactions
+        WHERE direction='CREDIT'
+          AND status='POSTED'
+    """).fetchone()[0]
+    expenses = db.execute("""
+        SELECT COALESCE(SUM(amount), 0)
+        FROM platform_transactions
+        WHERE direction='DEBIT'
+          AND status='POSTED'
+    """).fetchone()[0]
+    db.close()
+    revenue = float(revenue or 0)
+    expenses = float(expenses or 0)
+    return jsonify({
+        "success": True,
+        "financial": {
+            "cod": {
+                "total_cod": float(total_cod or 0),
+                "collected_cod": float(collected_cod or 0),
+                "pending_cod": round(
+                    float(total_cod or 0) - float(collected_cod or 0), 2
+                )
+            },
+            "partner": {
+                "pending_earnings": float(pending_partner or 0),
+                "paid_earnings": float(paid_partner or 0)
+            },
+            "seller": {
+                "pending_payable": float(pending_seller or 0),
+                "paid_payable": float(paid_seller or 0)
+            },
+            "company": {
+                "pending_amount": float(pending_company or 0),
+                "paid_amount": float(paid_company or 0)
+            },
+            "platform": {
+                "revenue": revenue,
+                "expenses": expenses,
+                "net": round(revenue - expenses, 2)
+            }
+        }
+    })
+# ============================================================
+# PAYOUT MODULE
+# ============================================================
+@app.route("/api/partner-earnings/<earning_id>/payout", methods=["POST"])
+def payout_partner_earning(earning_id):
+    db = get_db()
+    earning = db.execute("""
+        SELECT *
+        FROM partner_earnings
+        WHERE earning_id=?
+    """, (earning_id,)).fetchone()
+    if not earning:
+        db.close()
+        return jsonify({
+            "success": False,
+            "message": "Partner earning not found"
+        }), 404
+    if earning["status"] == "PAID":
+        db.close()
+        return jsonify({
+            "success": False,
+            "message": "Partner earning already paid"
+        }), 400
+
+    # Serialize concurrent payout requests and re-check status
+    # before creating the platform debit transaction.
+    db.execute("BEGIN IMMEDIATE")
+
+    locked = db.execute(
+        "SELECT status FROM partner_earnings WHERE earning_id=?",
+        (earning_id,)
+    ).fetchone()
+
+    if not locked:
+        db.rollback()
+        db.close()
+        return jsonify({
+            "success": False,
+            "message": "Partner earning not found"
+        }), 404
+
+    if locked["status"] == "PAID":
+        db.rollback()
+        db.close()
+        return jsonify({
+            "success": False,
+            "message": "Partner earning already paid"
+        }), 400
+
+    payout_id = generate_id("PAYOUT")
+    paid_at = now()
+
+    # PLATFORM LEDGER — partner payout
+    create_platform_transaction(
+        db,
+        transaction_type="PARTNER_PAYOUT",
+        direction="DEBIT",
+        amount=float(earning["amount"] or 0),
+        shipment_id=earning["shipment_id"],
+        partner_id=earning["partner_id"],
+        reference_id=payout_id,
+        note="Partner earning payout completed"
+    )
+
+    db.execute("""
+        UPDATE partner_earnings
+        SET status='PAID',
+            payout_id=?,
+            paid_at=?
+        WHERE earning_id=?
+    """, (
+        payout_id,
+        paid_at,
+        earning_id
+    ))
+    db.commit()
+    updated = db.execute("""
+        SELECT *
+        FROM partner_earnings
+        WHERE earning_id=?
+    """, (earning_id,)).fetchone()
+    db.close()
+    return jsonify({
+        "success": True,
+        "message": "Partner payout completed successfully",
+        "payout_id": payout_id,
+        "earning": row_to_dict(updated)
+    })
+@app.route("/api/seller-settlements/<settlement_id>/payout", methods=["POST"])
+def payout_seller_settlement(settlement_id):
+    db = get_db()
+    settlement = db.execute("""
+        SELECT *
+        FROM seller_settlements
+        WHERE settlement_id=?
+    """, (settlement_id,)).fetchone()
+    if not settlement:
+        db.close()
+        return jsonify({
+            "success": False,
+            "message": "Seller settlement not found"
+        }), 404
+    if settlement["status"] == "PAID":
+        db.close()
+        return jsonify({
+            "success": False,
+            "message": "Seller settlement already paid"
+        }), 400
+
+    # Serialize concurrent payout requests and re-check status
+    # before creating the platform debit transaction.
+    db.execute("BEGIN IMMEDIATE")
+
+    locked = db.execute(
+        "SELECT status FROM seller_settlements WHERE settlement_id=?",
+        (settlement_id,)
+    ).fetchone()
+
+    if not locked:
+        db.rollback()
+        db.close()
+        return jsonify({
+            "success": False,
+            "message": "Seller settlement not found"
+        }), 404
+
+    if locked["status"] == "PAID":
+        db.rollback()
+        db.close()
+        return jsonify({
+            "success": False,
+            "message": "Seller settlement already paid"
+        }), 400
+
+    payout_id = generate_id("PAYOUT")
+    paid_at = now()
+
+    # PLATFORM LEDGER — seller payout
+    create_platform_transaction(
+        db,
+        transaction_type="SELLER_PAYOUT",
+        direction="DEBIT",
+        amount=float(settlement["net_payable"] or 0),
+        order_id=settlement["order_id"],
+        seller_id=settlement["seller_id"],
+        reference_id=payout_id,
+        note="Seller settlement payout completed"
+    )
+
+    db.execute("""
+        UPDATE seller_settlements
+        SET status='PAID',
+            payout_id=?,
+            paid_at=?
+        WHERE settlement_id=?
+    """, (
+        payout_id,
+        paid_at,
+        settlement_id
+    ))
+    db.commit()
+    updated = db.execute("""
+        SELECT *
+        FROM seller_settlements
+        WHERE settlement_id=?
+    """, (settlement_id,)).fetchone()
+    db.close()
+    return jsonify({
+        "success": True,
+        "message": "Seller payout completed successfully",
+        "payout_id": payout_id,
+        "settlement": row_to_dict(updated)
+    })
+@app.route("/api/company-settlements/<settlement_id>/payout", methods=["POST"])
+def payout_company_settlement(settlement_id):
+    db = get_db()
+    settlement = db.execute("""
+        SELECT *
+        FROM company_settlements
+        WHERE settlement_id=?
+    """, (settlement_id,)).fetchone()
+    if not settlement:
+        db.close()
+        return jsonify({
+            "success": False,
+            "message": "Company settlement not found"
+        }), 404
+    if settlement["status"] == "PAID":
+        db.close()
+        return jsonify({
+            "success": False,
+            "message": "Company settlement already paid"
+        }), 400
+
+    # Serialize concurrent payout requests and re-check status
+    # before creating the platform debit transaction.
+    db.execute("BEGIN IMMEDIATE")
+
+    locked = db.execute(
+        "SELECT status FROM company_settlements WHERE settlement_id=?",
+        (settlement_id,)
+    ).fetchone()
+
+    if not locked:
+        db.rollback()
+        db.close()
+        return jsonify({
+            "success": False,
+            "message": "Company settlement not found"
+        }), 404
+
+    if locked["status"] == "PAID":
+        db.rollback()
+        db.close()
+        return jsonify({
+            "success": False,
+            "message": "Company settlement already paid"
+        }), 400
+
+    payout_id = generate_id("PAYOUT")
+    paid_at = now()
+
+    # PLATFORM LEDGER — company payout
+    create_platform_transaction(
+        db,
+        transaction_type="COMPANY_PAYOUT",
+        direction="DEBIT",
+        amount=float(settlement["net_amount"] or 0),
+        company_id=settlement["company_id"],
+        reference_id=payout_id,
+        note="Company settlement payout completed"
+    )
+
+    db.execute("""
+        UPDATE company_settlements
+        SET status='PAID',
+            payout_id=?,
+            paid_at=?
+        WHERE settlement_id=?
+    """, (
+        payout_id,
+        paid_at,
+        settlement_id
+    ))
+    db.commit()
+    updated = db.execute("""
+        SELECT *
+        FROM company_settlements
+        WHERE settlement_id=?
+    """, (settlement_id,)).fetchone()
+    db.close()
+    return jsonify({
+        "success": True,
+        "message": "Company payout completed successfully",
+        "payout_id": payout_id,
+        "settlement": row_to_dict(updated)
+    })
+# ============================================================
+# PAYOUT SUMMARY
+# ============================================================
+@app.route("/api/financial/payouts", methods=["GET"])
+def financial_payouts():
+    db = get_db()
+    partner_paid = db.execute("""
+        SELECT COALESCE(SUM(amount), 0)
+        FROM partner_earnings
+        WHERE status='PAID'
+    """).fetchone()[0]
+    seller_paid = db.execute("""
+        SELECT COALESCE(SUM(net_payable), 0)
+        FROM seller_settlements
+        WHERE status='PAID'
+    """).fetchone()[0]
+    company_paid = db.execute("""
+        SELECT COALESCE(SUM(net_amount), 0)
+        FROM company_settlements
+        WHERE status='PAID'
+    """).fetchone()[0]
+    partner_pending = db.execute("""
+        SELECT COALESCE(SUM(amount), 0)
+        FROM partner_earnings
+        WHERE status='PENDING'
+    """).fetchone()[0]
+    seller_pending = db.execute("""
+        SELECT COALESCE(SUM(net_payable), 0)
+        FROM seller_settlements
+        WHERE status='PENDING'
+    """).fetchone()[0]
+    company_pending = db.execute("""
+        SELECT COALESCE(SUM(net_amount), 0)
+        FROM company_settlements
+        WHERE status='PENDING'
+    """).fetchone()[0]
+    db.close()
+    paid_total = (
+        float(partner_paid or 0)
+        + float(seller_paid or 0)
+        + float(company_paid or 0)
+    )
+    pending_total = (
+        float(partner_pending or 0)
+        + float(seller_pending or 0)
+        + float(company_pending or 0)
+    )
+    return jsonify({
+        "success": True,
+        "payouts": {
+            "paid": {
+                "partner": float(partner_paid or 0),
+                "seller": float(seller_paid or 0),
+                "company": float(company_paid or 0),
+                "total": round(paid_total, 2)
+            },
+            "pending": {
+                "partner": float(partner_pending or 0),
+                "seller": float(seller_pending or 0),
+                "company": float(company_pending or 0),
+                "total": round(pending_total, 2)
+            }
+        }
+    })
+
+# ============================================================
+# OWNER FINANCIAL LEDGER
+# ============================================================
+
+@app.route("/api/owner/financial", methods=["GET"])
+def owner_financial():
+    db = get_db()
+
+    credit = db.execute("""
+        SELECT COALESCE(SUM(amount), 0)
+        FROM owner_ledger
+        WHERE direction='CREDIT' AND status='POSTED'
+    """).fetchone()[0]
+
+    debit = db.execute("""
+        SELECT COALESCE(SUM(amount), 0)
+        FROM owner_ledger
+        WHERE direction='DEBIT' AND status='POSTED'
+    """).fetchone()[0]
+
+    withdrawn = db.execute("""
+        SELECT COALESCE(SUM(amount), 0)
+        FROM owner_withdrawals
+        WHERE status='COMPLETED'
+    """).fetchone()[0]
+
+    transactions = db.execute("""
+        SELECT *
+        FROM owner_ledger
+        ORDER BY id DESC
+        LIMIT 100
+    """).fetchall()
+
+    db.close()
+
+    total_credit = round(float(credit or 0), 2)
+    total_debit = round(float(debit or 0), 2)
+    total_withdrawn = round(float(withdrawn or 0), 2)
+
+    # Withdrawals are already recorded as DEBIT entries in owner_ledger.
+    # Do not subtract owner_withdrawals again, otherwise balance is
+    # reduced twice.
+    profit = round(total_credit - total_debit, 2)
+    available = profit
+
+    return jsonify({
+        "success": True,
+        "owner": {
+            "total_earned": total_credit,
+            "total_debit": total_debit,
+            "profit": profit,
+            "withdrawn": total_withdrawn,
+            "available_balance": available
+        },
+        "ledger": [row_to_dict(x) for x in transactions]
+    })
+
+
+
+# ============================================================
+# OWNER WITHDRAWAL SYSTEM
+# ============================================================
+
+@app.route("/api/owner/withdraw", methods=["POST"])
+def owner_withdraw():
+    data = request.get_json(silent=True) or {}
+
+    try:
+        amount = round(float(data.get("amount", 0)), 2)
+    except (TypeError, ValueError):
+        return jsonify({
+            "success": False,
+            "message": "Invalid withdrawal amount"
+        }), 400
+
+    if amount <= 0:
+        return jsonify({
+            "success": False,
+            "message": "Withdrawal amount must be greater than zero"
+        }), 400
+
+    db = get_db()
+
+    try:
+        db.execute("BEGIN IMMEDIATE")
+
+        credit = db.execute("""
+            SELECT COALESCE(SUM(amount), 0)
+            FROM owner_ledger
+            WHERE direction='CREDIT'
+              AND status='POSTED'
+        """).fetchone()[0]
+
+        debit = db.execute("""
+            SELECT COALESCE(SUM(amount), 0)
+            FROM owner_ledger
+            WHERE direction='DEBIT'
+              AND status='POSTED'
+        """).fetchone()[0]
+
+        withdrawn = db.execute("""
+            SELECT COALESCE(SUM(amount), 0)
+            FROM owner_withdrawals
+            WHERE status='COMPLETED'
+        """).fetchone()[0]
+
+        # Owner withdrawals are represented by OWNER_WITHDRAWAL
+        # DEBIT entries in owner_ledger, so subtract ledger debit only.
+        # Do not subtract owner_withdrawals again.
+        available = round(
+            float(credit or 0)
+            - float(debit or 0),
+            2
+        )
+
+        if amount > available:
+            db.close()
+            return jsonify({
+                "success": False,
+                "message": "Insufficient owner balance",
+                "available_balance": available,
+                "requested_amount": amount
+            }), 400
+
+        withdrawal_id = generate_id("WITHDRAW")
+        reference_id = str(
+            data.get("reference_id", "")
+        ).strip() or withdrawal_id
+
+        note = str(
+            data.get(
+                "note",
+                "Owner profit withdrawal completed"
+            )
+        ).strip()
+
+        completed_at = now()
+
+        db.execute("""
+            INSERT INTO owner_withdrawals (
+                withdrawal_id,
+                amount,
+                status,
+                reference_id,
+                note,
+                created_at,
+                completed_at
+            )
+            VALUES (?, ?, 'COMPLETED', ?, ?, ?, ?)
+        """, (
+            withdrawal_id,
+            amount,
+            reference_id,
+            note,
+            completed_at,
+            completed_at
+        ))
+
+        ledger_id = generate_id("OLEDGER")
+
+        db.execute("""
+            INSERT INTO owner_ledger (
+                ledger_id,
+                transaction_id,
+                shipment_id,
+                order_id,
+                transaction_type,
+                direction,
+                amount,
+                status,
+                reference_id,
+                note,
+                created_at
+            )
+            VALUES (
+                ?, NULL, NULL, NULL,
+                'OWNER_WITHDRAWAL',
+                'DEBIT',
+                ?, 'POSTED',
+                ?, ?, ?
+            )
+        """, (
+            ledger_id,
+            amount,
+            reference_id,
+            note,
+            completed_at
+        ))
+
+        db.commit()
+
+        new_available = round(
+            available - amount,
+            2
+        )
+
+        return jsonify({
+            "success": True,
+            "message": "Owner withdrawal completed successfully",
+            "withdrawal": {
+                "withdrawal_id": withdrawal_id,
+                "amount": amount,
+                "status": "COMPLETED",
+                "reference_id": reference_id,
+                "note": note,
+                "completed_at": completed_at
+            },
+            "owner": {
+                "previous_available_balance": available,
+                "withdrawn_amount": amount,
+                "available_balance": new_available
+            }
+        })
+
+    except Exception:
+        db.rollback()
+        raise
+
+    finally:
+        try:
+            db.close()
+        except Exception:
+            pass
+
+
+@app.route("/api/owner/withdrawals", methods=["GET"])
+def owner_withdrawals():
+    db = get_db()
+
+    rows = db.execute("""
+        SELECT *
+        FROM owner_withdrawals
+        ORDER BY id DESC
+        LIMIT 100
+    """).fetchall()
+
+    db.close()
+
+    return jsonify({
+        "success": True,
+        "withdrawals": [
+            row_to_dict(x) for x in rows
+        ],
+        "total": len(rows)
+    })
+
+
+# ============================================================
+# SINGLE LOGISTICS PLATFORM SERVER
+# ============================================================
+# ============================================================
+# SINGLE SERVER — LOGISTICS PLATFORM
+# ============================================================
+
+# ============================================================
+# SINGLE LOGISTICS PLATFORM SERVER
+# ============================================================
+
+# DELYVO MARKET - MULTI SELLER PUBLIC API
+# ============================================================
+
+@app.route("/api/market/products", methods=["GET"])
+def market_products():
+    db = get_db()
+
+    q = str(request.args.get("q", "")).strip().lower()
+    category = str(request.args.get("category", "all")).strip().lower()
+    seller_id = str(request.args.get("seller_id", "")).strip()
+
+    sql = """
+        SELECT
+            p.product_id,
+            p.seller_id,
+            p.name,
+            p.sku,
+            p.description,
+            p.price,
+            p.stock,
+            p.status,
+            p.created_at,
+            p.updated_at,
+            s.name AS seller_name,
+            s.city AS seller_city
+        FROM products p
+        JOIN sellers s ON s.seller_id = p.seller_id
+        WHERE p.status='ACTIVE'
+          AND p.stock > 0
+          AND s.status='ACTIVE'
+    """
+
+    params = []
+
+    if q:
+        sql += """
+            AND (
+                lower(p.name) LIKE ?
+                OR lower(COALESCE(p.description,'')) LIKE ?
+                OR lower(COALESCE(p.sku,'')) LIKE ?
+                OR lower(COALESCE(s.name,'')) LIKE ?
+            )
+        """
+        term = f"%{q}%"
+        params.extend([term, term, term, term])
+
+    if category and category != "all":
+        sql += """
+            AND (
+                lower(COALESCE(p.name,'')) LIKE ?
+                OR lower(COALESCE(p.description,'')) LIKE ?
+            )
+        """
+        term = f"%{category}%"
+        params.extend([term, term])
+
+    if seller_id:
+        sql += " AND p.seller_id=? "
+        params.append(seller_id)
+
+    sql += " ORDER BY p.id DESC"
+
+    rows = db.execute(sql, tuple(params)).fetchall()
+
+    return jsonify({
+        "success": True,
+        "products": [row_to_dict(r) for r in rows],
+        "total": len(rows)
+    })
+
+
+@app.route("/api/market/sellers", methods=["GET"])
+def market_sellers():
+    db = get_db()
+
+    rows = db.execute("""
+        SELECT
+            s.seller_id,
+            s.name,
+            s.city,
+            COUNT(p.id) AS product_count
+        FROM sellers s
+        LEFT JOIN products p
+            ON p.seller_id=s.seller_id
+           AND p.status='ACTIVE'
+           AND p.stock > 0
+        WHERE s.status='ACTIVE'
+        GROUP BY s.seller_id
+        ORDER BY s.id DESC
+    """).fetchall()
+
+    return jsonify({
+        "success": True,
+        "sellers": [row_to_dict(r) for r in rows],
+        "total": len(rows)
+    })
+
+
+@app.route("/api/market/product/<product_id>", methods=["GET"])
+def market_product_detail(product_id):
+    db = get_db()
+
+    row = db.execute("""
+        SELECT
+            p.*,
+            s.name AS seller_name,
+            s.city AS seller_city
+        FROM products p
+        JOIN sellers s ON s.seller_id=p.seller_id
+        WHERE p.product_id=?
+          AND p.status='ACTIVE'
+          AND s.status='ACTIVE'
+    """, (product_id,)).fetchone()
+
+    if not row:
+        return jsonify({
+            "success": False,
+            "message": "Product not found"
+        }), 404
+
+    return jsonify({
+        "success": True,
+        "product": row_to_dict(row)
+    })
+
+
+# ============================================================
+# DELYVO MARKET - CUSTOMER ORDER LOOKUP
+# ============================================================
+
+@app.route("/api/market/orders/<order_id>", methods=["GET"])
+def market_order_detail(order_id):
+    db = get_db()
+
+    order = db.execute("""
+        SELECT *
+        FROM orders
+        WHERE order_id=?
+    """, (order_id,)).fetchone()
+
+    if not order:
+        return jsonify({
+            "success": False,
+            "message": "Order not found"
+        }), 404
+
+    items = db.execute("""
+        SELECT *
+        FROM order_items
+        WHERE order_id=?
+        ORDER BY id ASC
+    """, (order_id,)).fetchall()
+
+    shipment = None
+
+    if order["shipment_id"]:
+        shipment = db.execute("""
+            SELECT *
+            FROM shipments
+            WHERE shipment_id=?
+        """, (order["shipment_id"],)).fetchone()
+
+    events = []
+
+    if shipment:
+        events = db.execute("""
+            SELECT *
+            FROM shipment_events
+            WHERE shipment_id=?
+            ORDER BY id DESC
+        """, (order["shipment_id"],)).fetchall()
+
+    return jsonify({
+        "success": True,
+        "order": row_to_dict(order),
+        "items": [row_to_dict(x) for x in items],
+        "shipment": row_to_dict(shipment) if shipment else None,
+        "events": [row_to_dict(x) for x in events]
+    })
+
+
+print("Delyvo Market multi-seller API registered")
+
+
+# ============================================================
+
+# ============================================================
+# DELYVO MARKET - CUSTOMER ORDER MANAGEMENT
+# ============================================================
+
+@app.route("/api/market/orders/<order_id>/cancel", methods=["POST"])
+def market_cancel_order(order_id):
+    db = get_db()
+
+    order = db.execute("""
+        SELECT *
+        FROM orders
+        WHERE order_id=?
+    """, (order_id,)).fetchone()
+
+    if not order:
+        return jsonify({
+            "success": False,
+            "message": "Order not found"
+        }), 404
+
+    status = str(order["order_status"] or "").upper()
+
+    if status not in ("PLACED", "NEW"):
+        return jsonify({
+            "success": False,
+            "message": "Order cannot be cancelled at this stage"
+        }), 400
+
+    db.execute("""
+        UPDATE orders
+        SET order_status='CANCELLED',
+            updated_at=datetime('now')
+        WHERE order_id=?
+    """, (order_id,))
+
+    shipment_id = order["shipment_id"]
+
+    if shipment_id:
+        shipment = db.execute("""
+            SELECT status
+            FROM shipments
+            WHERE shipment_id=?
+        """, (shipment_id,)).fetchone()
+
+        if shipment and str(shipment["status"]).upper() in (
+            "CREATED", "NEW"
+        ):
+            db.execute("""
+                UPDATE shipments
+                SET status='CANCELLED',
+                    updated_at=datetime('now')
+                WHERE shipment_id=?
+            """, (shipment_id,))
+
+            db.execute("""
+                INSERT INTO shipment_events
+                (shipment_id,status,hub_code,note,created_at)
+                VALUES (?,?,?,?,datetime('now'))
+            """, (
+                shipment_id,
+                "CANCELLED",
+                "HUB001",
+                "Customer cancelled market order"
+            ))
+
+    db.commit()
+
+    updated = db.execute("""
+        SELECT *
+        FROM orders
+        WHERE order_id=?
+    """, (order_id,)).fetchone()
+
+    return jsonify({
+        "success": True,
+        "message": "Order cancelled successfully",
+        "order": row_to_dict(updated)
+    })
+
+
+
+# ============================================================
+# CUSTOMER RETURN MANAGEMENT MODULE
+# ============================================================
+# Lifecycle:
+# RETURN_REQUESTED
+# -> RETURN_ASSIGNED
+# -> RETURN_PICKED_UP
+# -> RETURNED
+# -> REFUND_PENDING
+# -> REFUNDED
+#
+# This module is intentionally separate from normal delivery/RTO.
+# ============================================================
+
+def ensure_return_tables():
+    db = get_db()
+
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS customer_returns (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            return_id TEXT UNIQUE NOT NULL,
+            order_id TEXT NOT NULL,
+            shipment_id TEXT,
+            seller_id TEXT,
+            customer_name TEXT,
+            customer_phone TEXT,
+            reason TEXT,
+            status TEXT NOT NULL DEFAULT 'RETURN_REQUESTED',
+            pickup_partner_id TEXT,
+            pickup_assignment_id TEXT,
+            refund_payment_id TEXT,
+            refund_amount REAL DEFAULT 0,
+            requested_at TEXT,
+            assigned_at TEXT,
+            picked_up_at TEXT,
+            returned_at TEXT,
+            refund_requested_at TEXT,
+            refunded_at TEXT,
+            hub_code TEXT,
+            note TEXT,
+            created_at TEXT,
+            updated_at TEXT
+        )
+    """)
+
+    db.execute("""
+        CREATE INDEX IF NOT EXISTS idx_customer_returns_order
+        ON customer_returns(order_id)
+    """)
+
+    db.execute("""
+        CREATE INDEX IF NOT EXISTS idx_customer_returns_shipment
+        ON customer_returns(shipment_id)
+    """)
+
+    db.execute("""
+        CREATE INDEX IF NOT EXISTS idx_customer_returns_status
+        ON customer_returns(status)
+    """)
+
+    db.commit()
+    db.close()
+
+
+# Create table when application module loads.
+ensure_return_tables()
+
+
+@app.route("/api/market/orders/<order_id>/return", methods=["POST"])
+def market_return_order(order_id):
+    data = request.get_json(silent=True) or {}
+
+    db = get_db()
+
+    order = db.execute("""
+        SELECT *
+        FROM orders
+        WHERE order_id=?
+    """, (order_id,)).fetchone()
+
+    if not order:
+        db.close()
+        return jsonify({
+            "success": False,
+            "message": "Order not found"
+        }), 404
+
+    if str(order["order_status"] or "").upper() != "DELIVERED":
+        db.close()
+        return jsonify({
+            "success": False,
+            "message": "Only delivered orders can be returned"
+        }), 400
+
+    existing = db.execute("""
+        SELECT *
+        FROM customer_returns
+        WHERE order_id=?
+          AND status NOT IN ('REFUNDED', 'CANCELLED')
+        ORDER BY id DESC
+        LIMIT 1
+    """, (order_id,)).fetchone()
+
+    if existing:
+        db.close()
+        return jsonify({
+            "success": False,
+            "message": "Return request already exists",
+            "return": row_to_dict(existing)
+        }), 409
+
+    requested_at = now()
+    return_id = generate_id("RET")
+
+    reason = str(
+        data.get("reason", "Customer requested return")
+    ).strip()
+
+    hub_code = ""
+
+    if order["shipment_id"]:
+        shipment = db.execute("""
+            SELECT *
+            FROM shipments
+            WHERE shipment_id=?
+        """, (order["shipment_id"],)).fetchone()
+
+        if shipment:
+            hub_code = str(
+                shipment["current_hub"]
+                or shipment["destination_hub"]
+                or shipment["origin_hub"]
+                or ""
+            ).strip().upper()
+
+    db.execute("""
+        INSERT INTO customer_returns (
+            return_id,
+            order_id,
+            shipment_id,
+            seller_id,
+            customer_name,
+            customer_phone,
+            reason,
+            status,
+            refund_amount,
+            requested_at,
+            hub_code,
+            note,
+            created_at,
+            updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'RETURN_REQUESTED',
+                ?, ?, ?, ?, ?, ?)
+    """, (
+        return_id,
+        order_id,
+        order["shipment_id"],
+        order["seller_id"],
+        order["customer_name"],
+        order["customer_phone"],
+        reason,
+        float(order["total_amount"] or 0),
+        requested_at,
+        hub_code,
+        "Customer return request created",
+        requested_at,
+        requested_at
+    ))
+
+    db.execute("""
+        UPDATE orders
+        SET order_status='RETURN_REQUESTED',
+            updated_at=?
+        WHERE order_id=?
+    """, (requested_at, order_id))
+
+    if order["shipment_id"]:
+        db.execute("""
+            UPDATE shipments
+            SET status='RETURN_REQUESTED',
+                updated_at=?
+            WHERE shipment_id=?
+        """, (
+            requested_at,
+            order["shipment_id"]
+        ))
+
+        db.execute("""
+            INSERT INTO shipment_events
+            (shipment_id, status, hub_code, note, created_at)
+            VALUES (?, 'RETURN_REQUESTED', ?, ?, ?)
+        """, (
+            order["shipment_id"],
+            hub_code,
+            f"Customer return requested: {reason}",
+            requested_at
+        ))
+
+    db.commit()
+
+    ret = db.execute("""
+        SELECT *
+        FROM customer_returns
+        WHERE return_id=?
+    """, (return_id,)).fetchone()
+
+    db.close()
+
+    return jsonify({
+        "success": True,
+        "message": "Customer return request created",
+        "return": row_to_dict(ret)
+    }), 201
+
+
+@app.route("/api/returns/<return_id>", methods=["GET"])
+def get_customer_return(return_id):
+    db = get_db()
+
+    ret = db.execute("""
+        SELECT *
+        FROM customer_returns
+        WHERE return_id=?
+    """, (return_id,)).fetchone()
+
+    if not ret:
+        db.close()
+        return jsonify({
+            "success": False,
+            "message": "Return not found"
+        }), 404
+
+    db.close()
+
+    return jsonify({
+        "success": True,
+        "return": row_to_dict(ret)
+    })
+
+
+@app.route("/api/returns", methods=["GET"])
+def get_customer_returns():
+    status_filter = str(
+        request.args.get("status", "")
+    ).strip().upper()
+
+    db = get_db()
+
+    if status_filter:
+        rows = db.execute("""
+            SELECT *
+            FROM customer_returns
+            WHERE status=?
+            ORDER BY id DESC
+        """, (status_filter,)).fetchall()
+    else:
+        rows = db.execute("""
+            SELECT *
+            FROM customer_returns
+            ORDER BY id DESC
+        """).fetchall()
+
+    db.close()
+
+    return jsonify({
+        "success": True,
+        "returns": [row_to_dict(x) for x in rows]
+    })
+
+
+@app.route("/api/returns/<return_id>/assign", methods=["POST"])
+def assign_customer_return(return_id):
+    data = request.get_json(silent=True) or {}
+
+    partner_id = str(
+        data.get("partner_id", "")
+    ).strip()
+
+    if not partner_id:
+        return jsonify({
+            "success": False,
+            "message": "partner_id is required"
+        }), 400
+
+    db = get_db()
+
+    ret = db.execute("""
+        SELECT *
+        FROM customer_returns
+        WHERE return_id=?
+    """, (return_id,)).fetchone()
+
+    if not ret:
+        db.close()
+        return jsonify({
+            "success": False,
+            "message": "Return not found"
+        }), 404
+
+    if ret["status"] != "RETURN_REQUESTED":
+        db.close()
+        return jsonify({
+            "success": False,
+            "message": "Only RETURN_REQUESTED returns can be assigned"
+        }), 400
+
+    partner = db.execute("""
+        SELECT partner_id, status
+        FROM delivery_partners
+        WHERE partner_id=?
+    """, (partner_id,)).fetchone()
+
+    if not partner:
+        db.close()
+        return jsonify({
+            "success": False,
+            "message": "Delivery partner not found"
+        }), 404
+
+    if partner["status"] != "ACTIVE":
+        db.close()
+        return jsonify({
+            "success": False,
+            "message": "Delivery partner is inactive"
+        }), 400
+
+    assigned_at = now()
+
+    db.execute("""
+        UPDATE customer_returns
+        SET status='RETURN_ASSIGNED',
+            pickup_partner_id=?,
+            assigned_at=?,
+            updated_at=?
+        WHERE return_id=?
+    """, (
+        partner_id,
+        assigned_at,
+        assigned_at,
+        return_id
+    ))
+
+    db.commit()
+
+    updated = db.execute("""
+        SELECT *
+        FROM customer_returns
+        WHERE return_id=?
+    """, (return_id,)).fetchone()
+
+    db.close()
+
+    return jsonify({
+        "success": True,
+        "message": "Customer return assigned to partner",
+        "return": row_to_dict(updated)
+    })
+
+
+@app.route("/api/returns/<return_id>/pickup", methods=["POST"])
+def pickup_customer_return(return_id):
+    data = request.get_json(silent=True) or {}
+
+    partner_id = str(
+        data.get("partner_id", "")
+    ).strip()
+
+    if not partner_id:
+        return jsonify({
+            "success": False,
+            "message": "partner_id is required"
+        }), 400
+
+    db = get_db()
+
+    ret = db.execute("""
+        SELECT *
+        FROM customer_returns
+        WHERE return_id=?
+    """, (return_id,)).fetchone()
+
+    if not ret:
+        db.close()
+        return jsonify({
+            "success": False,
+            "message": "Return not found"
+        }), 404
+
+    if ret["pickup_partner_id"] != partner_id:
+        db.close()
+        return jsonify({
+            "success": False,
+            "message": "Return is assigned to another partner"
+        }), 403
+
+    if ret["status"] != "RETURN_ASSIGNED":
+        db.close()
+        return jsonify({
+            "success": False,
+            "message": "Only RETURN_ASSIGNED returns can be picked up"
+        }), 400
+
+    picked_up_at = now()
+
+    db.execute("""
+        UPDATE customer_returns
+        SET status='RETURN_PICKED_UP',
+            picked_up_at=?,
+            updated_at=?
+        WHERE return_id=?
+    """, (
+        picked_up_at,
+        picked_up_at,
+        return_id
+    ))
+
+    if ret["shipment_id"]:
+        db.execute("""
+            INSERT INTO shipment_events
+            (shipment_id, status, hub_code, note, created_at)
+            VALUES (?, ?, ?, ?, ?)
+        """, (
+            ret["shipment_id"],
+            "RETURN_PICKED_UP",
+            ret["hub_code"],
+            f"Customer return picked up by partner {partner_id}",
+            picked_up_at
+        ))
+
+    db.commit()
+
+    updated = db.execute("""
+        SELECT *
+        FROM customer_returns
+        WHERE return_id=?
+    """, (return_id,)).fetchone()
+
+    db.close()
+
+    return jsonify({
+        "success": True,
+        "message": "Customer return picked up",
+        "return": row_to_dict(updated)
+    })
+
+
+@app.route("/api/returns/<return_id>/complete", methods=["POST"])
+def complete_customer_return(return_id):
+    data = request.get_json(silent=True) or {}
+
+    db = get_db()
+
+    ret = db.execute("""
+        SELECT *
+        FROM customer_returns
+        WHERE return_id=?
+    """, (return_id,)).fetchone()
+
+    if not ret:
+        db.close()
+        return jsonify({
+            "success": False,
+            "message": "Return not found"
+        }), 404
+
+    if ret["status"] != "RETURN_PICKED_UP":
+        db.close()
+        return jsonify({
+            "success": False,
+            "message": "Only RETURN_PICKED_UP returns can be completed"
+        }), 400
+
+    returned_at = now()
+
+    db.execute("""
+        UPDATE customer_returns
+        SET status='RETURNED',
+            returned_at=?,
+            updated_at=?
+        WHERE return_id=?
+    """, (
+        returned_at,
+        returned_at,
+        return_id
+    ))
+
+    if ret["shipment_id"]:
+        db.execute("""
+            UPDATE shipments
+            SET status='RETURNED',
+                current_hub=?,
+                updated_at=?
+            WHERE shipment_id=?
+        """, (
+            ret["hub_code"],
+            returned_at,
+            ret["shipment_id"]
+        ))
+
+        db.execute("""
+            INSERT INTO shipment_events
+            (shipment_id, status, hub_code, note, created_at)
+            VALUES (?, 'RETURNED', ?, ?, ?)
+        """, (
+            ret["shipment_id"],
+            ret["hub_code"],
+            "Customer return received",
+            returned_at
+        ))
+
+    db.commit()
+
+    updated = db.execute("""
+        SELECT *
+        FROM customer_returns
+        WHERE return_id=?
+    """, (return_id,)).fetchone()
+
+    db.close()
+
+    return jsonify({
+        "success": True,
+        "message": "Customer return completed",
+        "return": row_to_dict(updated)
+    })
+
+
+@app.route("/api/market/customer/orders", methods=["POST"])
+def market_customer_orders():
+    data = request.get_json(silent=True) or {}
+
+    order_ids = data.get("order_ids", [])
+
+    if not isinstance(order_ids, list):
+        return jsonify({
+            "success": False,
+            "message": "order_ids must be a list"
+        }), 400
+
+    order_ids = [
+        str(x).strip()
+        for x in order_ids
+        if str(x).strip()
+    ][:20]
+
+    if not order_ids:
+        return jsonify({
+            "success": True,
+            "orders": [],
+            "total": 0
+        })
+
+    db = get_db()
+
+    placeholders = ",".join(["?"] * len(order_ids))
+
+    rows = db.execute(
+        f"""
+        SELECT *
+        FROM orders
+        WHERE order_id IN ({placeholders})
+        ORDER BY id DESC
+        """,
+        tuple(order_ids)
+    ).fetchall()
+
+    return jsonify({
+        "success": True,
+        "orders": [row_to_dict(r) for r in rows],
+        "total": len(rows)
+    })
+
+
+# ============================================================
+# DELYVO MARKET - ORDER SUMMARY
+# ============================================================
+
+@app.route("/api/market/orders/<order_id>/summary", methods=["GET"])
+def market_order_summary(order_id):
+    db = get_db()
+
+    order = db.execute("""
+        SELECT
+            o.*,
+            s.name AS seller_name,
+            s.city AS seller_city
+        FROM orders o
+        LEFT JOIN sellers s
+            ON s.seller_id=o.seller_id
+        WHERE o.order_id=?
+    """, (order_id,)).fetchone()
+
+    if not order:
+        return jsonify({
+            "success": False,
+            "message": "Order not found"
+        }), 404
+
+    items = db.execute("""
+        SELECT
+            oi.*,
+            p.sku,
+            p.description
+        FROM order_items oi
+        LEFT JOIN products p
+            ON p.product_id=oi.product_id
+        WHERE oi.order_id=?
+        ORDER BY oi.id ASC
+    """, (order_id,)).fetchall()
+
+    shipment = None
+    payment = None
+
+    if order["shipment_id"]:
+        shipment = db.execute("""
+            SELECT *
+            FROM shipments
+            WHERE shipment_id=?
+        """, (order["shipment_id"],)).fetchone()
+
+        payment = db.execute("""
+            SELECT *
+            FROM payments
+            WHERE shipment_id=?
+            ORDER BY id DESC
+            LIMIT 1
+        """, (order["shipment_id"],)).fetchone()
+
+    return jsonify({
+        "success": True,
+        "order": row_to_dict(order),
+        "items": [row_to_dict(x) for x in items],
+        "shipment": row_to_dict(shipment) if shipment else None,
+        "payment": row_to_dict(payment) if payment else None
+    })
+
+
+print("Delyvo Market customer order management registered")
+
+# ============================================================
+# DELYVO PLATFORM SERVER START
+# ============================================================
+
+
+# ============================================================
+# CUSTOMER RETURN / REFUND FINANCIAL MODULE
+# ============================================================
+
+# ============================================================
+# CUSTOMER RETURN / REFUND FINANCIAL MODULE
+# ============================================================
+
+def ensure_refund_financial_tables():
+    db = get_db()
+
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS customer_refunds (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            refund_id TEXT UNIQUE NOT NULL,
+            return_id TEXT NOT NULL,
+            order_id TEXT NOT NULL,
+            shipment_id TEXT,
+            seller_id TEXT,
+            payment_id TEXT,
+            refund_payment_id TEXT,
+            refund_amount REAL NOT NULL DEFAULT 0,
+            payment_type TEXT,
+            status TEXT NOT NULL DEFAULT 'REFUND_REQUESTED',
+            reason TEXT,
+            requested_at TEXT,
+            processed_at TEXT,
+            completed_at TEXT,
+            note TEXT,
+            created_at TEXT,
+            updated_at TEXT
+        )
+    """)
+
+    db.execute("""
+        CREATE INDEX IF NOT EXISTS idx_customer_refunds_return
+        ON customer_refunds(return_id)
+    """)
+
+    db.execute("""
+        CREATE INDEX IF NOT EXISTS idx_customer_refunds_order
+        ON customer_refunds(order_id)
+    """)
+
+    db.execute("""
+        CREATE INDEX IF NOT EXISTS idx_customer_refunds_status
+        ON customer_refunds(status)
+    """)
+
+    db.commit()
+    db.close()
+
+
+ensure_refund_financial_tables()
+
+
+@app.route("/api/returns/<return_id>/refund", methods=["POST"])
+def request_customer_refund(return_id):
+    data = request.get_json(silent=True) or {}
+    db = get_db()
+
+    ret = db.execute("""
+        SELECT *
+        FROM customer_returns
+        WHERE return_id=?
+    """, (return_id,)).fetchone()
+
+    if not ret:
+        db.close()
+        return jsonify({
+            "success": False,
+            "message": "Return not found"
+        }), 404
+
+    if ret["status"] != "RETURNED":
+        db.close()
+        return jsonify({
+            "success": False,
+            "message": "Only completed returns can be refunded"
+        }), 400
+
+    existing = db.execute("""
+        SELECT *
+        FROM customer_refunds
+        WHERE return_id=?
+          AND status NOT IN ('CANCELLED')
+        ORDER BY id DESC
+        LIMIT 1
+    """, (return_id,)).fetchone()
+
+    if existing:
+        db.close()
+        return jsonify({
+            "success": False,
+            "message": "Refund already exists for this return",
+            "refund": row_to_dict(existing)
+        }), 409
+
+    order = db.execute("""
+        SELECT *
+        FROM orders
+        WHERE order_id=?
+    """, (ret["order_id"],)).fetchone()
+
+    if not order:
+        db.close()
+        return jsonify({
+            "success": False,
+            "message": "Order not found"
+        }), 404
+
+    payment = None
+
+    if ret["shipment_id"]:
+        payment = db.execute("""
+            SELECT *
+            FROM payments
+            WHERE shipment_id=?
+            ORDER BY id DESC
+            LIMIT 1
+        """, (ret["shipment_id"],)).fetchone()
+
+    payment_type = (
+        payment["payment_type"]
+        if payment
+        else str(order["payment_type"] or "PREPAID").upper()
+    )
+
+    payment_id = payment["payment_id"] if payment else None
+
+    try:
+        refund_amount = float(
+            data.get(
+                "refund_amount",
+                ret["refund_amount"] or order["total_amount"] or 0
+            ) or 0
+        )
+    except (TypeError, ValueError):
+        db.close()
+        return jsonify({
+            "success": False,
+            "message": "refund_amount must be a valid number"
+        }), 400
+
+    if refund_amount < 0:
+        db.close()
+        return jsonify({
+            "success": False,
+            "message": "refund_amount cannot be negative"
+        }), 400
+
+    created_at = now()
+    refund_id = generate_id("REF")
+    reason = str(
+        data.get("reason", "Customer return refund")
+    ).strip()
+
+    db.execute("""
+        INSERT INTO customer_refunds (
+            refund_id,
+            return_id,
+            order_id,
+            shipment_id,
+            seller_id,
+            payment_id,
+            refund_payment_id,
+            refund_amount,
+            payment_type,
+            status,
+            reason,
+            requested_at,
+            note,
+            created_at,
+            updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'REFUND_REQUESTED',
+                ?, ?, ?, ?, ?)
+    """, (
+        refund_id,
+        return_id,
+        ret["order_id"],
+        ret["shipment_id"],
+        ret["seller_id"],
+        payment_id,
+        None,
+        refund_amount,
+        payment_type,
+        reason,
+        created_at,
+        "Refund request created",
+        created_at,
+        created_at
+    ))
+
+    db.execute("""
+        UPDATE customer_returns
+        SET status='REFUND_REQUESTED',
+            refund_payment_id=?,
+            refund_amount=?,
+            refund_requested_at=?,
+            updated_at=?
+        WHERE return_id=?
+    """, (
+        refund_id,
+        refund_amount,
+        created_at,
+        created_at,
+        return_id
+    ))
+
+    if ret["shipment_id"]:
+        db.execute("""
+            INSERT INTO shipment_events (
+                shipment_id,
+                status,
+                hub_code,
+                note,
+                created_at
+            )
+            VALUES (?, 'REFUND_REQUESTED', ?, ?, ?)
+        """, (
+            ret["shipment_id"],
+            ret["hub_code"] or "",
+            "Customer refund requested",
+            created_at
+        ))
+
+    db.commit()
+
+    refund = db.execute("""
+        SELECT *
+        FROM customer_refunds
+        WHERE refund_id=?
+    """, (refund_id,)).fetchone()
+
+    db.close()
+
+    return jsonify({
+        "success": True,
+        "message": "Refund request created",
+        "refund": row_to_dict(refund)
+    }), 201
+
+
+@app.route("/api/refunds/<refund_id>", methods=["GET"])
+def get_customer_refund(refund_id):
+    db = get_db()
+
+    refund = db.execute("""
+        SELECT *
+        FROM customer_refunds
+        WHERE refund_id=?
+    """, (refund_id,)).fetchone()
+
+    if not refund:
+        db.close()
+        return jsonify({
+            "success": False,
+            "message": "Refund not found"
+        }), 404
+
+    db.close()
+
+    return jsonify({
+        "success": True,
+        "refund": row_to_dict(refund)
+    })
+
+
+@app.route("/api/refunds", methods=["GET"])
+def get_customer_refunds():
+    status_filter = str(
+        request.args.get("status", "")
+    ).strip().upper()
+
+    db = get_db()
+
+    if status_filter:
+        rows = db.execute("""
+            SELECT *
+            FROM customer_refunds
+            WHERE status=?
+            ORDER BY id DESC
+        """, (status_filter,)).fetchall()
+    else:
+        rows = db.execute("""
+            SELECT *
+            FROM customer_refunds
+            ORDER BY id DESC
+        """).fetchall()
+
+    db.close()
+
+    return jsonify({
+        "success": True,
+        "refunds": [row_to_dict(x) for x in rows]
+    })
+
+
+@app.route("/api/refunds/<refund_id>/complete", methods=["POST"])
+def complete_customer_refund(refund_id):
+    data = request.get_json(silent=True) or {}
+    db = get_db()
+
+    refund = db.execute("""
+        SELECT *
+        FROM customer_refunds
+        WHERE refund_id=?
+    """, (refund_id,)).fetchone()
+
+    if not refund:
+        db.close()
+        return jsonify({
+            "success": False,
+            "message": "Refund not found"
+        }), 404
+
+    if refund["status"] == "REFUNDED":
+        db.close()
+        return jsonify({
+            "success": False,
+            "message": "Refund already completed",
+            "refund": row_to_dict(refund)
+        }), 409
+
+    if refund["status"] != "REFUND_REQUESTED":
+        db.close()
+        return jsonify({
+            "success": False,
+            "message": "Only REFUND_REQUESTED refunds can be completed"
+        }), 400
+
+    completed_at = now()
+    refund_amount = round(float(refund["refund_amount"] or 0), 2)
+
+    # --------------------------------------------------------
+    # CUSTOMER PAYMENT RECORD
+    # --------------------------------------------------------
+    if refund["payment_id"]:
+        payment = db.execute("""
+            SELECT *
+            FROM payments
+            WHERE payment_id=?
+        """, (refund["payment_id"],)).fetchone()
+
+        if payment:
+            db.execute("""
+                UPDATE payments
+                SET status='REFUNDED',
+                    note=?
+                WHERE payment_id=?
+            """, (
+                "Customer refund completed: " + refund["refund_id"],
+                refund["payment_id"]
+            ))
+
+    # --------------------------------------------------------
+    # PLATFORM LEDGER
+    # --------------------------------------------------------
+    if refund_amount > 0:
+        create_platform_transaction(
+            db,
+            transaction_type="CUSTOMER_REFUND",
+            direction="DEBIT",
+            amount=refund_amount,
+            shipment_id=refund["shipment_id"],
+            order_id=refund["order_id"],
+            seller_id=refund["seller_id"],
+            reference_id=refund["refund_id"],
+            note="Customer refund completed"
+        )
+
+    # --------------------------------------------------------
+    # SELLER SETTLEMENT ADJUSTMENT
+    # --------------------------------------------------------
+    settlement = None
+
+    if refund["shipment_id"]:
+        settlement = db.execute("""
+            SELECT *
+            FROM seller_settlements
+            WHERE shipment_id=?
+            ORDER BY id DESC
+            LIMIT 1
+        """, (refund["shipment_id"],)).fetchone()
+
+    if settlement:
+        old_net = round(float(settlement["net_payable"] or 0), 2)
+        new_net = round(max(0, old_net - refund_amount), 2)
+
+        db.execute("""
+            UPDATE seller_settlements
+            SET net_payable=?,
+                other_charge=COALESCE(other_charge, 0) + ?,
+                note=? 
+            WHERE settlement_id=?
+        """, (
+            new_net,
+            refund_amount,
+            "Adjusted for customer refund " + refund["refund_id"],
+            settlement["settlement_id"]
+        ))
+
+        db.execute("""
+            INSERT INTO platform_transactions (
+                transaction_id,
+                shipment_id,
+                order_id,
+                seller_id,
+                company_id,
+                partner_id,
+                transaction_type,
+                direction,
+                amount,
+                status,
+                reference_id,
+                note,
+                created_at
+            )
+            VALUES (?, ?, ?, ?, ?, NULL, 'SELLER_REFUND_ADJUSTMENT',
+                    'DEBIT', ?, 'POSTED', ?, ?, ?)
+        """, (
+            generate_id("TXN"),
+            refund["shipment_id"],
+            refund["order_id"],
+            refund["seller_id"],
+            refund_amount,
+            refund["refund_id"],
+            "Seller settlement reduced due to customer refund",
+            completed_at
+        ))
+
+    # --------------------------------------------------------
+    # FINAL REFUND STATUS
+    # --------------------------------------------------------
+    db.execute("""
+        UPDATE customer_refunds
+        SET status='REFUNDED',
+            processed_at=?,
+            completed_at=?,
+            updated_at=?,
+            note=?
+        WHERE refund_id=?
+    """, (
+        completed_at,
+        completed_at,
+        completed_at,
+        "Refund completed successfully",
+        refund_id
+    ))
+
+    db.execute("""
+        UPDATE customer_returns
+        SET status='REFUNDED',
+            refunded_at=?,
+            updated_at=?
+        WHERE return_id=?
+    """, (
+        completed_at,
+        completed_at,
+        refund["return_id"]
+    ))
+
+    if refund["shipment_id"]:
+        db.execute("""
+            INSERT INTO shipment_events (
+                shipment_id,
+                status,
+                hub_code,
+                note,
+                created_at
+            )
+            VALUES (?, 'REFUNDED', ?, ?, ?)
+        """, (
+            refund["shipment_id"],
+            "",
+            "Customer refund completed",
+            completed_at
+        ))
+
+    # Marketplace order is now financially closed.
+    db.execute("""
+        UPDATE orders
+        SET payment_status='REFUNDED',
+            order_status='REFUNDED',
+            updated_at=?
+        WHERE order_id=?
+    """, (
+        completed_at,
+        refund["order_id"]
+    ))
+
+    db.commit()
+
+    updated = db.execute("""
+        SELECT *
+        FROM customer_refunds
+        WHERE refund_id=?
+    """, (refund_id,)).fetchone()
+
+    db.close()
+
+    return jsonify({
+        "success": True,
+        "message": "Customer refund completed",
+        "refund": row_to_dict(updated)
+    })
+
+
+@app.route("/api/refunds/summary", methods=["GET"])
+def refund_summary():
+    db = get_db()
+
+    total = db.execute("""
+        SELECT COUNT(*)
+        FROM customer_refunds
+    """).fetchone()[0]
+
+    requested = db.execute("""
+        SELECT COUNT(*)
+        FROM customer_refunds
+        WHERE status='REFUND_REQUESTED'
+    """).fetchone()[0]
+
+    refunded = db.execute("""
+        SELECT COUNT(*)
+        FROM customer_refunds
+        WHERE status='REFUNDED'
+    """).fetchone()[0]
+
+    requested_amount = db.execute("""
+        SELECT COALESCE(SUM(refund_amount), 0)
+        FROM customer_refunds
+        WHERE status='REFUND_REQUESTED'
+    """).fetchone()[0]
+
+    refunded_amount = db.execute("""
+        SELECT COALESCE(SUM(refund_amount), 0)
+        FROM customer_refunds
+        WHERE status='REFUNDED'
+    """).fetchone()[0]
+
+    db.close()
+
+    return jsonify({
+        "success": True,
+        "summary": {
+            "total_refunds": total,
+            "requested_refunds": requested,
+            "completed_refunds": refunded,
+            "requested_amount": requested_amount,
+            "refunded_amount": refunded_amount
+        }
+    })
+
+
 
 if __name__ == "__main__":
-    init_db()
-
-    print("=" * 40)
-    print(" CORE LOGISTICS PLATFORM")
-    print(" Backend v1.0")
-    print("=" * 40)
-    print(f"Database: {DB_PATH}")
-    print("Server: http://127.0.0.1:5001")
-
     app.run(
         host="0.0.0.0",
         port=5001,
         debug=False
     )
-
-# ============================================================
-# DELYVO MARKET CUSTOMER APP
-# ============================================================
-
-@app.route("/market")
-@app.route("/delyvo-market")
-def delyvo_market():
-    return app.send_static_file("market-placeholder.html") if False else render_template("delyvo_market.html")

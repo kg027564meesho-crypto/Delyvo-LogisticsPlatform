@@ -8,7 +8,7 @@
 <meta name="viewport"
 content="width=device-width,initial-scale=1.0">
 
-<title>Delyvo Logistics - Hub</title>
+<title>Delyvo Hub</title>
 
 <style>
 
@@ -151,7 +151,7 @@ grid-template-columns:repeat(2,1fr);
 <header>
 
 <div class="logo">
-Delyvo Logistics
+Delyvo Hub
 </div>
 
 </header>

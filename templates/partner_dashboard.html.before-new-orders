@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Delyvo Logistics</title>
+    <title>Delyvo Partner</title>
     <link rel="stylesheet" href="/static/partner_app.css">
 </head>
 
@@ -19,9 +19,6 @@
 
 <div id="homePage" class="page active">
 
-
-
-
 <div class="welcome">
     <h1 id="appWelcome">Welcome 👋</h1>
     <p>Your delivery partner dashboard</p>
@@ -29,7 +26,7 @@
 
 <header class="topbar">
     <div>
-        <div class="brand">Delyvo Logistics</div>
+        <div class="brand">Delyvo Partner</div>
         <div class="subtitle">Delivery Operations</div>
     </div>
 
@@ -136,38 +133,6 @@
         <h1>Deliveries</h1>
         <p>Manage your assigned shipments</p>
     </div>
-
-    <section class="section seat-section">
-        <div class="section-head">
-            <div>
-                <h2>Partner Seat</h2>
-                <div class="section-subtitle">
-                    Your hub seat reservation
-                </div>
-            </div>
-            <button onclick="loadPartnerSeat()">Refresh</button>
-        </div>
-
-        <div id="partnerSeatBox">
-            <div class="empty">Loading seat...</div>
-        </div>
-    </section>
-
-    <section class="section new-orders-section">
-        <div class="section-head">
-            <div>
-                <h2>New Orders</h2>
-                <div class="section-subtitle">
-                    Available deliveries near your hub
-                </div>
-            </div>
-            <button onclick="loadAvailableOrders()">Refresh</button>
-        </div>
-
-        <div id="availableOrders">
-            <div class="empty">Loading new orders...</div>
-        </div>
-    </section>
 
     <section class="section">
         <div class="section-head">
@@ -871,278 +836,11 @@ async function loadDeliveryHistory() {
     }
 }
 
-
-function renderAvailableOrders(items) {
-    const box = document.getElementById("availableOrders");
-
-    if (!box) return;
-
-    if (!items || !items.length) {
-        box.innerHTML = `
-            <div class="new-order-empty">
-                <div class="new-order-icon">📦</div>
-                <strong>No new deliveries</strong>
-                <span>New shipments will appear here when assigned to your hub.</span>
-            </div>
-        `;
-        return;
-    }
-
-    box.innerHTML = items.map(item => `
-        <div class="item new-order-card">
-
-            <div class="item-top">
-                <div>
-                    <div class="item-id">
-                        ${escapeHtml(
-                            item.awb ||
-                            item.shipment_id ||
-                            "-"
-                        )}
-                    </div>
-
-                    <div class="history-shipment">
-                        ${escapeHtml(item.shipment_id || "-")}
-                    </div>
-                </div>
-
-                <span class="badge">
-                    NEW
-                </span>
-            </div>
-
-            <div class="item-meta">
-                <span>
-                    👤 ${escapeHtml(item.customer_name || "Customer")}
-                </span>
-
-                <span>
-                    📍 ${escapeHtml(item.delivery_address || "-")}
-                </span>
-
-                <span>
-                    🏢 ${escapeHtml(
-                        item.hub_code ||
-                        item.current_hub ||
-                        "HUB001"
-                    )}
-                </span>
-            </div>
-
-            <div class="new-order-bottom">
-                <strong>
-                    ₹${Number(item.amount || 0).toLocaleString("en-IN", {
-                        maximumFractionDigits: 2
-                    })}
-                </strong>
-
-                <button
-                    class="primary accept-order-btn"
-                    data-shipment-id="${escapeHtml(
-                        item.shipment_id || item.id || ""
-                    )}">
-                    ACCEPT
-                </button>
-            </div>
-
-        </div>
-    `).join("");
-
-    box.querySelectorAll(".accept-order-btn").forEach(button => {
-        button.onclick = () => {
-            alert(
-                "Order available है, लेकिन partner-assignment endpoint के बिना direct acceptance नहीं किया जाएगा."
-            );
-        };
-    });
-}
-
-async function loadAvailableOrders() {
-    const box = document.getElementById("availableOrders");
-
-    if (!box) return;
-
-    box.innerHTML =
-        '<div class="empty">Loading new orders...</div>';
-
-    try {
-        const response = await fetch(
-            "/api/hubs/HUB001/shipments/available"
-        );
-
-        const data = await response.json();
-
-        if (!response.ok || !data.success) {
-            throw new Error(
-                data.message || "Available orders request failed"
-            );
-        }
-
-        renderAvailableOrders(data.shipments || []);
-
-    } catch (error) {
-        box.innerHTML =
-            `<div class="error">${escapeHtml(error.message)}</div>`;
-    }
-}
-
-
-function renderPartnerSeat(seat) {
-    const box = document.getElementById("partnerSeatBox");
-
-    if (!box) return;
-
-    if (!seat) {
-        box.innerHTML = `
-            <div class="seat-empty">
-                <div class="seat-icon">💺</div>
-                <strong>No seat reserved</strong>
-                <span>
-                    Your hub will reserve a seat for you when available.
-                </span>
-            </div>
-        `;
-        return;
-    }
-
-    const status = String(seat.status || "").toUpperCase();
-    const confirmed = status === "CONFIRMED";
-
-    box.innerHTML = `
-        <div class="seat-card ${confirmed ? "seat-confirmed" : "seat-reserved"}">
-
-            <div class="seat-card-top">
-                <div>
-                    <div class="seat-label">SEAT NUMBER</div>
-                    <div class="seat-number">
-                        ${escapeHtml(seat.seat_number || "-")}
-                    </div>
-                </div>
-
-                <span class="seat-status ${confirmed ? "confirmed" : "reserved"}">
-                    ${confirmed ? "CONFIRMED" : "RESERVED"}
-                </span>
-            </div>
-
-            <div class="seat-info">
-                <div>
-                    <span>Seat ID</span>
-                    <b>${escapeHtml(seat.seat_id || "-")}</b>
-                </div>
-
-                <div>
-                    <span>Hub</span>
-                    <b>${escapeHtml(seat.hub_code || "-")}</b>
-                </div>
-            </div>
-
-            ${
-                confirmed
-                ? `
-                    <div class="seat-confirmed-message">
-                        ✓ Your seat is confirmed.
-                    </div>
-                `
-                : `
-                    <button
-                        class="primary seat-confirm-btn"
-                        onclick="confirmPartnerSeat('${escapeHtml(seat.seat_id || "")}')"
-                    >
-                        CONFIRM SEAT
-                    </button>
-                `
-            }
-
-        </div>
-    `;
-}
-
-
-async function loadPartnerSeat() {
-    const box = document.getElementById("partnerSeatBox");
-
-    if (!box) return;
-
-    box.innerHTML =
-        '<div class="empty">Loading seat...</div>';
-
-    try {
-        const response = await fetch(
-            `/api/partners/${encodeURIComponent(partnerId)}/seat`
-        );
-
-        const data = await response.json();
-
-        if (!response.ok || !data.success) {
-            throw new Error(
-                data.message || "Seat request failed"
-            );
-        }
-
-        renderPartnerSeat(data.seat || null);
-
-    } catch (error) {
-        box.innerHTML =
-            `<div class="error">${escapeHtml(error.message)}</div>`;
-    }
-}
-
-
-async function confirmPartnerSeat(seatId) {
-
-    if (!seatId) return;
-
-    const box = document.getElementById("partnerSeatBox");
-
-    if (box) {
-        box.innerHTML =
-            '<div class="empty">Confirming your seat...</div>';
-    }
-
-    try {
-
-        const response = await fetch(
-            `/api/partner-seats/${encodeURIComponent(seatId)}/confirm`,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    partner_id: partnerId
-                })
-            }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok || !data.success) {
-            throw new Error(
-                data.message || "Seat confirmation failed"
-            );
-        }
-
-        renderPartnerSeat(data.seat || null);
-
-        alert("Seat confirmed successfully.");
-
-    } catch (error) {
-
-        if (box) {
-            box.innerHTML =
-                `<div class="error">${escapeHtml(error.message)}</div>`;
-        }
-    }
-}
-
-
 async function loadAll() {
     try {
         await loadDashboard();
         await loadPendingAssignments();
         await loadDeliveryHistory();
-        await loadAvailableOrders();
-        await loadPartnerSeat();
     } catch (error) {
         console.error(error);
     }

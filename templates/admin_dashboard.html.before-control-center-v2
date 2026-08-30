@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Delyvo Logistics - Admin Control Center</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+    margin:0;
+    font-family:Arial,Helvetica,sans-serif;
+    background:#f3f6f9;
+    color:#111827;
+}
+
+header{
+    background:#111827;
+    color:white;
+    padding:16px 20px;
+    position:sticky;
+    top:0;
+    z-index:20;
+    box-shadow:0 2px 12px #0002;
+}
+
+.header-inner{
+    max-width:1200px;
+    margin:auto;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:15px;
+}
+
+.logo{
+    font-size:23px;
+    font-weight:800;
+}
+
+.online{
+    font-size:13px;
+    color:#86efac;
+}
+
+.container{
+    max-width:1200px;
+    margin:auto;
+    padding:20px;
+}
+
+.hero{
+    background:linear-gradient(135deg,#111827,#26364a);
+    color:white;
+    padding:25px;
+    border-radius:20px;
+    margin-bottom:20px;
+}
+
+.hero h1{
+    margin:0 0 8px;
+    font-size:30px;
+}
+
+.hero p{
+    margin:0;
+    color:#cbd5e1;
+    line-height:1.5;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:14px;
+    margin-bottom:20px;
+}
+
+.stat{
+    background:white;
+    border-radius:16px;
+    padding:18px;
+    box-shadow:0 2px 10px #00000010;
+    border:1px solid #e5e7eb;
+}
+
+.stat-icon{
+    font-size:25px;
+}
+
+.label{
+    color:#6b7280;
+    font-size:13px;
+    margin-top:8px;
+}
+
+.number{
+    font-size:30px;
+    font-weight:800;
+    margin-top:5px;
+}
+
+.card{
+    background:white;
+    border-radius:17px;
+    padding:20px;
+    box-shadow:0 2px 10px #00000010;
+    border:1px solid #e5e7eb;
+    margin-bottom:18px;
+}
+
+.card-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    margin-bottom:14px;
+}
+
+.card h2,
+.card h3{
+    margin:0;
+}
+
+button{
+    border:0;
+    border-radius:9px;
+    padding:10px 14px;
+    background:#111827;
+    color:white;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+button:hover{
+    opacity:.88;
+}
+
+.actions{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:10px;
+}
+
+.action{
+    display:block;
+    text-decoration:none;
+    text-align:center;
+    background:#f8fafc;
+    color:#111827;
+    border:1px solid #e2e8f0;
+    border-radius:12px;
+    padding:15px 10px;
+    font-weight:bold;
+}
+
+.action:hover{
+    background:#eef2f7;
+}
+
+.result{
+    margin-top:12px;
+    background:#f8fafc;
+    border-radius:12px;
+    padding:12px;
+    overflow:auto;
+    font-size:13px;
+    border:1px solid #e5e7eb;
+}
+
+.table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+.table th,
+.table td{
+    text-align:left;
+    padding:10px;
+    border-bottom:1px solid #edf0f2;
+    white-space:nowrap;
+}
+
+.table th{
+    color:#6b7280;
+    font-size:12px;
+}
+
+.status{
+    font-weight:bold;
+    color:#16a34a;
+}
+
+.error{
+    color:#dc2626;
+    font-weight:bold;
+}
+
+.muted{
+    color:#6b7280;
+}
+
+@media(max-width:900px){
+    .grid{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .actions{
+        grid-template-columns:repeat(2,1fr);
+    }
+}
+
+@media(max-width:600px){
+    .container{
+        padding:12px;
+    }
+
+    .hero h1{
+        font-size:24px;
+    }
+
+    .grid{
+        grid-template-columns:repeat(2,1fr);
+        gap:9px;
+    }
+
+    .stat{
+        padding:14px;
+    }
+
+    .number{
+        font-size:24px;
+    }
+
+    .header-inner{
+        align-items:flex-start;
+    }
+
+    .online{
+        font-size:11px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<div class="header-inner">
+    <div class="logo">Delyvo Logistics</div>
+    <div class="online">● Platform Online</div>
+</div>
+</header>
+
+<div class="container">
+
+<div class="hero">
+    <h1>Delyvo Control Center</h1>
+    <p>
+        Central administration for companies, sellers, shipments,
+        delivery partners, hubs, orders and payments.
+    </p>
+</div>
+
+<!-- LIVE STATISTICS -->
+
+<div class="grid">
+
+<div class="stat">
+    <div class="stat-icon">🏢</div>
+    <div class="label">Companies</div>
+    <div id="companies" class="number">—</div>
+</div>
+
+<div class="stat">
+    <div class="stat-icon">🛒</div>
+    <div class="label">Sellers</div>
+    <div id="sellers" class="number">—</div>
+</div>
+
+<div class="stat">
+    <div class="stat-icon">📦</div>
+    <div class="label">Shipments</div>
+    <div id="shipments" class="number">—</div>
+</div>
+
+<div class="stat">
+    <div class="stat-icon">🚚</div>
+    <div class="label">Partners</div>
+    <div id="partners" class="number">—</div>
+</div>
+
+<div class="stat">
+    <div class="stat-icon">🏭</div>
+    <div class="label">Hubs</div>
+    <div id="hubs" class="number">—</div>
+</div>
+
+<div class="stat">
+    <div class="stat-icon">📱</div>
+    <div class="label">Products</div>
+    <div id="products" class="number">—</div>
+</div>
+
+<div class="stat">
+    <div class="stat-icon">🧾</div>
+    <div class="label">Orders</div>
+    <div id="orders" class="number">—</div>
+</div>
+
+<div class="stat">
+    <div class="stat-icon">💰</div>
+    <div class="label">Payments</div>
+    <div id="payments" class="number">—</div>
+</div>
+
+</div>
+
+<!-- QUICK ACTIONS -->
+
+<div class="card">
+
+<div class="card-header">
+    <h3>Quick Access</h3>
+</div>
+
+<div class="actions">
+
+<a class="action" href="/admin-partners">
+    🚚<br>Partners
+</a>
+
+<a class="action" href="/company">
+    🏢<br>Companies
+</a>
+
+<a class="action" href="/hub">
+    🏭<br>Hubs
+</a>
+
+<a class="action" href="/seller-dashboard">
+    🛒<br>Sellers
+</a>
+
+<a class="action" href="/delyvo-market">
+    🛍️<br>Market
+</a>
+
+</div>
+</div>
+
+<!-- PLATFORM STATUS -->
+
+<div class="card">
+
+<div class="card-header">
+    <h3>Platform Status</h3>
+    <button onclick="loadDashboard()">Refresh</button>
+</div>
+
+<p class="status">🟢 Delyvo Core Server Online</p>
+
+<div id="result" class="result">
+Loading dashboard statistics...
+</div>
+
+</div>
+
+<!-- SHIPMENTS -->
+
+<div class="card">
+
+<div class="card-header">
+    <h3>Recent Shipments</h3>
+    <button onclick="loadShipments()">Refresh</button>
+</div>
+
+<div id="shipmentBox" class="result">
+Loading shipments...
+</div>
+
+</div>
+
+<!-- COMPANIES -->
+
+<div class="card">
+
+<div class="card-header">
+    <h3>Companies</h3>
+    <button onclick="loadCompanies()">Refresh</button>
+</div>
+
+<div id="companyBox" class="result">
+Loading companies...
+</div>
+
+</div>
+
+<!-- PARTNERS -->
+
+<div class="card">
+
+<div class="card-header">
+    <h3>Delivery Partners</h3>
+    <button onclick="loadPartners()">Refresh</button>
+</div>
+
+<div id="partnerBox" class="result">
+Loading partners...
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+async function getJSON(url){
+
+    const response = await fetch(url);
+
+    if(!response.ok){
+        throw new Error("HTTP " + response.status);
+    }
+
+    return await response.json();
+}
+
+
+/* =========================================
+   DASHBOARD
+========================================= */
+
+async function loadDashboard(){
+
+    const result = document.getElementById("result");
+
+    result.textContent = "Loading...";
+
+    try{
+
+        const data = await getJSON("/api/admin/dashboard");
+
+        if(!data.success){
+            throw new Error(data.message || "Dashboard API failed");
+        }
+
+        const s = data.statistics || {};
+
+        document.getElementById("companies").textContent = s.companies ?? 0;
+        document.getElementById("sellers").textContent = s.sellers ?? 0;
+        document.getElementById("shipments").textContent = s.shipments ?? 0;
+        document.getElementById("partners").textContent = s.partners ?? 0;
+        document.getElementById("hubs").textContent = s.hubs ?? 0;
+        document.getElementById("products").textContent = s.products ?? 0;
+        document.getElementById("orders").textContent = s.orders ?? 0;
+        document.getElementById("payments").textContent = s.payments ?? 0;
+
+        result.innerHTML =
+            "✅ Dashboard updated successfully" +
+            "<br><span class='muted'>" +
+            "Generated: " +
+            (data.generated_at || "—") +
+            "</span>";
+
+    }catch(error){
+
+        result.innerHTML =
+            "<span class='error'>❌ Dashboard API error: " +
+            escapeHTML(error.message) +
+            "</span>";
+    }
+}
+
+
+/* =========================================
+   SHIPMENTS
+========================================= */
+
+async function loadShipments(){
+
+    const box = document.getElementById("shipmentBox");
+
+    box.textContent = "Loading...";
+
+    try{
+
+        const data = await getJSON("/api/admin/shipments/recent");
+
+        const rows = data.shipments || [];
+
+        if(!rows.length){
+
+            box.innerHTML =
+                "<span class='muted'>No shipments found.</span>";
+
+            return;
+        }
+
+        box.innerHTML = buildTable(rows);
+
+    }catch(error){
+
+        box.innerHTML =
+            "<span class='error'>❌ " +
+            escapeHTML(error.message) +
+            "</span>";
+    }
+}
+
+
+/* =========================================
+   COMPANIES
+========================================= */
+
+async function loadCompanies(){
+
+    const box = document.getElementById("companyBox");
+
+    box.textContent = "Loading...";
+
+    try{
+
+        const data = await getJSON("/api/admin/companies");
+
+        const rows = data.companies || [];
+
+        if(!rows.length){
+
+            box.innerHTML =
+                "<span class='muted'>No companies found.</span>";
+
+            return;
+        }
+
+        box.innerHTML = buildTable(rows);
+
+    }catch(error){
+
+        box.innerHTML =
+            "<span class='error'>❌ " +
+            escapeHTML(error.message) +
+            "</span>";
+    }
+}
+
+
+/* =========================================
+   PARTNERS
+========================================= */
+
+async function loadPartners(){
+
+    const box = document.getElementById("partnerBox");
+
+    box.textContent = "Loading...";
+
+    try{
+
+        const data = await getJSON("/api/admin/partners");
+
+        const rows = data.partners || [];
+
+        if(!rows.length){
+
+            box.innerHTML =
+                "<span class='muted'>No delivery partners found.</span>";
+
+            return;
+        }
+
+        box.innerHTML = buildTable(rows);
+
+    }catch(error){
+
+        box.innerHTML =
+            "<span class='error'>❌ " +
+            escapeHTML(error.message) +
+            "</span>";
+    }
+}
+
+
+/* =========================================
+   TABLE BUILDER
+========================================= */
+
+function buildTable(rows){
+
+    const columns = Object.keys(rows[0]);
+
+    let html = "<table class='table'><thead><tr>";
+
+    columns.slice(0,8).forEach(function(column){
+
+        html += "<th>" +
+            escapeHTML(column) +
+            "</th>";
+    });
+
+    html += "</tr></thead><tbody>";
+
+    rows.slice(0,20).forEach(function(row){
+
+        html += "<tr>";
+
+        columns.slice(0,8).forEach(function(column){
+
+            let value = row[column];
+
+            if(value === null || value === undefined){
+                value = "—";
+            }
+
+            html += "<td>" +
+                escapeHTML(String(value)) +
+                "</td>";
+        });
+
+        html += "</tr>";
+    });
+
+    html += "</tbody></table>";
+
+    return html;
+}
+
+
+/* =========================================
+   HTML SAFETY
+========================================= */
+
+function escapeHTML(value){
+
+    return value
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+}
+
+
+/* =========================================
+   INITIAL LOAD
+========================================= */
+
+loadDashboard();
+loadShipments();
+loadCompanies();
+loadPartners();
+
+</script>
+
+</body>
+</html>

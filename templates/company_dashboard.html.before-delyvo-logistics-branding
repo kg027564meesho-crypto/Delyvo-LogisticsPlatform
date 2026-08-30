@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Delyvo Logistics - Company</title>
+<title>Delyvo Company</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;font-family:Arial,sans-serif;background:#f4f6f8;color:#111827}
@@ -27,7 +27,7 @@ button{width:100%;border:0;border-radius:9px;padding:12px;background:#111827;col
 <body>
 
 <header>
-<div class="logo">Delyvo Logistics</div>
+<div class="logo">Delyvo Company</div>
 </header>
 
 <div class="container">

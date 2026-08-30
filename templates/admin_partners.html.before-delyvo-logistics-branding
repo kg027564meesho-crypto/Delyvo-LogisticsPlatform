@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Delyvo Logistics - Admin</title>
+    <title>Delyvo Admin - Partners</title>
     <link rel="stylesheet" href="/static/admin_partners.css">
 </head>
 
@@ -12,7 +12,7 @@
 
     <header class="topbar">
         <div>
-            <div class="brand">Delyvo Logistics</div>
+            <div class="brand">Delyvo Admin</div>
             <div class="operations-panel"subtitle">Partner Operations</div>
         </div>
 

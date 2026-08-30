@@ -886,12 +886,10 @@ async function openProduct(productId){
    CART
 ========================= */
 
-
 function addToCart(id){
+
     const product = products.find(
-        p =>
-            String(p.product_id) ===
-            String(id)
+        p => String(p.product_id) === String(id)
     );
 
     if(!product){
@@ -899,30 +897,21 @@ function addToCart(id){
         return;
     }
 
-    const stock =
-        Number(product.stock || 0);
+    const stock = Number(product.stock || 0);
 
     if(stock <= 0){
-        alert(
-            "This product is currently out of stock."
-        );
+        alert("This product is currently out of stock.");
         return;
     }
 
     const existing = cart.find(
-        x =>
-            String(x.product_id) ===
-            String(id)
+        x => String(x.product_id) === String(id)
     );
 
     if(existing){
-        if(
-            Number(existing.quantity || 0) >=
-            stock
-        ){
-            alert(
-                "Maximum available stock reached."
-            );
+
+        if(Number(existing.quantity || 0) >= stock){
+            alert("Maximum available stock reached.");
             return;
         }
 
@@ -930,6 +919,7 @@ function addToCart(id){
             Number(existing.quantity || 0) + 1;
 
     }else{
+
         cart.push({
             product_id: product.product_id,
             product_name: product.name,
@@ -945,7 +935,6 @@ function addToCart(id){
     updateCartCount();
     renderCart();
 }
-
 
 function saveCart(){
     localStorage.setItem(
@@ -985,16 +974,16 @@ function removeUnavailableCartItems(){
     }
 }
 
-
 function updateCartProductsStock(){
+
     cart = cart.map(item => {
+
         const p = products.find(
-            x =>
-                String(x.product_id) ===
-                String(item.product_id)
+            x => String(x.product_id) === String(item.product_id)
         );
 
         if(p){
+
             item.product_name = p.name;
             item.seller_id = p.seller_id;
             item.seller_name = p.seller_name;
@@ -1007,15 +996,13 @@ function updateCartProductsStock(){
         }
 
         return item;
-    }).filter(
-        item => Number(item.stock || 0) > 0 &&
-                Number(item.quantity || 0) > 0
-    );
+    });
+
+    removeUnavailableCartItems();
 
     saveCart();
     updateCartCount();
 }
-
 
 function updateCartCount(){
 
@@ -1095,24 +1082,26 @@ function renderCart(){
         `<h3>Subtotal: ${money(subtotal)}</h3>`;
 }
 
-
 function changeQty(i,d){
-    if(!cart[i]) return;
+
+    if(!cart[i]){
+        return;
+    }
 
     const next =
-        Number(cart[i].quantity || 0) +
-        Number(d || 0);
+        Number(cart[i].quantity || 0) + Number(d || 0);
 
     if(next <= 0){
-        cart.splice(i,1);
-    }else{
-        const stock =
-            Number(cart[i].stock || 0);
 
-        if(stock > 0 && next > stock){
-            alert(
-                "Maximum available stock reached."
-            );
+        cart.splice(i,1);
+
+    }else{
+
+        const maxStock =
+            Number(cart[i].stock || 999999);
+
+        if(next > maxStock){
+            alert("Maximum available stock reached.");
             return;
         }
 
@@ -1123,7 +1112,6 @@ function changeQty(i,d){
     updateCartCount();
     renderCart();
 }
-
 
 /* =========================
    CHECKOUT
@@ -1338,21 +1326,11 @@ async function placeOrder(){
             id => rememberOrder(id)
         );
 
-        
-createdOrders.forEach(id => {
-    rememberOrder(id);
-});
-
-alert(
-    "Order placed successfully!
-
-" +
-    "Order IDs:
-" +
-    createdOrders.join("
-")
-);
-
+        alert(
+            "Order placed successfully!\n\n" +
+            "Order IDs:\n" +
+            createdOrders.join("\n")
+        );
 
         closeModal("checkoutModal");
         closeModal("cartModal");
@@ -1372,23 +1350,24 @@ alert(
    ORDERS
 ========================= */
 
-
-
 async function openOrders(){
-    document.getElementById(
-        "ordersModal"
-    ).style.display = "flex";
+
+    document.getElementById("ordersModal")
+        .style.display = "flex";
+
+    const input =
+        document.getElementById("orderLookup");
+
+    if(input){
+        input.value = "";
+    }
 
     renderSavedOrders();
 
     await syncCustomerOrders();
 
     renderSavedOrders();
-
-    await refreshSavedOrderStatuses();
 }
-
-
 
 
 
@@ -1486,85 +1465,49 @@ function clearCustomerOrders(){
     renderSavedOrders();
 }
 
-
 function renderSavedOrders(){
+
     const box = document.getElementById("orders");
 
-    if(!box){
-        return;
-    }
-
     if(!customerOrders.length){
+
         box.innerHTML = `
             <div class="empty">
                 No saved orders yet.<br>
                 Place an order and it will appear here.
             </div>
         `;
+
         return;
     }
 
     box.innerHTML = `
-        <div
-            style="
-                display:flex;
-                justify-content:space-between;
-                align-items:center;
-                gap:10px;
-            "
-        >
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
             <h3>Recent Orders</h3>
-
             <button
                 class="detail"
-                onclick="clearCustomerOrders()"
-            >
+                onclick="clearCustomerOrders()">
                 Clear
             </button>
         </div>
 
-        ${
-            customerOrders.map(id => `
-                <div
-                    class="order-card"
-                    style="
-                        display:flex;
-                        justify-content:space-between;
-                        align-items:center;
-                        gap:10px;
-                    "
-                >
-                    <div>
-                        <b>
-                            ${escapeHtml(id)}
-                        </b>
+        ${customerOrders.map(id => `
+            <div class="order-card">
 
-                        <small
-                            id="order-status-${escapeHtml(id)}"
-                            class="order-status-preview"
-                            style="
-                                display:block;
-                                margin-top:4px;
-                            "
-                        >
-                            Loading status...
-                        </small>
-                    </div>
-
-                    <button
-                        class="detail"
-                        onclick="loadOrderById(
-                            '${escapeHtml(id)}'
-                        )"
-                    >
-                        View / Track
-                    </button>
+                <div>
+                    <b>${escapeHtml(id)}</b>
                 </div>
-            `).join("")
-        }
+
+                <button
+                    class="detail"
+                    onclick="loadOrderById('${escapeHtml(id)}')">
+                    View / Track
+                </button>
+
+            </div>
+        `).join("")}
     `;
 }
-
 
 async function loadOrderById(orderId){
     document.getElementById("orderLookup").value = orderId;
@@ -1905,9 +1848,7 @@ async function lookupOrder(){
         const o = data.order;
         const items = data.items || [];
         const shipment = data.shipment;
-        const events = Array.isArray(data.events)
-            ? data.events.slice().reverse()
-            : [];
+        const events = data.events || [];
 
         rememberOrder(o.order_id);
 

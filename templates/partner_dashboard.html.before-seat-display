@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Delyvo Logistics</title>
+    <title>Delyvo Partner</title>
     <link rel="stylesheet" href="/static/partner_app.css">
 </head>
 
@@ -19,9 +19,6 @@
 
 <div id="homePage" class="page active">
 
-
-
-
 <div class="welcome">
     <h1 id="appWelcome">Welcome 👋</h1>
     <p>Your delivery partner dashboard</p>
@@ -29,7 +26,7 @@
 
 <header class="topbar">
     <div>
-        <div class="brand">Delyvo Logistics</div>
+        <div class="brand">Delyvo Partner</div>
         <div class="subtitle">Delivery Operations</div>
     </div>
 
@@ -1134,7 +1131,6 @@ async function confirmPartnerSeat(seatId) {
         }
     }
 }
-
 
 async function loadAll() {
     try {
