@@ -8,7 +8,9 @@ import sqlite3
 import os
 import uuid
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, "data", "platform.db")
+DATA_DIR = os.path.join(BASE_DIR, "data")
+os.makedirs(DATA_DIR, exist_ok=True)
+DB_PATH = os.path.join(DATA_DIR, "platform.db")
 app = Flask(__name__)
 CORS(app)
 def get_db():
