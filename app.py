@@ -80,6 +80,10 @@ def create_platform_transaction(
 
 def row_to_dict(row):
     return dict(row) if row else None
+def hash_password(password):
+    import hashlib
+    return hashlib.sha256(str(password).encode("utf-8")).hexdigest()
+
 def init_db():
     db = get_db()
     db.execute("""
@@ -302,6 +306,38 @@ def init_db():
             created_at TEXT NOT NULL
         )
     """)
+    # Ensure the platform admin login account exists.
+    # Existing admin records are preserved.
+    default_username = "Delyvo logistics platform"
+    default_password = "Delyvo@1234"
+
+    existing_admin = db.execute(
+        "SELECT admin_id FROM admins WHERE name=? LIMIT 1",
+        (default_username,)
+    ).fetchone()
+
+    if not existing_admin:
+        db.execute("""
+            INSERT INTO admins
+            (admin_id, name, phone, password_hash, status, created_at)
+            VALUES (?, ?, ?, ?, 'ACTIVE', ?)
+        """, (
+            generate_id("ADM"),
+            default_username,
+            "9999999999",
+            hash_password(default_password),
+            now()
+        ))
+    else:
+        db.execute("""
+            UPDATE admins
+            SET password_hash=?, status='ACTIVE'
+            WHERE name=?
+        """, (
+            hash_password(default_password),
+            default_username
+        ))
+
     db.commit()
     db.close()
 # =========================================================
